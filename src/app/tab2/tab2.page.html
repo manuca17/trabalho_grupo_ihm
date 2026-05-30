@@ -1,17 +1,111 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+    <ion-title>Adicionar moeda</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="add-offer-content">
+  <section class="page-intro">
+    <p class="eyebrow">Cenário 2</p>
+    <h1>Registo de nova oferta</h1>
+    <p>
+      Captura as três vistas da moeda, define preço, quantidade e
+      disponibilidade para troca.
+    </p>
+  </section>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+  <form [formGroup]="offerForm" class="offer-form">
+    <ion-list inset="true">
+      <ion-item>
+        <ion-select
+          label="Moeda"
+          labelPlacement="stacked"
+          formControlName="coinId"
+          (ionChange)="onCoinChange($event.detail.value)"
+        >
+          <ion-select-option *ngFor="let coin of coins" [value]="coin.id"
+            >{{ coin.name }}</ion-select-option
+          >
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Quantidade"
+          labelPlacement="stacked"
+          type="number"
+          formControlName="quantity"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-input
+          label="Valor de venda pretendido"
+          labelPlacement="stacked"
+          type="number"
+          formControlName="askPrice"
+        ></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-textarea
+          label="Descrição breve"
+          labelPlacement="stacked"
+          autoGrow="true"
+          formControlName="description"
+          placeholder="Estado, anomalias visíveis, origem e urgência da venda"
+        ></ion-textarea>
+      </ion-item>
+      <ion-item>
+        <ion-toggle formControlName="availableForTrade"
+          >Disponível para troca</ion-toggle
+        >
+      </ion-item>
+    </ion-list>
+
+    <section class="selected-coin" *ngIf="selectedCoin">
+      <img [src]="selectedCoin.image" [alt]="selectedCoin.name" />
+      <div>
+        <h2>{{ selectedCoin.name }}</h2>
+        <p>{{ selectedCoin.description }}</p>
+      </div>
+    </section>
+
+    <section class="capture-grid">
+      <button
+        type="button"
+        class="capture-card"
+        *ngFor="let step of photoSteps"
+        (click)="capturePhoto(step)"
+      >
+        <ng-container
+          *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder"
+        >
+          <img [src]="captured.dataUrl" [alt]="captured.label" />
+          <strong>{{ captured.label }}</strong>
+          <span
+            >{{ getBrightnessTone(captured.brightness) }} · {{
+            captured.brightness }}%</span
+          >
+        </ng-container>
+        <ng-template #capturePlaceholder>
+          <ion-icon name="camera-outline"></ion-icon>
+          <strong>{{ step.label }}</strong>
+          <span>Toca para abrir a câmara</span>
+        </ng-template>
+      </button>
+    </section>
+
+    <ion-note color="warning" *ngIf="photos.length < photoSteps.length">
+      É obrigatório capturar anverso, reverso e bordo antes de publicar a
+      oferta.
+    </ion-note>
+
+    <ion-button
+      expand="block"
+      color="primary"
+      [disabled]="isSubmitting"
+      (click)="publishOffer()"
+    >
+      <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
+      Publicar oferta
+    </ion-button>
+  </form>
 </ion-content>

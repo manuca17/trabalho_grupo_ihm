@@ -35,3 +35,52 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Manrope:wght@400;500;700&display=swap");
+
+html,
+body,
+ion-app,
+ion-content {
+  font-family: "Manrope", sans-serif;
+}
+
+body {
+  background:
+    radial-gradient(circle at top, rgba(207, 165, 83, 0.22), transparent 28%),
+    linear-gradient(180deg, #f8f0db 0%, #f4ede1 42%, #efe4d5 100%);
+  color: #2f1e15;
+}
+
+h1,
+h2,
+h3,
+ion-title {
+  font-family: "Cinzel", serif;
+}
+
+ion-content {
+  --background:
+    radial-gradient(
+      circle at 10% 15%,
+      rgba(207, 165, 83, 0.14),
+      transparent 20%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 249, 237, 0.94),
+      rgba(244, 237, 225, 0.96)
+    );
+}
+
+ion-card,
+ion-item,
+ion-list {
+  --border-color: rgba(94, 52, 32, 0.08);
+}
+
+ion-button {
+  --border-radius: 18px;
+  min-height: 52px;
+  font-weight: 700;
+}

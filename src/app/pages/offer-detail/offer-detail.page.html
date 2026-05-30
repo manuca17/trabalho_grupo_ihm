@@ -1,0 +1,61 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab2"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Oferta publicada</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="offer-detail-content">
+  <ng-container *ngIf="offer && coin">
+    <section class="offer-summary-card">
+      <img [src]="coin.image" [alt]="coin.name" />
+      <div>
+        <ion-badge color="success">{{ offer.status | titlecase }}</ion-badge>
+        <h1>{{ coin.name }}</h1>
+        <p>{{ offer.description }}</p>
+      </div>
+    </section>
+
+    <ion-grid>
+      <ion-row>
+        <ion-col size="6">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-subtitle>Quantidade</ion-card-subtitle>
+              <ion-card-title>{{ offer.quantity }}</ion-card-title>
+            </ion-card-header>
+          </ion-card>
+        </ion-col>
+        <ion-col size="6">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-subtitle>Preço pedido</ion-card-subtitle>
+              <ion-card-title
+                >{{ offer.askPrice | currency:'EUR' }}</ion-card-title
+              >
+            </ion-card-header>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <ion-list inset="true">
+      <ion-item *ngFor="let photo of offer.photos">
+        <ion-thumbnail slot="start">
+          <img [src]="photo.dataUrl" [alt]="photo.label" />
+        </ion-thumbnail>
+        <ion-label>
+          <h2>{{ photo.label }}</h2>
+          <p>Luminosidade detetada: {{ photo.brightness }}%</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <ion-button expand="block" color="secondary" (click)="openNegotiations()">
+      <ion-icon slot="start" name="chatbubbles-outline"></ion-icon>
+      Ver negociações relacionadas
+    </ion-button>
+  </ng-container>
+</ion-content>

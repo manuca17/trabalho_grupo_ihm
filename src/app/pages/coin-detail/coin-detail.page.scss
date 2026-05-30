@@ -1,0 +1,40 @@
+.detail-content {
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --padding-top: 18px;
+  --padding-bottom: 28px;
+}
+
+.coin-hero {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 20px;
+
+  img {
+    width: 100%;
+    max-width: 240px;
+    justify-self: center;
+    filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.18));
+  }
+
+  h1 {
+    margin: 8px 0;
+    font-size: 1.9rem;
+  }
+
+  p {
+    color: var(--ion-color-medium-shade);
+  }
+}
+
+.detail-list {
+  margin-bottom: 18px;
+  border-radius: 24px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}

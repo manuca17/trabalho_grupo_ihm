@@ -1,4 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Camera, CameraResultType } from '@capacitor/camera';
+import { firstValueFrom } from 'rxjs';
+
+import { Coin, OfferPhoto } from '../core/models/coin.model';
+import { ContentService } from '../core/services/content.service';
+import { MarketplaceService } from '../core/services/marketplace.service';
 
 @Component({
   selector: 'app-tab2',
@@ -6,8 +14,156 @@ import { Component } from '@angular/core';
   styleUrls: ['tab2.page.scss'],
   standalone: false,
 })
-export class Tab2Page {
+export class Tab2Page implements OnInit {
+  readonly photoSteps: Array<{ kind: OfferPhoto['kind']; label: string }> = [
+    { kind: 'obverse', label: 'Anverso' },
+    { kind: 'reverse', label: 'Reverso' },
+    { kind: 'edge', label: 'Bordo' },
+  ];
 
-  constructor() {}
+  readonly offerForm = this.formBuilder.nonNullable.group({
+    coinId: ['', [Validators.required]],
+    quantity: [1, [Validators.required, Validators.min(1)]],
+    askPrice: [150, [Validators.required, Validators.min(1)]],
+    description: ['', [Validators.required, Validators.minLength(10)]],
+    availableForTrade: [true],
+  });
 
+  coins: Coin[] = [];
+  selectedCoin?: Coin;
+  photos: OfferPhoto[] = [];
+  isSubmitting = false;
+
+  constructor(
+    private readonly activatedRoute: ActivatedRoute,
+    private readonly formBuilder: FormBuilder,
+    private readonly router: Router,
+    private readonly contentService: ContentService,
+    private readonly marketplaceService: MarketplaceService,
+  ) {}
+
+  async ngOnInit(): Promise<void> {
+    await this.marketplaceService.init();
+    this.coins = await firstValueFrom(this.contentService.coins$);
+
+    const coinId =
+      this.activatedRoute.snapshot.queryParamMap.get('coinId') ??
+      this.coins[0]?.id ??
+      '';
+    this.offerForm.controls.coinId.setValue(coinId);
+    this.onCoinChange(coinId);
+  }
+
+  onCoinChange(coinId: string): void {
+    this.selectedCoin = this.coins.find((coin) => coin.id === coinId);
+  }
+
+  async capturePhoto(step: {
+    kind: OfferPhoto['kind'];
+    label: string;
+  }): Promise<void> {
+    const photo = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: true,
+      resultType: CameraResultType.DataUrl,
+    });
+
+    if (!photo.dataUrl) {
+      return;
+    }
+
+    const brightness = await this.calculateBrightness(photo.dataUrl);
+    const nextPhoto: OfferPhoto = {
+      kind: step.kind,
+      label: step.label,
+      dataUrl: photo.dataUrl,
+      brightness,
+    };
+
+    this.photos = [
+      ...this.photos.filter((item) => item.kind !== step.kind),
+      nextPhoto,
+    ].sort(
+      (left, right) =>
+        this.photoSteps.findIndex((stepItem) => stepItem.kind === left.kind) -
+        this.photoSteps.findIndex((stepItem) => stepItem.kind === right.kind),
+    );
+  }
+
+  getPhotoForStep(kind: OfferPhoto['kind']): OfferPhoto | undefined {
+    return this.photos.find((photo) => photo.kind === kind);
+  }
+
+  getBrightnessTone(brightness: number): string {
+    if (brightness < 35) {
+      return 'Pouca luz detetada';
+    }
+
+    if (brightness < 65) {
+      return 'Luminosidade aceitável';
+    }
+
+    return 'Boa luminosidade';
+  }
+
+  async publishOffer(): Promise<void> {
+    if (
+      this.offerForm.invalid ||
+      this.photos.length !== this.photoSteps.length
+    ) {
+      this.offerForm.markAllAsTouched();
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    try {
+      const formValue = this.offerForm.getRawValue();
+      const offer = await this.marketplaceService.publishOffer({
+        coinId: formValue.coinId,
+        quantity: formValue.quantity,
+        askPrice: formValue.askPrice,
+        description: formValue.description,
+        availableForTrade: formValue.availableForTrade,
+        photos: this.photos,
+      });
+
+      await this.router.navigate(['/offer', offer.id]);
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
+  private calculateBrightness(dataUrl: string): Promise<number> {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        if (!context) {
+          resolve(50);
+          return;
+        }
+
+        canvas.width = 40;
+        canvas.height = 40;
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const { data } = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        let total = 0;
+
+        for (let index = 0; index < data.length; index += 4) {
+          total += (data[index] + data[index + 1] + data[index + 2]) / 3;
+        }
+
+        resolve(Math.round(total / (data.length / 4) / 2.55));
+      };
+      image.src = dataUrl;
+    });
+  }
 }

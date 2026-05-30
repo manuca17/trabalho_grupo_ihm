@@ -1,17 +1,46 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 3
-    </ion-title>
+    <ion-title>Negociações</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 3</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="negotiations-content">
+  <section class="page-intro">
+    <p class="eyebrow">Cenário 3</p>
+    <h1>Chat interno e propostas de troca</h1>
+    <p>
+      Carlos pode anexar uma moeda do inventário digital e Maria valida o valor
+      real antes de aceitar.
+    </p>
+  </section>
 
-  <app-explore-container name="Tab 3 page"></app-explore-container>
+  <ion-list lines="none" class="thread-list">
+    <ion-item
+      *ngFor="let thread of negotiations$ | async"
+      class="thread-card"
+      [class.thread-card--highlight]="isHighlighted(thread)"
+      button="true"
+      detail="false"
+      (click)="openNegotiation(thread)"
+    >
+      <ion-avatar slot="start">
+        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+      </ion-avatar>
+      <ion-label>
+        <div class="thread-header">
+          <h2>{{ thread.proposerName }} → {{ thread.sellerName }}</h2>
+          <ion-badge
+            [color]="thread.status === 'traded' ? 'success' : 'warning'"
+            >{{ thread.status | titlecase }}</ion-badge
+          >
+        </div>
+        <p>Valor real indicado: {{ thread.realValue | currency:'EUR' }}</p>
+        <p>{{ thread.messages[thread.messages.length - 1]?.body }}</p>
+      </ion-label>
+
+      <ion-badge slot="end" color="secondary" *ngIf="thread.unreadCount > 0"
+        >{{ thread.unreadCount }}</ion-badge
+      >
+    </ion-item>
+  </ion-list>
 </ion-content>

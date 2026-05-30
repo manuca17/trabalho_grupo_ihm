@@ -1,0 +1,33 @@
+[
+  {
+    "id": "thread-carlos-maria-1",
+    "offerId": "seed-offer-aureus",
+    "offerCoinId": "coin-aureus-augustus",
+    "proposerCoinId": "coin-denarius-trajan",
+    "proposerName": "Carlos",
+    "sellerName": "Maria",
+    "status": "pending",
+    "realValue": 680,
+    "unreadCount": 2,
+    "messages": [
+      {
+        "id": "msg-seed-1",
+        "author": "Carlos",
+        "body": "Olá Maria, posso trocar o meu Denário de Trajano e assumir os portes.",
+        "sentAt": "2026-05-29T10:00:00.000Z"
+      },
+      {
+        "id": "msg-seed-2",
+        "author": "Carlos",
+        "body": "O valor real que defini no formulário é 680 euros e o estado é XF.",
+        "sentAt": "2026-05-29T10:03:00.000Z"
+      },
+      {
+        "id": "msg-seed-3",
+        "author": "Maria",
+        "body": "Recebi a proposta. Vou rever as fotos e confirmar a condição do bordo.",
+        "sentAt": "2026-05-29T10:12:00.000Z"
+      }
+    ]
+  }
+]

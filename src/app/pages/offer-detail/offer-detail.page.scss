@@ -1,0 +1,27 @@
+.offer-detail-content {
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --padding-top: 18px;
+}
+
+.offer-summary-card {
+  display: grid;
+  grid-template-columns: minmax(96px, 132px) 1fr;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 18px;
+  border-radius: 28px;
+  background: linear-gradient(
+    160deg,
+    rgba(207, 165, 83, 0.16),
+    rgba(94, 52, 32, 0.1)
+  );
+
+  img {
+    width: 100%;
+  }
+
+  h1 {
+    margin: 10px 0;
+  }
+}

@@ -1,0 +1,82 @@
+.add-offer-content {
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --padding-top: 18px;
+  --padding-bottom: 32px;
+}
+
+.page-intro {
+  margin-bottom: 18px;
+
+  h1 {
+    margin: 8px 0 10px;
+    font-size: 2rem;
+  }
+
+  p {
+    color: var(--ion-color-medium-shade);
+  }
+}
+
+.offer-form {
+  display: grid;
+  gap: 18px;
+}
+
+.selected-coin {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 24px;
+  background: rgba(255, 248, 227, 0.8);
+
+  img {
+    width: 100%;
+  }
+
+  h2 {
+    margin: 6px 0;
+  }
+}
+
+.capture-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.capture-card {
+  display: grid;
+  gap: 8px;
+  min-height: 180px;
+  padding: 14px;
+  border: 0;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.84);
+  color: var(--ion-text-color);
+  box-shadow: 0 16px 28px rgba(84, 48, 27, 0.08);
+
+  ion-icon {
+    font-size: 2rem;
+    color: var(--ion-color-secondary);
+  }
+
+  img {
+    width: 100%;
+    height: 92px;
+    object-fit: cover;
+    border-radius: 16px;
+  }
+
+  span {
+    color: var(--ion-color-medium-shade);
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .capture-grid {
+    grid-template-columns: 1fr;
+  }
+}

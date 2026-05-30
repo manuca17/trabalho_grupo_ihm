@@ -1,0 +1,39 @@
+.negotiations-content {
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --padding-top: 18px;
+  --padding-bottom: 30px;
+}
+
+.thread-list {
+  display: grid;
+  gap: 14px;
+  background: transparent;
+}
+
+.thread-card {
+  --background: rgba(255, 255, 255, 0.9);
+  --border-radius: 24px;
+  --inner-padding-top: 16px;
+  --inner-padding-bottom: 16px;
+  --inner-padding-end: 16px;
+  --padding-start: 14px;
+}
+
+.thread-card--highlight {
+  outline: 2px solid rgba(94, 52, 32, 0.28);
+}
+
+.thread-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+ion-avatar {
+  display: grid;
+  place-items: center;
+  background: rgba(207, 165, 83, 0.2);
+  color: var(--ion-color-secondary-shade);
+}

@@ -1,0 +1,72 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/tab3"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Negociação</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="negotiation-content">
+  <ng-container *ngIf="thread">
+    <section class="negotiation-overview">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-subtitle
+            >{{ thread.sellerName }} vs {{ thread.proposerName
+            }}</ion-card-subtitle
+          >
+          <ion-card-title>{{ thread.status | titlecase }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p>
+            Valor real indicado pelo interessado: {{ thread.realValue |
+            currency:'EUR' }}
+          </p>
+          <p *ngIf="offerCoin && proposerCoin">
+            Proposta: {{ proposerCoin.name }} em troca de {{ offerCoin.name }}.
+          </p>
+        </ion-card-content>
+      </ion-card>
+    </section>
+
+    <section class="message-list">
+      <article
+        class="message"
+        *ngFor="let message of thread.messages"
+        [class.message--self]="message.author === 'Maria'"
+      >
+        <span class="message__author">{{ message.author }}</span>
+        <p>{{ message.body }}</p>
+        <small>{{ message.sentAt | date:'short' }}</small>
+      </article>
+    </section>
+
+    <ion-item class="composer" lines="none">
+      <ion-input
+        [(ngModel)]="draftMessage"
+        label="Responder"
+        labelPlacement="stacked"
+        placeholder="Escreve uma contra-proposta ou confirma o envio"
+      ></ion-input>
+      <ion-button
+        slot="end"
+        fill="solid"
+        color="secondary"
+        (click)="sendMessage()"
+      >
+        <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+      </ion-button>
+    </ion-item>
+
+    <ion-button
+      expand="block"
+      color="success"
+      (click)="acceptTrade()"
+      [disabled]="thread.status === 'traded'"
+    >
+      <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
+      Marcar moedas como trocadas
+    </ion-button>
+  </ng-container>
+</ion-content>

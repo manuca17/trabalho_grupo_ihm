@@ -1,17 +1,49 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>
-      Tab 1
-    </ion-title>
+    <ion-title
+      >{{ (strings$ | async)?.tabLabels?.inventory || 'Inventário' }}</ion-title
+    >
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="inventory-content">
+  <section class="inventory-hero">
+    <p class="eyebrow">Ancient Coins Exchange</p>
+    <h1>
+      {{ (strings$ | async)?.headings?.inventory || 'Coleção pronta para venda
+      ou troca' }}
+    </h1>
+    <p>
+      Inventário digital com detalhe rápido, estado da última oferta e ligação
+      direta ao formulário.
+    </p>
+  </section>
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+  <ion-list lines="none" class="inventory-list">
+    <ion-item
+      class="inventory-card"
+      *ngFor="let item of inventoryCards$ | async"
+      button="true"
+      detail="false"
+      (click)="openCoin(item.coin)"
+    >
+      <ion-thumbnail slot="start" class="coin-thumb">
+        <img [src]="item.coin.image" [alt]="item.coin.name" />
+      </ion-thumbnail>
+
+      <ion-label>
+        <div class="card-header">
+          <h2>{{ item.coin.name }}</h2>
+          <ion-chip color="secondary">{{ item.coin.material }}</ion-chip>
+        </div>
+        <p>{{ item.coin.description }}</p>
+        <div class="meta-row">
+          <span>{{ item.coin.estimatedValue | currency:'EUR' }}</span>
+          <span>{{ getOfferStateLabel(item.lastOffer) }}</span>
+        </div>
+      </ion-label>
+
+      <ion-icon slot="end" name="chevron-forward-outline"></ion-icon>
+    </ion-item>
+  </ion-list>
 </ion-content>

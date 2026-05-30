@@ -1,0 +1,18 @@
+{
+  "tabLabels": {
+    "inventory": "Inventário",
+    "addOffer": "Adicionar",
+    "negotiations": "Chat"
+  },
+  "headings": {
+    "inventory": "Coleção pronta para venda ou troca",
+    "addOffer": "Registo de nova oferta",
+    "negotiations": "Negociações ativas"
+  },
+  "cta": {
+    "viewDetails": "Ver detalhes",
+    "publishOffer": "Publicar oferta",
+    "openNegotiation": "Abrir negociação",
+    "markAsTraded": "Marcar como trocado"
+  }
+}

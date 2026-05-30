@@ -1,0 +1,41 @@
+[
+  {
+    "id": "coin-aureus-augustus",
+    "name": "Aureus de Augusto",
+    "emperor": "Augusto",
+    "period": "27 a.C. - 14 d.C.",
+    "material": "Ouro",
+    "conservation": "Muito Bom",
+    "location": "Viana do Castelo",
+    "estimatedValue": 1850,
+    "description": "Exemplar romano com busto laureado e boa legibilidade no reverso.",
+    "image": "assets/icon/coin-aureus.svg",
+    "tags": ["Roma", "Imperial", "Troca aberta"]
+  },
+  {
+    "id": "coin-denarius-trajan",
+    "name": "Denário de Trajano",
+    "emperor": "Trajano",
+    "period": "98 - 117 d.C.",
+    "material": "Prata",
+    "conservation": "Excelente",
+    "location": "Braga",
+    "estimatedValue": 620,
+    "description": "Moeda muito procurada em feiras de numismática pelo excelente relevo.",
+    "image": "assets/icon/coin-denarius.svg",
+    "tags": ["Prata", "Inventário digital", "Alta procura"]
+  },
+  {
+    "id": "coin-follis-constantine",
+    "name": "Follis de Constantino I",
+    "emperor": "Constantino I",
+    "period": "306 - 337 d.C.",
+    "material": "Bronze",
+    "conservation": "Bom",
+    "location": "Porto",
+    "estimatedValue": 240,
+    "description": "Peça adequada para troca rápida devido ao valor acessível e estado homogéneo.",
+    "image": "assets/icon/coin-follis.svg",
+    "tags": ["Bronze", "Troca rápida", "Catálogo pessoal"]
+  }
+]

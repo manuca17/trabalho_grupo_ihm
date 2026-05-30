@@ -1,0 +1,66 @@
+.inventory-content {
+  --padding-start: 18px;
+  --padding-end: 18px;
+  --padding-top: 18px;
+  --padding-bottom: 34px;
+}
+
+.inventory-hero {
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 8px 0 10px;
+    font-size: 2.2rem;
+    line-height: 1.05;
+  }
+
+  p {
+    color: var(--ion-color-medium-shade);
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ion-color-secondary-shade);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.inventory-list {
+  display: grid;
+  gap: 14px;
+  background: transparent;
+}
+
+.inventory-card {
+  --background: rgba(255, 251, 239, 0.9);
+  --border-radius: 26px;
+  --padding-start: 14px;
+  --inner-padding-end: 14px;
+  --inner-padding-top: 14px;
+  --inner-padding-bottom: 14px;
+  box-shadow: 0 18px 32px rgba(84, 48, 27, 0.08);
+}
+
+.coin-thumb {
+  --size: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 30%, #f7e4aa, #c48a43);
+}
+
+.card-header,
+.meta-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meta-row {
+  margin-top: 12px;
+  color: var(--ion-color-medium-shade);
+  font-size: 0.84rem;
+}
