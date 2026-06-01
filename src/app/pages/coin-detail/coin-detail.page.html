@@ -1,70 +1,160 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/tab1"></ion-back-button>
-    </ion-buttons>
-    <ion-title>{{ coin?.name || 'Moeda' }}</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content [fullscreen]="true" class="detail-content">
   <ng-container *ngIf="coin as currentCoin">
-    <section class="coin-hero">
-      <img [src]="currentCoin.image" [alt]="currentCoin.name" />
-      <div>
-        <ion-chip color="secondary">{{ currentCoin.period }}</ion-chip>
-        <h1>{{ currentCoin.name }}</h1>
-        <p>{{ currentCoin.description }}</p>
+    <section class="media-hero">
+      <div class="media-stage">
+        <img
+          [src]="galleryImages[selectedImageIndex]?.src || currentCoin.image"
+          [alt]="currentCoin.name"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="floating-icon floating-icon--left"
+        (click)="goBack()"
+      >
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+
+      <div class="floating-actions">
+        <button type="button" class="floating-icon" (click)="toggleSaved()">
+          <ion-icon [name]="isSaved ? 'heart' : 'heart-outline'"></ion-icon>
+        </button>
+        <button type="button" class="floating-icon" (click)="shareCoin()">
+          <ion-icon name="share-social-outline"></ion-icon>
+        </button>
+      </div>
+
+      <div class="thumbnail-row" *ngIf="galleryImages.length">
+        <button
+          type="button"
+          class="thumbnail"
+          *ngFor="let image of galleryImages; let index = index"
+          [class.thumbnail--active]="selectedImageIndex === index"
+          (click)="selectImage(index)"
+        >
+          <img [src]="image.src" [alt]="image.label" />
+        </button>
       </div>
     </section>
 
-    <ion-list inset="true" class="detail-list">
-      <ion-item>
-        <ion-icon slot="start" name="shield-half-outline"></ion-icon>
-        <ion-label>
-          <h2>Imperador</h2>
-          <p>{{ currentCoin.emperor }}</p>
-        </ion-label>
-      </ion-item>
-      <ion-item>
-        <ion-icon slot="start" name="diamond-outline"></ion-icon>
-        <ion-label>
-          <h2>Material</h2>
-          <p>{{ currentCoin.material }}</p>
-        </ion-label>
-      </ion-item>
-      <ion-item>
-        <ion-icon slot="start" name="ribbon-outline"></ion-icon>
-        <ion-label>
-          <h2>Estado de conservação</h2>
-          <p>{{ currentCoin.conservation }}</p>
-        </ion-label>
-      </ion-item>
-      <ion-item>
-        <ion-icon slot="start" name="wallet-outline"></ion-icon>
-        <ion-label>
-          <h2>Valor estimado</h2>
-          <p>{{ currentCoin.estimatedValue | currency:'EUR' }}</p>
-        </ion-label>
-      </ion-item>
-      <ion-item>
-        <ion-icon slot="start" name="location-outline"></ion-icon>
-        <ion-label>
-          <h2>Localização</h2>
-          <p>{{ currentCoin.location }}</p>
-        </ion-label>
-      </ion-item>
-    </ion-list>
+    <section class="detail-stack">
+      <article class="surface-card headline-card">
+        <h1>{{ currentCoin.name }}</h1>
 
-    <section class="tag-row">
-      <ion-chip *ngFor="let tag of currentCoin.tags" color="primary"
-        >{{ tag }}</ion-chip
-      >
+        <div class="headline-row">
+          <strong class="price" [class.price--trade]="isTrade"
+            >{{ displayPrice }}</strong
+          >
+          <span class="condition-pill">{{ currentCoin.conservation }}</span>
+        </div>
+      </article>
+
+      <article class="surface-card seller-card">
+        <div class="seller-main">
+          <div class="seller-avatar">👤</div>
+          <div>
+            <h2>{{ sellerName }}</h2>
+            <div class="seller-rating">
+              <span>⭐</span>
+              <span>{{ sellerRating }}</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="contact-button" (click)="contactSeller()">
+          Contactar
+        </button>
+      </article>
+
+      <article class="surface-card specs-card">
+        <h2>Especificações</h2>
+
+        <div class="spec-list">
+          <div class="spec-row">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <div>
+              <span class="spec-label">Ano</span>
+              <strong>{{ currentCoin.period }}</strong>
+            </div>
+          </div>
+
+          <div class="spec-row">
+            <ion-icon name="location-outline"></ion-icon>
+            <div>
+              <span class="spec-label">Origem</span>
+              <strong>{{ origin }}</strong>
+            </div>
+          </div>
+
+          <div class="spec-row">
+            <ion-icon name="barbell-outline"></ion-icon>
+            <div>
+              <span class="spec-label">Peso</span>
+              <strong>{{ weight }}</strong>
+            </div>
+          </div>
+
+          <div class="spec-row">
+            <ion-icon name="resize-outline"></ion-icon>
+            <div>
+              <span class="spec-label">Diâmetro</span>
+              <strong>{{ diameter }}</strong>
+            </div>
+          </div>
+
+          <div class="spec-row">
+            <ion-icon name="shield-half-outline"></ion-icon>
+            <div>
+              <span class="spec-label">Material</span>
+              <strong>{{ currentCoin.material }}</strong>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="surface-card">
+        <h2>Descrição</h2>
+        <p>{{ currentCoin.description }}</p>
+      </article>
+
+      <article class="surface-card">
+        <h2>História</h2>
+        <p>{{ history }}</p>
+      </article>
+
+      <article class="surface-card">
+        <h2>Referência Catalográfica</h2>
+        <p class="reference-text">{{ reference }}</p>
+      </article>
+
+      <article class="surface-card location-card">
+        <ion-icon name="map-outline"></ion-icon>
+        <div>
+          <span class="spec-label">Localização do vendedor</span>
+          <strong>{{ currentCoin.location }}</strong>
+        </div>
+      </article>
+
+      <section class="tag-row">
+        <ion-chip *ngFor="let tag of currentCoin.tags">{{ tag }}</ion-chip>
+      </section>
     </section>
-
-    <ion-button expand="block" color="primary" (click)="navigateToOffer()">
-      <ion-icon slot="start" name="add-circle-outline"></ion-icon>
-      Criar nova oferta com esta moeda
-    </ion-button>
   </ng-container>
 </ion-content>
+
+<ion-footer *ngIf="coin as currentCoin" class="detail-footer">
+  <div class="footer-actions">
+    <button
+      type="button"
+      class="primary-action"
+      [class.primary-action--trade]="isTrade"
+      (click)="navigateToOffer()"
+    >
+      {{ isTrade ? 'Propor Troca' : 'Fazer Oferta' }}
+    </button>
+    <button type="button" class="secondary-action" (click)="toggleSaved()">
+      {{ isSaved ? 'Guardado' : 'Guardar' }}
+    </button>
+  </div>
+</ion-footer>

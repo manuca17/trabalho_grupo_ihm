@@ -1,156 +1,373 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Adicionar Moeda</ion-title>
+    <ion-buttons slot="start" *ngIf="mode === 'proposal'">
+      <button
+        type="button"
+        class="header-back-button"
+        (click)="goBackFromProposal()"
+      >
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+    </ion-buttons>
+    <ion-title>{{ pageTitle }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="add-coin-content">
-  <div *ngIf="submitted" class="success-screen">
-    <div class="success-icon-container">
-      <ion-icon name="checkmark-circle" color="success"></ion-icon>
-    </div>
-    <h3>Moeda Adicionada!</h3>
-    <p>A sua moeda foi publicada com sucesso e já está disponível para outros colecionadores.</p>
-  </div>
-
-  <div *ngIf="!submitted" class="form-container">
-    <section class="page-intro">
-      <h1>Adicionar Nova Moeda</h1>
-      <p>Preencha os detalhes e tire fotografias da sua moeda.</p>
-    </section>
-
-    <form [formGroup]="offerForm" class="offer-form" (ngSubmit)="handleSubmit()">
-      
-      <section class="photos-section">
-        <label class="section-label">Fotografias da Moeda</label>
-        
-        <div class="capture-grid">
-          <button
-            type="button"
-            class="capture-card"
-            *ngFor="let step of photoSteps; let i = index"
-            (click)="capturePhoto(step)"
-          >
-            <ng-container *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder">
-              <div class="photo-wrapper">
-                <img [src]="captured.dataUrl" [alt]="captured.label" />
-                <button type="button" class="remove-btn" (click)="removePhoto(step.kind); $event.stopPropagation()">
-                  <ion-icon name="close-circle"></ion-icon>
-                </button>
-              </div>
-              <strong>{{ captured.label }}</strong>
-            </ng-container>
-
-            <ng-template #capturePlaceholder>
-              <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
-              <strong>{{ step.label }}</strong>
-              <span>Toca para abrir a câmara</span>
-            </ng-template>
-          </button>
-        </div>
-        <p class="hint-text">Recomendamos 3 fotos: anverso, reverso e bordo da moeda</p>
+<ion-content
+  [fullscreen]="true"
+  [class.add-coin-content]="mode === 'create'"
+  [class.make-offer-content]="mode === 'proposal'"
+>
+  <ng-container *ngIf="mode === 'proposal'; else createOfferView">
+    <ng-container *ngIf="selectedCoin as currentCoin">
+      <section class="offer-page-header">
+        <h1>{{ supportsTrade ? 'Propor Troca' : 'Fazer Oferta' }}</h1>
+        <p>Envie a sua proposta ao vendedor desta moeda.</p>
       </section>
 
-      <ion-list inset="true" class="form-list">
-        
-        <ion-item>
-          <ion-input
-            label="Título / Descrição Breve"
-            labelPlacement="stacked"
-            type="text"
-            formControlName="title"
-            placeholder="Ex: Denário Romano - Augusto"
-          ></ion-input>
-        </ion-item>
+      <section class="selected-coin-card">
+        <div class="selected-coin-card__media">
+          <img [src]="currentCoin.image" [alt]="currentCoin.name" />
+        </div>
+        <div class="selected-coin-card__copy">
+          <h2>{{ currentCoin.name }}</h2>
+          <strong>{{ proposalPriceLabel }}</strong>
+          <span>{{ currentCoin.conservation }}</span>
+        </div>
+      </section>
 
-        <ion-item>
-          <ion-input
-            label="Quantidade"
-            labelPlacement="stacked"
+      <section class="proposal-section" *ngIf="supportsTrade">
+        <h2>Tipo de Proposta</h2>
+
+        <div class="proposal-type-list">
+          <button
+            type="button"
+            class="proposal-type-card"
+            [class.proposal-type-card--active]="offerType === 'money'"
+            (click)="setOfferType('money')"
+          >
+            <strong>Oferta Monetária</strong>
+            <span>Propor um valor em dinheiro</span>
+          </button>
+
+          <button
+            type="button"
+            class="proposal-type-card"
+            [class.proposal-type-card--active]="offerType === 'trade'"
+            (click)="setOfferType('trade')"
+          >
+            <strong>Troca Direta</strong>
+            <span>Trocar por moedas da sua coleção</span>
+          </button>
+
+          <button
+            type="button"
+            class="proposal-type-card"
+            [class.proposal-type-card--active]="offerType === 'both'"
+            (click)="setOfferType('both')"
+          >
+            <strong>Combinado</strong>
+            <span>Dinheiro e moedas em troca</span>
+          </button>
+        </div>
+      </section>
+
+      <section
+        class="proposal-section"
+        *ngIf="offerType === 'money' || offerType === 'both'"
+      >
+        <label class="field-label" for="offer-amount">Valor da Oferta</label>
+        <div class="currency-field">
+          <span>EUR</span>
+          <input
+            id="offer-amount"
             type="number"
-            min="1"
-            formControlName="quantity"
-          ></ion-input>
-        </ion-item>
+            min="0"
+            step="1"
+            [(ngModel)]="offerAmount"
+            placeholder="0"
+          />
+        </div>
+        <p class="hint-text">Preço pedido: {{ proposalPriceLabel }}</p>
+      </section>
 
-        <ion-item>
-          <ion-select label="Era Histórica" labelPlacement="stacked" formControlName="era" placeholder="Selecionar">
-            <ion-select-option value="romano">Império Romano</ion-select-option>
-            <ion-select-option value="grego">Grécia Antiga</ion-select-option>
-            <ion-select-option value="portugues">Portugal</ion-select-option>
-            <ion-select-option value="bizantino">Império Bizantino</ion-select-option>
-          </ion-select>
-        </ion-item>
-
-        <ion-item>
-          <ion-select label="Estado de Conservação" labelPlacement="stacked" formControlName="condition" placeholder="Selecionar">
-            <ion-select-option value="bc">BC (Bem Conservada)</ion-select-option>
-            <ion-select-option value="mbc">MBC (Muito Bem Conservada)</ion-select-option>
-            <ion-select-option value="bela">Bela</ion-select-option>
-            <ion-select-option value="soberba">Soberba</ion-select-option>
-          </ion-select>
-        </ion-item>
-
-        <ion-item>
-          <ion-textarea
-            label="Descrição Detalhada"
-            labelPlacement="stacked"
-            autoGrow="true"
-            rows="4"
-            formControlName="description"
-            placeholder="Detalhes sobre origem, características, história..."
-          ></ion-textarea>
-        </ion-item>
-
-        <ion-item>
-          <ion-input
-            label="Valor Real Estimado (€)"
-            labelPlacement="stacked"
-            type="number"
-            step="0.01"
-            formControlName="realValue"
-            placeholder="0.00"
-          ></ion-input>
-        </ion-item>
-
-        <ion-item lines="none">
-          <ion-label>Disponível para</ion-label>
-        </ion-item>
-        <div class="segment-container">
-          <ion-segment formControlName="availableFor">
-            <ion-segment-button value="sale">
-              <ion-label>Venda</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="trade">
-              <ion-label>Troca</ion-label>
-            </ion-segment-button>
-          </ion-segment>
+      <section
+        class="proposal-section"
+        *ngIf="offerType === 'trade' || offerType === 'both'"
+      >
+        <div class="section-heading section-heading--stacked">
+          <h2>Moedas para Troca</h2>
+          <p>Selecione moedas da sua coleção para incluir na proposta.</p>
         </div>
 
-        <ion-item *ngIf="offerForm.get('availableFor')?.value === 'sale'">
-          <ion-input
-            label="Preço de Venda (€)"
-            labelPlacement="stacked"
-            type="number"
-            step="0.01"
-            formControlName="salePrice"
-            placeholder="0.00"
-          ></ion-input>
-        </ion-item>
+        <div class="trade-coin-list">
+          <button
+            type="button"
+            class="trade-coin-card"
+            *ngFor="let coin of ownedCoins"
+            [class.trade-coin-card--selected]="selectedTradeCoinIds.includes(coin.id)"
+            (click)="toggleTradeCoinSelection(coin.id)"
+          >
+            <div class="trade-coin-card__media">
+              <img [src]="coin.image" [alt]="coin.name" />
+            </div>
+            <div class="trade-coin-card__copy">
+              <strong>{{ coin.name }}</strong>
+              <span>Condição: {{ coin.conservation }}</span>
+              <em>{{ getTradeCoinValue(coin) }}</em>
+            </div>
+            <div
+              class="trade-coin-card__check"
+              *ngIf="selectedTradeCoinIds.includes(coin.id)"
+            >
+              <ion-icon name="checkmark-outline"></ion-icon>
+            </div>
+          </button>
+        </div>
 
-      </ion-list>
+        <p class="warning-text" *ngIf="selectedTradeCoinIds.length === 0">
+          Selecione pelo menos uma moeda para troca.
+        </p>
+      </section>
 
-      <div class="submit-container">
-        <ion-button
-          type="submit"
-          expand="block"
-          color="warning"
-          [disabled]="offerForm.invalid || photos.length < 3"
+      <section class="proposal-section">
+        <label class="field-label" for="proposal-message"
+          >Mensagem ao Vendedor</label
         >
-          Publicar Moeda
-        </ion-button>
-      </div>
+        <textarea
+          id="proposal-message"
+          [(ngModel)]="message"
+          maxlength="500"
+          rows="5"
+          placeholder="Escreva uma mensagem opcional..."
+        ></textarea>
+        <p class="hint-text">{{ message.length }}/500 caracteres</p>
+      </section>
 
-    </form>
-  </div>
+      <section class="proposal-summary">
+        <h2>Resumo da Oferta</h2>
+
+        <div
+          class="summary-row"
+          *ngIf="(offerType === 'money' || offerType === 'both') && hasOfferAmount"
+        >
+          <span>Valor oferecido</span>
+          <strong>{{ 'EUR ' + offerAmount }}</strong>
+        </div>
+
+        <div
+          class="summary-row"
+          *ngIf="(offerType === 'trade' || offerType === 'both') && selectedTradeCoinIds.length > 0"
+        >
+          <span>Moedas em troca</span>
+          <strong>{{ selectedTradeCoinIds.length }}</strong>
+        </div>
+
+        <div class="summary-row" *ngIf="message.trim()">
+          <span>Mensagem personalizada</span>
+          <strong>Sim</strong>
+        </div>
+      </section>
+    </ng-container>
+  </ng-container>
+
+  <ng-template #createOfferView>
+    <div *ngIf="submitted" class="success-screen">
+      <div class="success-icon-container">
+        <ion-icon name="checkmark-circle" color="success"></ion-icon>
+      </div>
+      <h3>Moeda Adicionada!</h3>
+      <p>
+        A sua moeda foi publicada com sucesso e já está disponível para outros
+        colecionadores.
+      </p>
+    </div>
+
+    <div *ngIf="!submitted" class="form-container">
+      <section class="page-intro">
+        <h1>Adicionar Nova Moeda</h1>
+        <p>Preencha os detalhes e tire fotografias da sua moeda.</p>
+      </section>
+
+      <form
+        [formGroup]="offerForm"
+        class="offer-form"
+        (ngSubmit)="handleSubmit()"
+      >
+        <section class="photos-section">
+          <label class="section-label">Fotografias da Moeda</label>
+
+          <div class="capture-grid">
+            <button
+              type="button"
+              class="capture-card"
+              *ngFor="let step of photoSteps; let i = index"
+              (click)="capturePhoto(step)"
+            >
+              <ng-container
+                *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder"
+              >
+                <div class="photo-wrapper">
+                  <img [src]="captured.dataUrl" [alt]="captured.label" />
+                  <button
+                    type="button"
+                    class="remove-btn"
+                    (click)="removePhoto(step.kind); $event.stopPropagation()"
+                  >
+                    <ion-icon name="close-circle"></ion-icon>
+                  </button>
+                </div>
+                <strong>{{ captured.label }}</strong>
+              </ng-container>
+
+              <ng-template #capturePlaceholder>
+                <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+                <strong>{{ step.label }}</strong>
+                <span>Toca para abrir a câmara</span>
+              </ng-template>
+            </button>
+          </div>
+          <p class="hint-text">
+            Recomendamos 3 fotos: anverso, reverso e bordo da moeda
+          </p>
+        </section>
+
+        <ion-list inset="true" class="form-list">
+          <ion-item>
+            <ion-input
+              label="Título / Descrição Breve"
+              labelPlacement="stacked"
+              type="text"
+              formControlName="title"
+              placeholder="Ex: Denário Romano - Augusto"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-input
+              label="Quantidade"
+              labelPlacement="stacked"
+              type="number"
+              min="1"
+              formControlName="quantity"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item>
+            <ion-select
+              label="Era Histórica"
+              labelPlacement="stacked"
+              formControlName="era"
+              placeholder="Selecionar"
+            >
+              <ion-select-option value="romano"
+                >Império Romano</ion-select-option
+              >
+              <ion-select-option value="grego">Grécia Antiga</ion-select-option>
+              <ion-select-option value="portugues">Portugal</ion-select-option>
+              <ion-select-option value="bizantino"
+                >Império Bizantino</ion-select-option
+              >
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-select
+              label="Estado de Conservação"
+              labelPlacement="stacked"
+              formControlName="condition"
+              placeholder="Selecionar"
+            >
+              <ion-select-option value="bc"
+                >BC (Bem Conservada)</ion-select-option
+              >
+              <ion-select-option value="mbc"
+                >MBC (Muito Bem Conservada)</ion-select-option
+              >
+              <ion-select-option value="bela">Bela</ion-select-option>
+              <ion-select-option value="soberba">Soberba</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-textarea
+              label="Descrição Detalhada"
+              labelPlacement="stacked"
+              autoGrow="true"
+              rows="4"
+              formControlName="description"
+              placeholder="Detalhes sobre origem, características, história..."
+            ></ion-textarea>
+          </ion-item>
+
+          <ion-item>
+            <ion-input
+              label="Valor Real Estimado (€)"
+              labelPlacement="stacked"
+              type="number"
+              step="0.01"
+              formControlName="realValue"
+              placeholder="0.00"
+            ></ion-input>
+          </ion-item>
+
+          <ion-item lines="none">
+            <ion-label>Disponível para</ion-label>
+          </ion-item>
+          <div class="segment-container">
+            <ion-segment formControlName="availableFor">
+              <ion-segment-button value="sale">
+                <ion-label>Venda</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="trade">
+                <ion-label>Troca</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+          </div>
+
+          <ion-item *ngIf="offerForm.get('availableFor')?.value === 'sale'">
+            <ion-input
+              label="Preço de Venda (€)"
+              labelPlacement="stacked"
+              type="number"
+              step="0.01"
+              formControlName="salePrice"
+              placeholder="0.00"
+            ></ion-input>
+          </ion-item>
+        </ion-list>
+
+        <div class="submit-container">
+          <ion-button
+            type="submit"
+            expand="block"
+            color="warning"
+            [disabled]="offerForm.invalid || photos.length < 3"
+          >
+            Publicar Moeda
+          </ion-button>
+        </div>
+      </form>
+    </div>
+  </ng-template>
 </ion-content>
+
+<ion-footer *ngIf="mode === 'proposal'" class="proposal-footer">
+  <div class="proposal-footer__actions">
+    <button
+      type="button"
+      class="proposal-submit"
+      [disabled]="!canSubmitProposal || isProposalSubmitting"
+      (click)="handleSubmit()"
+    >
+      Enviar Proposta
+    </button>
+    <button
+      type="button"
+      class="proposal-cancel"
+      (click)="goBackFromProposal()"
+    >
+      Cancelar
+    </button>
+  </div>
+</ion-footer>
