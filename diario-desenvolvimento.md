@@ -36,3 +36,30 @@ Decisões:
 - Adiar qualquer backend para uma fase posterior.
 - Concentrar esta entrega em frontend funcional e estável para os cenários 2 e 3.
 - Usar Storage e dados locais para garantir demonstração imediata da app.
+
+## Sessão 2 - 1 de junho de 2026 - Manuel Ferreira 33196
+
+Objetivo:
+Colocar a app a correr em Android e evoluir a interface principal com uma nova home, navbar inferior e sistema de tema visual mais consistente.
+
+Atividades realizadas:
+- Reestruturei a home screen de `tab1` para um layout mais moderno com hero, moedas em destaque, adicionadas recentemente e ações rápidas.
+- Substituí a tab bar padrão do Ionic por uma navbar inferior customizada com cinco botões: Início, Pesquisar, Adicionar, Mensagens e Perfil.
+- Introduzi um sistema global de tokens de tema em `global.scss`, com variáveis para cores, superfícies, bordas, tipografia e suporte a modo escuro via classe `.dark`.
+- Refatorei os estilos principais das páginas de inventário, adicionar oferta, negociações e detalhes para passarem a usar esse sistema de tema.
+- Sincronizei as alterações com o projeto Android através de `npx cap sync android` e validei repetidamente o frontend com `npm run build`.
+
+Problemas:
+- A navbar personalizada e partes do markup foram revertidas em alguns momentos e tiveram de ser repostas.
+- O build web passou a acusar warnings de budget em SCSS e o aviso CommonJS do `localforage`.
+
+Solução:
+
+- Reapliquei a navbar custom e a nova home sempre que houve regressões locais em ficheiros.
+- Centralizei o tema em variáveis globais para reduzir inconsistências e facilitar manutenção visual.
+
+Decisões:
+
+- Manter a prioridade na entrega funcional do frontend, sem abrir novas frentes como backend.
+- Usar um sistema de tema baseado em CSS variables em vez de depender de Tailwind, para ficar alinhado com Ionic/Angular.
+- Preservar a navegação atual por tabs e adaptar o visual sem reestruturar toda a arquitetura da app.
