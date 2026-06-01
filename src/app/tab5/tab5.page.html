@@ -1,13 +1,151 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>tab5</ion-title>
+    <ion-title
+      >{{ (activeSection$ | async) === 'profile' ? 'Perfil' : 'Inicio'
+      }}</ion-title
+    >
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">tab5</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="home-host-content">
+  <ng-container *ngIf="activeSection$ | async as activeSection">
+    <ng-container *ngIf="activeSection === 'home'; else profileView">
+      <section class="hero-card" *ngIf="summary$ | async as summary">
+        <div class="hero-copy">
+          <p class="eyebrow">Ancient Coins Exchange</p>
+          <h1>Bem-vindo de volta!</h1>
+          <p>
+            Descubra moedas raras, acompanhe negociações e publique novas
+            ofertas.
+          </p>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat-card">
+            <span>Moedas disponiveis</span>
+            <strong>{{ summary.availableCount }}</strong>
+          </div>
+          <div class="stat-card">
+            <span>Para troca</span>
+            <strong>{{ summary.tradeCount }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <div class="section-heading">
+          <h2>Em destaque</h2>
+          <button type="button" class="ghost-link" (click)="openMessages()">
+            Ver tudo
+          </button>
+        </div>
+
+        <div class="featured-grid">
+          <button
+            type="button"
+            class="featured-card"
+            *ngFor="let item of featuredCoins$ | async"
+            (click)="openCoin(item.coin)"
+          >
+            <div class="featured-media">
+              <img [src]="item.coin.image" [alt]="item.coin.name" />
+            </div>
+            <div class="featured-body">
+              <h3>{{ item.coin.name }}</h3>
+              <div class="featured-meta">
+                <span class="price-tag" [class.price-tag--trade]="isTrade(item)"
+                  >{{ getPriceLabel(item) }}</span
+                >
+                <span class="condition-tag">{{ item.coin.conservation }}</span>
+              </div>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <div class="section-heading">
+          <h2>Adicionadas recentemente</h2>
+        </div>
+
+        <div class="recent-list">
+          <button
+            type="button"
+            class="recent-card"
+            *ngFor="let item of recentlyAdded$ | async"
+            (click)="openCoin(item.coin)"
+          >
+            <div class="recent-main">
+              <div class="recent-thumb">
+                <img [src]="item.coin.image" [alt]="item.coin.name" />
+              </div>
+              <div class="recent-copy-card">
+                <h3>{{ item.coin.name }}</h3>
+                <div class="recent-meta">
+                  <span>{{ item.timeLabel }}</span>
+                  <span class="condition-tag"
+                    >{{ item.coin.conservation }}</span
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="recent-side">
+              <strong>{{ getPriceLabel(item) }}</strong>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <section class="content-section quick-actions">
+        <div class="section-heading">
+          <h2>Acoes rapidas</h2>
+        </div>
+
+        <div class="actions-grid">
+          <button
+            type="button"
+            class="action-card action-card--primary"
+            (click)="openAddOffer()"
+          >
+            <ion-icon name="camera-outline"></ion-icon>
+            <span>Adicionar Moeda</span>
+          </button>
+          <button type="button" class="action-card" (click)="openMessages()">
+            <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
+            <span>Mensagens</span>
+          </button>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-template #profileView>
+      <section class="profile-card">
+        <div class="profile-avatar">MF</div>
+        <h1>Manuel Ferreira</h1>
+        <p>
+          Colecionador de moeda antiga com foco em numismatica romana e
+          portuguesa.
+        </p>
+      </section>
+
+      <section class="content-section profile-grid">
+        <article class="profile-stat">
+          <span>Ofertas publicadas</span>
+          <strong>8</strong>
+        </article>
+        <article class="profile-stat">
+          <span>Trocas concluidas</span>
+          <strong>3</strong>
+        </article>
+        <article class="profile-stat">
+          <span>Favoritos</span>
+          <strong>14</strong>
+        </article>
+        <article class="profile-stat">
+          <span>Avaliacao</span>
+          <strong>4.9</strong>
+        </article>
+      </section>
+    </ng-template>
+  </ng-container>
 </ion-content>
