@@ -36,6 +36,10 @@ export class TabsPage {
       return 'add';
     }
 
+    if (url.includes('/tabs/tab4')) {
+      return 'messages';
+    }
+
     if (url.includes('/tabs/tab3')) {
       return 'messages';
     }
