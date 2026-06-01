@@ -1,111 +1,156 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Adicionar moeda</ion-title>
+    <ion-title>Adicionar Moeda</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="add-offer-content">
-  <section class="page-intro">
-    <p class="eyebrow">Cenário 2</p>
-    <h1>Registo de nova oferta</h1>
-    <p>
-      Captura as três vistas da moeda, define preço, quantidade e
-      disponibilidade para troca.
-    </p>
-  </section>
+<ion-content [fullscreen]="true" class="add-coin-content">
+  <div *ngIf="submitted" class="success-screen">
+    <div class="success-icon-container">
+      <ion-icon name="checkmark-circle" color="success"></ion-icon>
+    </div>
+    <h3>Moeda Adicionada!</h3>
+    <p>A sua moeda foi publicada com sucesso e já está disponível para outros colecionadores.</p>
+  </div>
 
-  <form [formGroup]="offerForm" class="offer-form">
-    <ion-list inset="true">
-      <ion-item>
-        <ion-select
-          label="Moeda"
-          labelPlacement="stacked"
-          formControlName="coinId"
-          (ionChange)="onCoinChange($event.detail.value)"
-        >
-          <ion-select-option *ngFor="let coin of coins" [value]="coin.id"
-            >{{ coin.name }}</ion-select-option
+  <div *ngIf="!submitted" class="form-container">
+    <section class="page-intro">
+      <h1>Adicionar Nova Moeda</h1>
+      <p>Preencha os detalhes e tire fotografias da sua moeda.</p>
+    </section>
+
+    <form [formGroup]="offerForm" class="offer-form" (ngSubmit)="handleSubmit()">
+      
+      <section class="photos-section">
+        <label class="section-label">Fotografias da Moeda</label>
+        
+        <div class="capture-grid">
+          <button
+            type="button"
+            class="capture-card"
+            *ngFor="let step of photoSteps; let i = index"
+            (click)="capturePhoto(step)"
           >
-        </ion-select>
-      </ion-item>
-      <ion-item>
-        <ion-input
-          label="Quantidade"
-          labelPlacement="stacked"
-          type="number"
-          formControlName="quantity"
-        ></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-input
-          label="Valor de venda pretendido"
-          labelPlacement="stacked"
-          type="number"
-          formControlName="askPrice"
-        ></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-textarea
-          label="Descrição breve"
-          labelPlacement="stacked"
-          autoGrow="true"
-          formControlName="description"
-          placeholder="Estado, anomalias visíveis, origem e urgência da venda"
-        ></ion-textarea>
-      </ion-item>
-      <ion-item>
-        <ion-toggle formControlName="availableForTrade"
-          >Disponível para troca</ion-toggle
-        >
-      </ion-item>
-    </ion-list>
+            <ng-container *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder">
+              <div class="photo-wrapper">
+                <img [src]="captured.dataUrl" [alt]="captured.label" />
+                <button type="button" class="remove-btn" (click)="removePhoto(step.kind); $event.stopPropagation()">
+                  <ion-icon name="close-circle"></ion-icon>
+                </button>
+              </div>
+              <strong>{{ captured.label }}</strong>
+            </ng-container>
 
-    <section class="selected-coin" *ngIf="selectedCoin">
-      <img [src]="selectedCoin.image" [alt]="selectedCoin.name" />
-      <div>
-        <h2>{{ selectedCoin.name }}</h2>
-        <p>{{ selectedCoin.description }}</p>
+            <ng-template #capturePlaceholder>
+              <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+              <strong>{{ step.label }}</strong>
+              <span>Toca para abrir a câmara</span>
+            </ng-template>
+          </button>
+        </div>
+        <p class="hint-text">Recomendamos 3 fotos: anverso, reverso e bordo da moeda</p>
+      </section>
+
+      <ion-list inset="true" class="form-list">
+        
+        <ion-item>
+          <ion-input
+            label="Título / Descrição Breve"
+            labelPlacement="stacked"
+            type="text"
+            formControlName="title"
+            placeholder="Ex: Denário Romano - Augusto"
+          ></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-input
+            label="Quantidade"
+            labelPlacement="stacked"
+            type="number"
+            min="1"
+            formControlName="quantity"
+          ></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-select label="Era Histórica" labelPlacement="stacked" formControlName="era" placeholder="Selecionar">
+            <ion-select-option value="romano">Império Romano</ion-select-option>
+            <ion-select-option value="grego">Grécia Antiga</ion-select-option>
+            <ion-select-option value="portugues">Portugal</ion-select-option>
+            <ion-select-option value="bizantino">Império Bizantino</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-select label="Estado de Conservação" labelPlacement="stacked" formControlName="condition" placeholder="Selecionar">
+            <ion-select-option value="bc">BC (Bem Conservada)</ion-select-option>
+            <ion-select-option value="mbc">MBC (Muito Bem Conservada)</ion-select-option>
+            <ion-select-option value="bela">Bela</ion-select-option>
+            <ion-select-option value="soberba">Soberba</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-textarea
+            label="Descrição Detalhada"
+            labelPlacement="stacked"
+            autoGrow="true"
+            rows="4"
+            formControlName="description"
+            placeholder="Detalhes sobre origem, características, história..."
+          ></ion-textarea>
+        </ion-item>
+
+        <ion-item>
+          <ion-input
+            label="Valor Real Estimado (€)"
+            labelPlacement="stacked"
+            type="number"
+            step="0.01"
+            formControlName="realValue"
+            placeholder="0.00"
+          ></ion-input>
+        </ion-item>
+
+        <ion-item lines="none">
+          <ion-label>Disponível para</ion-label>
+        </ion-item>
+        <div class="segment-container">
+          <ion-segment formControlName="availableFor">
+            <ion-segment-button value="sale">
+              <ion-label>Venda</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="trade">
+              <ion-label>Troca</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
+
+        <ion-item *ngIf="offerForm.get('availableFor')?.value === 'sale'">
+          <ion-input
+            label="Preço de Venda (€)"
+            labelPlacement="stacked"
+            type="number"
+            step="0.01"
+            formControlName="salePrice"
+            placeholder="0.00"
+          ></ion-input>
+        </ion-item>
+
+      </ion-list>
+
+      <div class="submit-container">
+        <ion-button
+          type="submit"
+          expand="block"
+          color="warning"
+          [disabled]="offerForm.invalid || photos.length < 3"
+        >
+          Publicar Moeda
+        </ion-button>
       </div>
-    </section>
 
-    <section class="capture-grid">
-      <button
-        type="button"
-        class="capture-card"
-        *ngFor="let step of photoSteps"
-        (click)="capturePhoto(step)"
-      >
-        <ng-container
-          *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder"
-        >
-          <img [src]="captured.dataUrl" [alt]="captured.label" />
-          <strong>{{ captured.label }}</strong>
-          <span
-            >{{ getBrightnessTone(captured.brightness) }} · {{
-            captured.brightness }}%</span
-          >
-        </ng-container>
-        <ng-template #capturePlaceholder>
-          <ion-icon name="camera-outline"></ion-icon>
-          <strong>{{ step.label }}</strong>
-          <span>Toca para abrir a câmara</span>
-        </ng-template>
-      </button>
-    </section>
-
-    <ion-note color="warning" *ngIf="photos.length < photoSteps.length">
-      É obrigatório capturar anverso, reverso e bordo antes de publicar a
-      oferta.
-    </ion-note>
-
-    <ion-button
-      expand="block"
-      color="primary"
-      [disabled]="isSubmitting"
-      (click)="publishOffer()"
-    >
-      <ion-icon slot="start" name="cloud-upload-outline"></ion-icon>
-      Publicar oferta
-    </ion-button>
-  </form>
+    </form>
+  </div>
 </ion-content>
