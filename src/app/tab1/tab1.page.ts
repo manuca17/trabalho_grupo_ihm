@@ -1,14 +1,29 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, combineLatest, map } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
 
-import { AppStrings } from '../core/models/app-strings.model';
 import { Coin, Offer } from '../core/models/coin.model';
 import { MarketplaceService } from '../core/services/marketplace.service';
-import { StringsService } from '../core/services/strings.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
-type RecentInventoryCard = InventoryCard & { timeLabel: string };
+
+type SearchResult = {
+  id: string;
+  title: string;
+  era: string;
+  price: string;
+  condition: string;
+  seller: string;
+  forTrade: boolean;
+  image: string;
+};
+
+type SearchFilters = {
+  era: string;
+  condition: string;
+  priceRange: string;
+  availableFor: string;
+};
 
 const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
   style: 'currency',
@@ -23,43 +38,103 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
   standalone: false,
 })
 export class Tab1Page {
+  readonly popularSearchTerms = [
+    'Denário',
+    'Império Romano',
+    'Escudo Português',
+    'Dracma',
+  ];
+
+  readonly sellerNames = [
+    'João Silva',
+    'Maria Costa',
+    'Carlos Mendes',
+    'Ana Sousa',
+  ];
+
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
-  readonly strings$: Observable<AppStrings> = this.stringsService.strings$;
-  readonly featuredCoins$: Observable<InventoryCard[]> =
-    this.inventoryCards$.pipe(map((cards) => cards.slice(0, 4)));
-  readonly recentlyAdded$: Observable<RecentInventoryCard[]> =
-    this.inventoryCards$.pipe(
-      map((cards) =>
-        [...cards]
-          .reverse()
-          .slice(0, 2)
-          .map((card, index) => ({
-            ...card,
-            timeLabel: index === 0 ? 'Há 2 horas' : 'Há 5 horas',
-          })),
-      ),
-    );
-  readonly summary$ = combineLatest([
+
+  private readonly searchQuerySubject = new BehaviorSubject('');
+  private readonly filtersSubject = new BehaviorSubject<SearchFilters>({
+    era: '',
+    condition: '',
+    priceRange: '',
+    availableFor: '',
+  });
+
+  readonly searchResults$: Observable<SearchResult[]> = combineLatest([
     this.inventoryCards$,
-    this.marketplaceService.offers$,
+    this.searchQuerySubject,
+    this.filtersSubject,
   ]).pipe(
-    map(([cards, offers]) => ({
-      availableCount: cards.length,
-      tradeCount: offers.filter((offer) => offer.availableForTrade).length,
-    })),
+    map(([cards, searchQuery, filters]) =>
+      cards
+        .filter((item) => this.matchesSearch(item, searchQuery, filters))
+        .map((item) => ({
+          id: item.coin.id,
+          title: item.coin.name,
+          era: item.coin.period,
+          price: this.getPriceLabel(item),
+          condition: item.coin.conservation,
+          seller: this.getSellerName(item.coin.id),
+          forTrade: this.isTrade(item),
+          image: item.coin.image,
+        })),
+    ),
   );
+
+  searchQuery = '';
+  showFilters = false;
+  filters: SearchFilters = {
+    era: '',
+    condition: '',
+    priceRange: '',
+    availableFor: '',
+  };
 
   constructor(
     private readonly router: Router,
     private readonly marketplaceService: MarketplaceService,
-    private readonly stringsService: StringsService,
   ) {}
 
-  openCoin(coin: Coin): void {
-    void this.router.navigate(['/coin', coin.id], {
-      queryParams: {
-        from: 'inventario',
-      },
+  updateSearchQuery(value: string): void {
+    this.searchQuery = value;
+    this.searchQuerySubject.next(value ?? '');
+  }
+
+  toggleFilters(): void {
+    this.showFilters = !this.showFilters;
+  }
+
+  setSearchTerm(term: string): void {
+    this.updateSearchQuery(term);
+  }
+
+  setFilter(field: keyof SearchFilters, value: string): void {
+    this.filters = {
+      ...this.filters,
+      [field]: value,
+    };
+    this.filtersSubject.next(this.filters);
+  }
+
+  clearFilters(): void {
+    this.filters = {
+      era: '',
+      condition: '',
+      priceRange: '',
+      availableFor: '',
+    };
+    this.filtersSubject.next(this.filters);
+  }
+
+  clearSearch(): void {
+    this.updateSearchQuery('');
+  }
+
+  openCoinById(coinId: string): void {
+    void this.router.navigate(['/coin', coinId], {
+      queryParams: { from: 'pesquisa' },
     });
   }
 
@@ -67,11 +142,63 @@ export class Tab1Page {
     void this.router.navigate(['/tabs/tab2']);
   }
 
-  openNegotiations(): void {
-    void this.router.navigate(['/tabs/tab3']);
+  private matchesSearch(
+    item: InventoryCard,
+    searchQuery: string,
+    filters: SearchFilters,
+  ): boolean {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const searchableText = [
+      item.coin.name,
+      item.coin.period,
+      item.coin.conservation,
+      item.coin.description,
+      ...(item.coin.tags ?? []),
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    const matchesQuery =
+      !normalizedQuery || searchableText.includes(normalizedQuery);
+
+    const matchesEra =
+      !filters.era || item.coin.period.toLowerCase().includes(filters.era);
+
+    const matchesCondition =
+      !filters.condition || item.coin.conservation.toLowerCase() === filters.condition;
+
+    const matchesAvailability =
+      !filters.availableFor ||
+      (filters.availableFor === 'trade'
+        ? !!item.lastOffer?.availableForTrade
+        : filters.availableFor === 'sale'
+        ? !item.lastOffer?.availableForTrade
+        : true);
+
+    const price = item.lastOffer?.askPrice ?? item.coin.estimatedValue;
+    const matchesPriceRange =
+      !filters.priceRange ||
+      (filters.priceRange === 'under200' && price < 200) ||
+      (filters.priceRange === '200-500' && price >= 200 && price <= 500) ||
+      (filters.priceRange === 'above500' && price > 500);
+
+    return (
+      matchesQuery &&
+      matchesEra &&
+      matchesCondition &&
+      matchesAvailability &&
+      matchesPriceRange
+    );
   }
 
-  getPriceLabel(item: InventoryCard): string {
+  private getSellerName(coinId: string): string {
+    const index = coinId
+      .split('')
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return this.sellerNames[index % this.sellerNames.length];
+  }
+
+  private getPriceLabel(item: InventoryCard): string {
     if (item.lastOffer?.availableForTrade) {
       return 'Troca';
     }
@@ -81,19 +208,7 @@ export class Tab1Page {
     );
   }
 
-  isTrade(item: InventoryCard): boolean {
+  private isTrade(item: InventoryCard): boolean {
     return !!item.lastOffer?.availableForTrade;
-  }
-
-  getOfferStateLabel(offer?: Offer): string {
-    if (!offer) {
-      return 'Sem oferta publicada';
-    }
-
-    if (offer.status === 'traded') {
-      return 'Última oferta concluída';
-    }
-
-    return 'Oferta pronta a negociar';
   }
 }
