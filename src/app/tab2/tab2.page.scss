@@ -1,21 +1,9 @@
 .add-offer-content {
+  --background: var(--color-background);
   --padding-start: 18px;
   --padding-end: 18px;
   --padding-top: 18px;
   --padding-bottom: 32px;
-}
-
-.page-intro {
-  margin-bottom: 18px;
-
-  h1 {
-    margin: 8px 0 10px;
-    font-size: 2rem;
-  }
-
-  p {
-    color: var(--ion-color-medium-shade);
-  }
 }
 
 .offer-form {
@@ -29,14 +17,21 @@
   gap: 14px;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(255, 248, 227, 0.8);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--app-shadow-sm);
 
   img {
     width: 100%;
+    border-radius: 16px;
   }
 
   h2 {
     margin: 6px 0;
+  }
+
+  p {
+    color: var(--color-muted-foreground);
   }
 }
 
@@ -53,13 +48,14 @@
   padding: 14px;
   border: 0;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.84);
-  color: var(--ion-text-color);
-  box-shadow: 0 16px 28px rgba(84, 48, 27, 0.08);
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--app-shadow-sm);
 
   ion-icon {
     font-size: 2rem;
-    color: var(--ion-color-secondary);
+    color: var(--color-primary);
   }
 
   img {
@@ -70,7 +66,7 @@
   }
 
   span {
-    color: var(--ion-color-medium-shade);
+    color: var(--color-muted-foreground);
     font-size: 0.8rem;
   }
 }

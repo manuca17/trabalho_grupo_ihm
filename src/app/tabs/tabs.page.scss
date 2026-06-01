@@ -1,9 +1,87 @@
 :host {
-  ion-tab-bar {
-    --background: rgba(255, 249, 236, 0.94);
-    --color-selected: var(--ion-color-secondary);
-    border-radius: 24px 24px 0 0;
-    border-top: 1px solid rgba(94, 52, 32, 0.08);
-    box-shadow: 0 -12px 24px rgba(84, 48, 27, 0.06);
+  .custom-tab-bar {
+    --background: var(--color-card);
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -8px 24px rgba(3, 2, 19, 0.1);
+  }
+
+  .nav-button {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 54px;
+    padding: 8px 4px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--color-muted-foreground);
+    font: inherit;
+    transition:
+      background-color 160ms ease,
+      color 160ms ease;
+
+    ion-icon {
+      font-size: 1.35rem;
+    }
+
+    span {
+      font-size: 0.72rem;
+      font-weight: 500;
+      line-height: 1;
+    }
+  }
+
+  .nav-button--active {
+    background: var(--color-accent);
+    color: var(--color-primary);
+  }
+
+  .nav-button--messages {
+    .message-badge {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--color-destructive);
+      color: var(--color-destructive-foreground);
+      font-size: 0.62rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .custom-tab-bar {
+      gap: 2px;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    .nav-button {
+      min-height: 52px;
+      padding-left: 2px;
+      padding-right: 2px;
+
+      ion-icon {
+        font-size: 1.2rem;
+      }
+
+      span {
+        font-size: 0.66rem;
+      }
+    }
   }
 }
