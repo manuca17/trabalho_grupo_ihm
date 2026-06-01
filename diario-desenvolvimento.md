@@ -40,7 +40,7 @@ Decisões:
 ## Sessão 2 - 1 de junho de 2026 - Manuel Ferreira 33196
 
 Objetivo:
-Colocar a app a correr em Android e evoluir a interface principal com uma nova home, navbar inferior e sistema de tema visual mais consistente.
+ Evoluir a interface principal com uma nova home, navbar inferior e sistema de tema visual mais consistente.
 
 Atividades realizadas:
 - Reestruturei a home screen de `tab1` para um layout mais moderno com hero, moedas em destaque, adicionadas recentemente e ações rápidas.
