@@ -1,4 +1,5 @@
 .offer-detail-content {
+  --background: var(--color-background);
   --padding-start: 18px;
   --padding-end: 18px;
   --padding-top: 18px;
@@ -11,17 +12,20 @@
   margin-bottom: 18px;
   padding: 18px;
   border-radius: 28px;
-  background: linear-gradient(
-    160deg,
-    rgba(207, 165, 83, 0.16),
-    rgba(94, 52, 32, 0.1)
-  );
+  background: linear-gradient(160deg, var(--color-card), var(--color-accent));
+  border: 1px solid var(--color-border);
+  box-shadow: var(--app-shadow-sm);
 
   img {
     width: 100%;
+    border-radius: 18px;
   }
 
   h1 {
     margin: 10px 0;
+  }
+
+  p {
+    color: var(--color-muted-foreground);
   }
 }
