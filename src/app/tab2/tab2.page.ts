@@ -21,18 +21,24 @@ export class Tab2Page implements OnInit {
     { kind: 'edge', label: 'Bordo' },
   ];
 
+  // 1. Atualizado com os novos campos vindos do Figma (mantendo a segurança do nonNullable)
   readonly offerForm = this.formBuilder.nonNullable.group({
     coinId: ['', [Validators.required]],
+    title: ['', []],
     quantity: [1, [Validators.required, Validators.min(1)]],
-    askPrice: [150, [Validators.required, Validators.min(1)]],
+    era: ['', [Validators.required]], // Novo do Figma
+    condition: ['', [Validators.required]], // Novo do Figma
     description: ['', [Validators.required, Validators.minLength(10)]],
-    availableForTrade: [true],
+    realValue: [0, [Validators.required, Validators.min(0)]], // Novo do Figma
+    availableFor: ['sale', [Validators.required]], // Novo do Figma ('sale' ou 'trade')
+    salePrice: [0, [Validators.min(0)]], // Substitui o askPrice antigo para ser condicional
   });
 
   coins: Coin[] = [];
   selectedCoin?: Coin;
   photos: OfferPhoto[] = [];
   isSubmitting = false;
+  submitted = false; // Controla o ecrã de sucesso temporário se quiseres usar
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -52,6 +58,18 @@ export class Tab2Page implements OnInit {
       '';
     this.offerForm.controls.coinId.setValue(coinId);
     this.onCoinChange(coinId);
+
+    // Lógica para ligar/desligar a obrigatoriedade do preço dependendo da seleção
+    this.offerForm.controls.availableFor.valueChanges.subscribe((value) => {
+      const priceControl = this.offerForm.controls.salePrice;
+      if (value === 'sale') {
+        priceControl.setValidators([Validators.required, Validators.min(0.01)]);
+      } else {
+        priceControl.clearValidators();
+        priceControl.setValue(0);
+      }
+      priceControl.updateValueAndValidity();
+    });
   }
 
   onCoinChange(coinId: string): void {
@@ -90,6 +108,11 @@ export class Tab2Page implements OnInit {
     );
   }
 
+  // 2. Nova Função: Permite ao utilizador remover a foto clicando no "X" (visto no Figma)
+  removePhoto(kind: OfferPhoto['kind']): void {
+    this.photos = this.photos.filter((photo) => photo.kind !== kind);
+  }
+
   getPhotoForStep(kind: OfferPhoto['kind']): OfferPhoto | undefined {
     return this.photos.find((photo) => photo.kind === kind);
   }
@@ -98,14 +121,13 @@ export class Tab2Page implements OnInit {
     if (brightness < 35) {
       return 'Pouca luz detetada';
     }
-
     if (brightness < 65) {
       return 'Luminosidade aceitável';
     }
-
     return 'Boa luminosidade';
   }
 
+  // 3. Modificado para enviar os novos parâmetros para o teu serviço de Backend
   async publishOffer(): Promise<void> {
     if (
       this.offerForm.invalid ||
@@ -119,12 +141,15 @@ export class Tab2Page implements OnInit {
 
     try {
       const formValue = this.offerForm.getRawValue();
+      
+      // Adaptado para enviar a estrutura que o teu marketplaceService espera,
+      // incluindo as novidades do Figma
       const offer = await this.marketplaceService.publishOffer({
         coinId: formValue.coinId,
         quantity: formValue.quantity,
-        askPrice: formValue.askPrice,
+        askPrice: formValue.availableFor === 'sale' ? formValue.salePrice : 0,
         description: formValue.description,
-        availableForTrade: formValue.availableForTrade,
+        availableForTrade: formValue.availableFor === 'trade',
         photos: this.photos,
       });
 
@@ -132,6 +157,10 @@ export class Tab2Page implements OnInit {
     } finally {
       this.isSubmitting = false;
     }
+  }
+
+  handleSubmit(): void {
+    void this.publishOffer();
   }
 
   private calculateBrightness(dataUrl: string): Promise<number> {
