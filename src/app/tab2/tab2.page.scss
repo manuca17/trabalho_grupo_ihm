@@ -1,9 +1,286 @@
-.add-offer-content {
+.add-coin-content {
   --background: var(--color-background);
   --padding-start: 18px;
   --padding-end: 18px;
   --padding-top: 18px;
   --padding-bottom: 32px;
+}
+
+.make-offer-content {
+  --background: var(--color-background);
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 18px;
+  --padding-bottom: 120px;
+}
+
+.header-back-button,
+.proposal-type-card,
+.trade-coin-card,
+.proposal-submit,
+.proposal-cancel {
+  border: 0;
+  font: inherit;
+}
+
+.header-back-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+}
+
+.offer-page-header,
+.proposal-section,
+.selected-coin-card,
+.proposal-summary {
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  background: var(--color-card);
+  box-shadow: var(--app-shadow-sm);
+}
+
+.offer-page-header h1,
+.proposal-section h2,
+.proposal-summary h2,
+.selected-coin-card h2 {
+  margin: 0 0 8px;
+}
+
+.offer-page-header p,
+.proposal-section p,
+.selected-coin-card span,
+.hint-text,
+.warning-text {
+  margin: 0;
+  color: var(--color-muted-foreground);
+}
+
+.selected-coin-card {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 14px;
+}
+
+.selected-coin-card__media img,
+.trade-coin-card__media img,
+.selected-coin img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.selected-coin-card__media {
+  width: 84px;
+  height: 84px;
+}
+
+.selected-coin-card__copy {
+  display: grid;
+  gap: 6px;
+
+  strong {
+    color: var(--color-primary);
+    font-size: 1.15rem;
+  }
+}
+
+.proposal-type-list,
+.trade-coin-list {
+  display: grid;
+  gap: 12px;
+}
+
+.proposal-type-card,
+.trade-coin-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 18px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+}
+
+.proposal-type-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.proposal-type-card span {
+  color: var(--color-muted-foreground);
+  font-size: 0.86rem;
+}
+
+.proposal-type-card--active {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-card));
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: var(--color-foreground);
+}
+
+.currency-field {
+  position: relative;
+
+  span {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    color: var(--color-muted-foreground);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0 14px 0 52px;
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font: inherit;
+  }
+}
+
+.proposal-section textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font: inherit;
+  resize: none;
+}
+
+.section-heading--stacked {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.trade-coin-card {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+}
+
+.trade-coin-card__media {
+  width: 64px;
+  height: 64px;
+}
+
+.trade-coin-card__copy {
+  display: grid;
+  gap: 4px;
+
+  span,
+  em {
+    color: var(--color-muted-foreground);
+    font-size: 0.84rem;
+    font-style: normal;
+  }
+
+  em {
+    color: var(--color-primary);
+    font-weight: 700;
+  }
+}
+
+.trade-coin-card__check {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-chart-2);
+  color: #ffffff;
+}
+
+.trade-coin-card--selected {
+  border-color: var(--color-chart-2);
+  background: color-mix(in srgb, var(--color-chart-2) 10%, var(--color-card));
+}
+
+.warning-text {
+  margin-top: 10px;
+  color: var(--color-destructive);
+}
+
+.proposal-summary {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-primary) 8%, var(--color-card)),
+    var(--color-card)
+  );
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summary-row + .summary-row {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.proposal-footer {
+  --background: transparent;
+  box-shadow: none;
+}
+
+.proposal-footer__actions {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-card) 96%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.proposal-submit,
+.proposal-cancel {
+  min-height: 52px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+.proposal-submit {
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+}
+
+.proposal-submit:disabled {
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+}
+
+.proposal-cancel {
+  background: var(--color-secondary);
+  color: var(--color-secondary-foreground);
 }
 
 .offer-form {
@@ -74,5 +351,17 @@
 @media (max-width: 768px) {
   .capture-grid {
     grid-template-columns: 1fr;
+  }
+
+  .selected-coin-card,
+  .trade-coin-card {
+    grid-template-columns: 1fr;
+  }
+
+  .trade-coin-card__media,
+  .selected-coin-card__media {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
   }
 }

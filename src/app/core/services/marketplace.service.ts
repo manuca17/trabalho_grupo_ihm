@@ -168,6 +168,77 @@ export class MarketplaceService {
   }
 
   /**
+   * Creates a negotiation thread directly from a coin detail proposal flow.
+   */
+  async createProposal(input: {
+    offerCoinId: string;
+    proposedCoinIds: string[];
+    offerAmount?: number;
+    message?: string;
+  }): Promise<NegotiationThread> {
+    const catalog = await firstValueFrom(this.catalog$);
+    const offeredCoins = catalog.filter((coin) =>
+      input.proposedCoinIds.includes(coin.id),
+    );
+    const primaryTradeCoin =
+      offeredCoins[0] ?? catalog.find((coin) => coin.id !== input.offerCoinId);
+    const proposalSummary = [
+      input.offerAmount
+        ? `Proponho ${new Intl.NumberFormat('pt-PT', {
+            style: 'currency',
+            currency: 'EUR',
+            maximumFractionDigits: 0,
+          }).format(input.offerAmount)}`
+        : '',
+      offeredCoins.length
+        ? `para troca por ${offeredCoins.map((coin) => coin.name).join(', ')}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const normalizedBody = input.message?.trim();
+    const firstMessageBody = [
+      proposalSummary || 'Tenho interesse nesta moeda.',
+      normalizedBody,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const thread: NegotiationThread = {
+      id: `thread-${Date.now()}`,
+      offerId: `proposal-${Date.now()}`,
+      offerCoinId: input.offerCoinId,
+      proposerCoinId: primaryTradeCoin?.id ?? input.offerCoinId,
+      proposerName: 'Carlos',
+      sellerName: 'Maria',
+      status: 'pending',
+      realValue:
+        input.offerAmount ??
+        primaryTradeCoin?.estimatedValue ??
+        catalog.find((coin) => coin.id === input.offerCoinId)?.estimatedValue ??
+        0,
+      unreadCount: 1,
+      messages: [
+        {
+          id: `msg-${Date.now()}`,
+          author: 'Carlos',
+          body: firstMessageBody,
+          sentAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    const updatedNegotiations = [...this.negotiationsSubject.value, thread];
+    this.negotiationsSubject.next(updatedNegotiations);
+    await this.localStorageService.setItem(
+      NEGOTIATIONS_STORAGE_KEY,
+      updatedNegotiations,
+    );
+
+    return thread;
+  }
+
+  /**
    * Appends a new message to a negotiation thread and stores it locally.
    */
   async addNegotiationMessage(

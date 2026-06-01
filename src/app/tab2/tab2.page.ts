@@ -8,6 +8,15 @@ import { Coin, OfferPhoto } from '../core/models/coin.model';
 import { ContentService } from '../core/services/content.service';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
+type Tab2Mode = 'create' | 'proposal';
+type ProposalType = 'money' | 'trade' | 'both';
+
+const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+});
+
 @Component({
   selector: 'app-tab2',
   templateUrl: 'tab2.page.html',
@@ -39,6 +48,15 @@ export class Tab2Page implements OnInit {
   photos: OfferPhoto[] = [];
   isSubmitting = false;
   submitted = false; // Controla o ecrã de sucesso temporário se quiseres usar
+  mode: Tab2Mode = 'create';
+  sourceTab = 'inicio';
+  supportsTrade = false;
+  offerType: ProposalType = 'money';
+  offerAmount = '';
+  message = '';
+  selectedTradeCoinIds: string[] = [];
+  ownedCoins: Coin[] = [];
+  isProposalSubmitting = false;
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -52,10 +70,18 @@ export class Tab2Page implements OnInit {
     await this.marketplaceService.init();
     this.coins = await firstValueFrom(this.contentService.coins$);
 
-    const coinId =
-      this.activatedRoute.snapshot.queryParamMap.get('coinId') ??
-      this.coins[0]?.id ??
-      '';
+    const requestedCoinId =
+      this.activatedRoute.snapshot.queryParamMap.get('coinId');
+    this.sourceTab =
+      this.activatedRoute.snapshot.queryParamMap.get('from') ?? this.sourceTab;
+    this.mode = requestedCoinId ? 'proposal' : 'create';
+
+    if (this.mode === 'proposal') {
+      this.setupProposalMode(requestedCoinId);
+      return;
+    }
+
+    const coinId = requestedCoinId ?? this.coins[0]?.id ?? '';
     this.offerForm.controls.coinId.setValue(coinId);
     this.onCoinChange(coinId);
 
@@ -72,8 +98,69 @@ export class Tab2Page implements OnInit {
     });
   }
 
+  get pageTitle(): string {
+    if (this.mode === 'proposal') {
+      return this.supportsTrade ? 'Propor Troca' : 'Fazer Oferta';
+    }
+
+    return 'Adicionar Moeda';
+  }
+
+  get proposalPriceLabel(): string {
+    if (!this.selectedCoin) {
+      return '';
+    }
+
+    return EUR_FORMATTER.format(this.selectedCoin.estimatedValue);
+  }
+
+  get canSubmitProposal(): boolean {
+    if (this.offerType === 'money') {
+      return this.hasOfferAmount;
+    }
+
+    if (this.offerType === 'trade') {
+      return this.selectedTradeCoinIds.length > 0;
+    }
+
+    return this.hasOfferAmount || this.selectedTradeCoinIds.length > 0;
+  }
+
+  get hasOfferAmount(): boolean {
+    return Number(this.offerAmount) > 0;
+  }
+
+  get selectedTradeCoins(): Coin[] {
+    return this.ownedCoins.filter((coin) =>
+      this.selectedTradeCoinIds.includes(coin.id),
+    );
+  }
+
   onCoinChange(coinId: string): void {
     this.selectedCoin = this.coins.find((coin) => coin.id === coinId);
+  }
+
+  goBackFromProposal(): void {
+    if (!this.selectedCoin) {
+      void this.router.navigate(['/tabs/tab5']);
+      return;
+    }
+
+    void this.router.navigate(['/coin', this.selectedCoin.id], {
+      queryParams: {
+        from: this.sourceTab,
+      },
+    });
+  }
+
+  setOfferType(type: ProposalType): void {
+    this.offerType = type;
+  }
+
+  toggleTradeCoinSelection(coinId: string): void {
+    this.selectedTradeCoinIds = this.selectedTradeCoinIds.includes(coinId)
+      ? this.selectedTradeCoinIds.filter((id) => id !== coinId)
+      : [...this.selectedTradeCoinIds, coinId];
   }
 
   async capturePhoto(step: {
@@ -141,7 +228,7 @@ export class Tab2Page implements OnInit {
 
     try {
       const formValue = this.offerForm.getRawValue();
-      
+
       // Adaptado para enviar a estrutura que o teu marketplaceService espera,
       // incluindo as novidades do Figma
       const offer = await this.marketplaceService.publishOffer({
@@ -160,7 +247,62 @@ export class Tab2Page implements OnInit {
   }
 
   handleSubmit(): void {
+    if (this.mode === 'proposal') {
+      void this.submitProposal();
+      return;
+    }
+
     void this.publishOffer();
+  }
+
+  async submitProposal(): Promise<void> {
+    if (!this.selectedCoin || !this.canSubmitProposal) {
+      return;
+    }
+
+    this.isProposalSubmitting = true;
+
+    try {
+      const thread = await this.marketplaceService.createProposal({
+        offerCoinId: this.selectedCoin.id,
+        proposedCoinIds:
+          this.offerType === 'money' ? [] : this.selectedTradeCoinIds,
+        offerAmount:
+          this.offerType === 'trade' ? undefined : Number(this.offerAmount),
+        message: this.message.trim(),
+      });
+
+      await this.router.navigate(['/negotiation', thread.id], {
+        queryParams: {
+          from: this.sourceTab,
+        },
+      });
+    } finally {
+      this.isProposalSubmitting = false;
+    }
+  }
+
+  getTradeCoinValue(coin: Coin): string {
+    return EUR_FORMATTER.format(coin.estimatedValue);
+  }
+
+  private async setupProposalMode(coinId: string | null): Promise<void> {
+    if (!coinId) {
+      this.mode = 'create';
+      return;
+    }
+
+    this.onCoinChange(coinId);
+    this.ownedCoins = this.coins
+      .filter((coin) => coin.id !== coinId)
+      .slice(0, 3);
+
+    const inventoryCards = await firstValueFrom(
+      this.marketplaceService.inventoryCards$,
+    );
+    const currentCard = inventoryCards.find((item) => item.coin.id === coinId);
+    this.supportsTrade = !!currentCard?.lastOffer?.availableForTrade;
+    this.offerType = this.supportsTrade ? 'trade' : 'money';
   }
 
   private calculateBrightness(dataUrl: string): Promise<number> {
