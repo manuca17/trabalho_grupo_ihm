@@ -1,0 +1,170 @@
+﻿.messages-page {
+  --ion-background-color: #f7f7f7;
+}
+
+.chat-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem;
+  background: var(--ion-color-warning);
+  color: white;
+}
+
+.chat-avatar {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 1.4rem;
+}
+
+.chat-header-text h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.chat-header-text p {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.messages-scroll {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.message-row {
+  display: flex;
+  margin-bottom: 0.85rem;
+}
+
+.message-row.sent {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 80%;
+  border-radius: 1rem;
+  padding: 0.9rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.message-row.sent .message-bubble {
+  background: var(--ion-color-warning);
+  color: white;
+}
+
+.message-row.received .message-bubble {
+  background: white;
+  color: #222;
+  border: 1px solid #e5e5e5;
+}
+
+.coin-preview {
+  margin-top: 0.9rem;
+  border-radius: 0.85rem;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.coin-preview-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.coin-emoji {
+  font-size: 1.45rem;
+}
+
+.coin-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.coin-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.image-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
+}
+
+.message-time {
+  margin-top: 0.65rem;
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.message-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem;
+  border-top: 1px solid #e5e5e5;
+  background: white;
+}
+
+.message-input ion-input {
+  flex: 1;
+}
+
+.image-button {
+  min-width: 0;
+}
+
+.conversation-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+ion-searchbar {
+  margin: 0.9rem 1rem 0 1rem;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: #666;
+}
+
+.empty-emoji {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.conversation-time {
+  font-size: 0.75rem;
+}

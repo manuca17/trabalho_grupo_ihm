@@ -63,3 +63,38 @@ Decisões:
 - Manter a prioridade na entrega funcional do frontend, sem abrir novas frentes como backend.
 - Usar um sistema de tema baseado em CSS variables em vez de depender de Tailwind, para ficar alinhado com Ionic/Angular.
 - Preservar a navegação atual por tabs e adaptar o visual sem reestruturar toda a arquitetura da app.
+
+## Sessão 1 - 01 de junho de 2026 - Guilherme Maciel 33245
+
+
+Atividades Realizadas:
+
+- Criação do tabs4 e do tab5.
+- Configuração da Barra de Navegação Central (Tabs): Criação e expansão da barra de menus inferior para suportar a navegação global por 5 abas distintas (tab1 a tab5)
+- Transformei o layout de mensagens no tab4 para Ionic/Angular.
+- Atualizei os ficheiros:
+        tab4.page.ts
+        tab4.page.html
+        tab4.page.scss
+- Corrigi a navegação das abas para que o botão “Mensagens” abrisse a tab4.
+
+Problemas:
+
+- A app continuava a mostrar a aba antiga porque o botão de mensagens em tabs.page.html ainda apontava para tab3.
+- A lógica de destaque de aba em tabs.page.ts também não estava a reconhecer /tabs/tab4 como a aba de mensagens.
+- Erro de Rota Raiz "Cannot GET /": Após a reorganização das pastas das abas, o browser apresentou um ecrã totalmente em branco com a falha de requisição HTTP na raiz do projeto.
+- Componente Standalone: Falha de compilação do Angular ao tentar inicializar o ionic serve. O terminal reportou que as novas abas tab4 e tab5 eram componentes Standalone e não podiam ser declaradas na lista de declarations de um NgModule.
+
+Soluções:
+
+- Configuro-se uma rota vazia padrão que carrega o módulo principal das abas por lazy loading e adicionou-se um mecanismo de fallback com o seletor curinga ().
+- Removeu-se a propriedade standalone: true e os seus respetivos imports de     componentes do decorador @Component, adicionando a flag standalone: false
+- Mudei o routerLink do botão Mensagens para ['/tabs/tab4'].
+- Atualizei getActiveNav() para tratar /tabs/tab4 como messages.
+- Mantive a navegação das abas consistente com o novo tab das mensagens.
+
+Decisões:
+
+- Optou-se por desativar o modo standalone das novas páginas geradas automaticamente pelo Ionic CLI.
+- Decidi usar tab4 como a nova tela de mensagens, de forma a deixara a tab3 ignorada para essa função.
+- Preferi corrigir a navegação diretamente em vez de mover o conteúdo para a tab3.
