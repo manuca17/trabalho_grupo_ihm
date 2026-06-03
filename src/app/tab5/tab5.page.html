@@ -11,6 +11,7 @@
   <ng-container *ngIf="activeSection$ | async as activeSection">
     <ng-container *ngIf="activeSection === 'home'; else profileView">
       <section class="hero-card" *ngIf="summary$ | async as summary">
+        <div class="hero-icon">↗</div>
         <div class="hero-copy">
           <p class="eyebrow">Ancient Coins Exchange</p>
           <h1>Bem-vindo de volta!</h1>
