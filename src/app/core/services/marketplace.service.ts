@@ -133,6 +133,8 @@ export class MarketplaceService {
     const offer: Offer = new OfferModel({
       id: offerId,
       coinId: input.coinId,
+      ownerId: profile.id,
+      ownerDisplayName: profile.displayName,
       quantity: input.quantity,
       askPrice: input.askPrice,
       description: input.description,
@@ -342,12 +344,17 @@ export class MarketplaceService {
     ]);
   }
 
-  private async resolveCurrentProfile(): Promise<{ displayName: string }> {
+  private async resolveCurrentProfile(): Promise<{
+    id: string;
+    displayName: string;
+  }> {
     await this.authService.ensureInitialized();
 
+    const profile = this.authService.currentProfileSnapshot;
+
     return {
-      displayName:
-        this.authService.currentProfileSnapshot?.displayName ?? 'Carlos',
+      id: profile?.id ?? 'anonymous-user',
+      displayName: profile?.displayName ?? 'Carlos',
     };
   }
 

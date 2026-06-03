@@ -48,6 +48,8 @@ export interface FirestoreOfferPhotoDto {
 
 export interface FirestoreOfferDto {
   coinId: string;
+  ownerId: string;
+  ownerDisplayName?: string;
   quantity: number;
   askPrice: number;
   description: string;
@@ -153,6 +155,8 @@ export function mapOfferFromFirestore(
   return new OfferModel({
     id,
     coinId: dto.coinId,
+    ownerId: dto.ownerId,
+    ownerDisplayName: dto.ownerDisplayName,
     quantity: dto.quantity,
     askPrice: dto.askPrice,
     description: dto.description,
@@ -166,6 +170,8 @@ export function mapOfferFromFirestore(
 export function mapOfferToFirestore(offer: Offer): FirestoreOfferDto {
   return {
     coinId: offer.coinId,
+    ownerId: offer.ownerId,
+    ownerDisplayName: offer.ownerDisplayName,
     quantity: offer.quantity,
     askPrice: offer.askPrice,
     description: offer.description,

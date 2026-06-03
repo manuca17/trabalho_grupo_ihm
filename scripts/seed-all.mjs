@@ -56,6 +56,7 @@ const SEEDED_USERS = [
 const SEEDED_OFFERS = [
   {
     id: "seed-offer-aureus",
+    ownerKey: "maria",
     coinId: "coin-aureus-augustus",
     quantity: 1,
     askPrice: 1900,
@@ -87,6 +88,7 @@ const SEEDED_OFFERS = [
   },
   {
     id: "seed-offer-denarius",
+    ownerKey: "carlos",
     coinId: "coin-denarius-trajan",
     quantity: 1,
     askPrice: 650,
@@ -230,10 +232,27 @@ async function seedAppStrings(db) {
   console.log(`Criado/atualizado: app_strings/${APP_STRINGS_DOCUMENT_ID}`);
 }
 
-async function seedOffers(db) {
+async function seedOffers(db, seededUserMap) {
   for (const offer of SEEDED_OFFERS) {
-    const { id, ...data } = offer;
+    const owner = seededUserMap.get(offer.ownerKey);
+
+    if (!owner) {
+      throw new Error(`Utilizador seed em falta para oferta: ${offer.id}`);
+    }
+
+    const { id, ownerKey, ...data } = offer;
     await db.collection("offers").doc(id).set(data, { merge: true });
+    await db
+      .collection("offers")
+      .doc(id)
+      .set(
+        {
+          ...data,
+          ownerId: owner.uid,
+          ownerDisplayName: owner.displayName,
+        },
+        { merge: true },
+      );
     console.log(`Criado/atualizado: offers/${id}`);
   }
 }
@@ -261,10 +280,10 @@ async function main() {
   const db = admin.firestore();
   const auth = admin.auth();
 
-  await seedUsers(db, auth);
+  const seededUserMap = await seedUsers(db, auth);
   await seedCoins(db);
   await seedAppStrings(db);
-  await seedOffers(db);
+  await seedOffers(db, seededUserMap);
   await seedNegotiations(db);
 
   console.log(

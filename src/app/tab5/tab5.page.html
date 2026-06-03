@@ -153,6 +153,100 @@
             <strong>{{ profile.stats.rating }}</strong>
           </article>
         </section>
+
+        <section class="content-section" *ngIf="myCoins$ | async as myCoins">
+          <div class="section-heading">
+            <h2>As minhas moedas</h2>
+          </div>
+
+          <div class="recent-list" *ngIf="myCoins.length; else emptyMyCoins">
+            <button
+              type="button"
+              class="recent-card"
+              *ngFor="let item of myCoins"
+              (click)="openCoin(item.coin)"
+            >
+              <div class="recent-main">
+                <div class="recent-thumb">
+                  <img [src]="item.coin.image" [alt]="item.coin.name" />
+                </div>
+                <div class="recent-copy-card">
+                  <h3>{{ item.coin.name }}</h3>
+                  <div class="recent-meta">
+                    <span>{{ item.coin.period }}</span>
+                    <span class="condition-tag"
+                      >{{ item.coin.conservation }}</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="recent-side">
+                <strong>{{ getPriceLabel(item) }}</strong>
+              </div>
+            </button>
+          </div>
+
+          <ng-template #emptyMyCoins>
+            <article class="surface-card">
+              <h3>Ainda nao tens moedas publicadas</h3>
+              <p>Adiciona uma oferta para ela aparecer aqui no teu perfil.</p>
+            </article>
+          </ng-template>
+        </section>
+
+        <section
+          class="content-section"
+          *ngIf="myNegotiations$ | async as myNegotiations"
+        >
+          <div class="section-heading">
+            <h2>As minhas negociações</h2>
+          </div>
+
+          <div
+            class="recent-list"
+            *ngIf="myNegotiations.length; else emptyMyNegotiations"
+          >
+            <button
+              type="button"
+              class="recent-card"
+              *ngFor="let item of myNegotiations"
+              (click)="openNegotiation(item.thread)"
+            >
+              <div class="recent-main">
+                <div class="recent-thumb" *ngIf="item.coin; else noCoinPreview">
+                  <img [src]="item.coin.image" [alt]="item.coin.name" />
+                </div>
+                <ng-template #noCoinPreview>
+                  <div class="recent-thumb">💬</div>
+                </ng-template>
+
+                <div class="recent-copy-card">
+                  <h3>{{ item.counterpart }}</h3>
+                  <div class="recent-meta">
+                    <span>{{ item.roleLabel }}</span>
+                    <span class="condition-tag">{{ item.thread.status }}</span>
+                  </div>
+                  <p>{{ item.lastMessage }}</p>
+                </div>
+              </div>
+              <div class="recent-side">
+                <strong
+                  >{{ item.thread.realValue | currency:
+                  'EUR':'symbol':'1.0-0':'pt-PT' }}</strong
+                >
+              </div>
+            </button>
+          </div>
+
+          <ng-template #emptyMyNegotiations>
+            <article class="surface-card">
+              <h3>Ainda nao tens negociações</h3>
+              <p>
+                Quando abrires ou receberes propostas, elas vao aparecer aqui.
+              </p>
+            </article>
+          </ng-template>
+        </section>
       </ng-container>
     </ng-template>
   </ng-container>

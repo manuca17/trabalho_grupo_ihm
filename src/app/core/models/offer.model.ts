@@ -6,6 +6,8 @@ import { OfferPhoto, OfferPhotoModel } from './offer-photo.model';
 export interface Offer {
   id: string;
   coinId: string;
+  ownerId: string;
+  ownerDisplayName?: string;
   quantity: number;
   askPrice: number;
   description: string;
@@ -18,6 +20,8 @@ export interface Offer {
 export class OfferModel implements Offer {
   id: string;
   coinId: string;
+  ownerId: string;
+  ownerDisplayName?: string;
   quantity: number;
   askPrice: number;
   description: string;
@@ -29,6 +33,8 @@ export class OfferModel implements Offer {
   constructor(data: Offer) {
     this.id = data.id;
     this.coinId = data.coinId;
+    this.ownerId = data.ownerId;
+    this.ownerDisplayName = data.ownerDisplayName;
     this.quantity = data.quantity;
     this.askPrice = data.askPrice;
     this.description = data.description;
@@ -50,6 +56,8 @@ export class OfferModel implements Offer {
     return {
       id: this.id,
       coinId: this.coinId,
+      ownerId: this.ownerId,
+      ownerDisplayName: this.ownerDisplayName,
       quantity: this.quantity,
       askPrice: this.askPrice,
       description: this.description,

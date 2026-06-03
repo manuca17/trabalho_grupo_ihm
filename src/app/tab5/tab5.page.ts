@@ -4,11 +4,19 @@ import { Observable, combineLatest, map } from 'rxjs';
 
 import { UserProfile } from '../core/models/auth.model';
 import { Coin } from '../core/models/coin.model';
+import { NegotiationThread } from '../core/models/negotiation-thread.model';
 import { Offer } from '../core/models/offer.model';
 import { AuthService } from '../core/services/auth.service';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
+type MyNegotiationCard = {
+  thread: NegotiationThread;
+  coin?: Coin;
+  counterpart: string;
+  lastMessage: string;
+  roleLabel: string;
+};
 
 const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
   style: 'currency',
@@ -53,6 +61,70 @@ export class Tab5Page {
       tradeCount: offers.filter((offer) => offer.availableForTrade).length,
     })),
   );
+  readonly myCoins$ = combineLatest([
+    this.inventoryCards$,
+    this.currentProfile$,
+  ]).pipe(
+    map(([cards, profile]) => {
+      if (!profile) {
+        return [];
+      }
+
+      return cards
+        .filter((item) => item.lastOffer?.ownerId === profile.id)
+        .reverse();
+    }),
+  );
+  readonly myNegotiations$ = combineLatest([
+    this.currentProfile$,
+    this.marketplaceService.negotiations$,
+    this.marketplaceService.offers$,
+    this.inventoryCards$,
+  ]).pipe(
+    map(([profile, threads, offers, cards]) => {
+      if (!profile) {
+        return [];
+      }
+
+      const normalizedDisplayName = profile.displayName.trim().toLowerCase();
+
+      return [...threads]
+        .filter((thread) => {
+          const linkedOffer = offers.find(
+            (offer) => offer.id === thread.offerId,
+          );
+          const isSeller = linkedOffer?.ownerId === profile.id;
+          const isProposer =
+            thread.proposerName.trim().toLowerCase() === normalizedDisplayName;
+
+          return isSeller || isProposer;
+        })
+        .sort((left, right) => {
+          const leftTimestamp =
+            left.messages[left.messages.length - 1]?.sentAt ?? '';
+          const rightTimestamp =
+            right.messages[right.messages.length - 1]?.sentAt ?? '';
+          return rightTimestamp.localeCompare(leftTimestamp);
+        })
+        .map((thread) => {
+          const linkedOffer = offers.find(
+            (offer) => offer.id === thread.offerId,
+          );
+          const isSeller = linkedOffer?.ownerId === profile.id;
+
+          return {
+            thread,
+            coin: cards.find((item) => item.coin.id === thread.offerCoinId)
+              ?.coin,
+            counterpart: isSeller ? thread.proposerName : thread.sellerName,
+            lastMessage:
+              thread.messages[thread.messages.length - 1]?.body ??
+              'Sem mensagens.',
+            roleLabel: isSeller ? 'Como vendedor' : 'Como proponente',
+          } as MyNegotiationCard;
+        });
+    }),
+  );
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -73,6 +145,14 @@ export class Tab5Page {
 
   openMessages(): void {
     void this.router.navigate(['/tabs/tab4']);
+  }
+
+  openNegotiation(thread: NegotiationThread): void {
+    void this.router.navigate(['/negotiation', thread.id], {
+      queryParams: {
+        offerId: thread.offerId,
+      },
+    });
   }
 
   getPriceLabel(item: InventoryCard): string {
