@@ -1,182 +1,120 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Pesquisar Catálogo</ion-title>
+﻿<ion-header [translucent]="true">
+  <ion-toolbar class="search-toolbar">
+    <div class="search-header">
+      <div class="search-header__content">
+        <strong>AncientCoins</strong>
+        <span>Colecionadores de Moedas</span>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <ion-toolbar class="search-bar-toolbar">
+    <div class="search-panel-top">
+      <div class="search-input-row">
+        
+        <div class="search-box">
+          <ion-icon name="search-outline"></ion-icon>
+          <ion-input
+            placeholder="Pesquisar moedas..."
+            [value]="searchQuery"
+            (ionInput)="updateSearchQuery($event.detail.value)"
+          ></ion-input>
+        </div>
+
+        <button type="button" class="filter-toggle-button" (click)="toggleFilters()">
+          <ion-icon name="options-outline"></ion-icon>
+        </button>
+
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="search-content">
-  <div class="search-pane">
-    <div class="search-bar">
-      <div class="search-field">
-        <ion-icon name="search-outline"></ion-icon>
-        <ion-input
-          placeholder="Pesquisar moedas..."
-          [(ngModel)]="searchQuery"
-          (ionInput)="updateSearchQuery($event.detail.value ?? '')"
-        ></ion-input>
-        <button
-          *ngIf="searchQuery"
-          type="button"
-          class="clear-button"
-          (click)="clearSearch()"
-        >
-          <ion-icon name="close-circle"></ion-icon>
-        </button>
+  
+  <div class="search-extended-area">
+    <div class="filters-expanded-panel" *ngIf="showFilters">
+      <p class="filter-group-title">Filtros Avançados</p>
+      <div class="filter-options-grid">
+        <button type="button" [class.active]="filters.priceRange === 'under200'" (click)="setFilter('priceRange', 'under200')">&lt; 200€</button>
+        <button type="button" [class.active]="filters.priceRange === '200-500'" (click)="setFilter('priceRange', '200-500')">200€ - 500€</button>
+        <button type="button" [class.active]="filters.priceRange === 'above500'" (click)="setFilter('priceRange', 'above500')">&gt; 500€</button>
       </div>
+      <button type="button" class="clear-filters-btn" (click)="clearFilters()">Limpar Filtros</button>
+    </div>
 
-      <ion-button
+    <p class="popular-label">PESQUISAS POPULARES:</p>
+    <div class="popular-buttons">
+      <button
+        *ngFor="let term of popularSearchTerms"
         type="button"
-        fill="outline"
-        class="filter-toggle"
-        [color]="showFilters ? 'warning' : 'medium'"
-        (click)="toggleFilters()"
+        class="popular-button"
+        (click)="setSearchTerm(term)"
       >
-        <ion-icon slot="icon-only" name="options-outline"></ion-icon>
-      </ion-button>
+        {{ term }}
+      </button>
     </div>
+  </div>
 
-    <div *ngIf="showFilters" class="filters-panel">
-      <div class="filter-row">
-        <label>Era Histórica</label>
-        <ion-select
-          interface="popover"
-          [(ngModel)]="filters.era"
-          (ionChange)="setFilter('era', $event.detail.value)"
-          placeholder="Todas as eras"
-        >
-          <ion-select-option value="romano">Império Romano</ion-select-option>
-          <ion-select-option value="grego">Grécia Antiga</ion-select-option>
-          <ion-select-option value="portugues">Portugal</ion-select-option>
-          <ion-select-option value="bizantino">Império Bizantino</ion-select-option>
-        </ion-select>
-      </div>
+  <div class="search-divider"></div>
 
-      <div class="filter-row">
-        <label>Estado de Conservação</label>
-        <ion-select
-          interface="popover"
-          [(ngModel)]="filters.condition"
-          (ionChange)="setFilter('condition', $event.detail.value)"
-          placeholder="Todos os estados"
-        >
-          <ion-select-option value="bc">BC (Bem Conservada)</ion-select-option>
-          <ion-select-option value="mbc">MBC (Muito Bem Conservada)</ion-select-option>
-          <ion-select-option value="bela">Bela</ion-select-option>
-          <ion-select-option value="soberba">Soberba</ion-select-option>
-        </ion-select>
-      </div>
+  <section class="search-page">
+    <ng-container *ngIf="!searchQuery; else searchResultsArea">
+      <section class="empty-area">
+        <div class="empty-illustration">
+          <ion-icon name="search-outline"></ion-icon>
+        </div>
+        <h3>PROCURA ALGO ESPECÍFICO?</h3>
+        <p>Use a barra de pesquisa para encontrar moedas por era histórica, tipo ou descrição.</p>
+      </section>
+    </ng-container>
 
-      <div class="filter-row">
-        <label>Intervalo de Preço</label>
-        <ion-select
-          interface="popover"
-          [(ngModel)]="filters.priceRange"
-          (ionChange)="setFilter('priceRange', $event.detail.value)"
-          placeholder="Todas as faixas"
-        >
-          <ion-select-option value="">Todas as faixas</ion-select-option>
-          <ion-select-option value="under200">Abaixo de €200</ion-select-option>
-          <ion-select-option value="200-500">€200 - €500</ion-select-option>
-          <ion-select-option value="above500">Acima de €500</ion-select-option>
-        </ion-select>
-      </div>
-
-      <div class="filter-row">
-        <label>Intervalo de Preço</label>
-        <ion-select
-          interface="popover"
-          [(ngModel)]="filters.priceRange"
-          (ionChange)="setFilter('priceRange', $event.detail.value)"
-          placeholder="Todas as faixas"
-        >
-          <ion-select-option value="">Todas as faixas</ion-select-option>
-          <ion-select-option value="under200">Abaixo de €200</ion-select-option>
-          <ion-select-option value="200-500">€200 - €500</ion-select-option>
-          <ion-select-option value="above500">Acima de €500</ion-select-option>
-        </ion-select>
-      </div>
-
-      <div class="filter-row">
-        <label>Disponível para</label>
-        <ion-select
-          interface="popover"
-          [(ngModel)]="filters.availableFor"
-          (ionChange)="setFilter('availableFor', $event.detail.value)"
-          placeholder="Tudo"
-        >
-          <ion-select-option value="sale">Venda</ion-select-option>
-          <ion-select-option value="trade">Troca</ion-select-option>
-        </ion-select>
-      </div>
-
-      <div class="filter-actions">
-        <ion-button fill="outline" expand="block" size="small" (click)="clearFilters()">
-          Limpar
-        </ion-button>
-        <ion-button fill="solid" expand="block" size="small" (click)="toggleFilters()">
-          Aplicar Filtros
-        </ion-button>
-      </div>
-    </div>
-
-    <ng-container *ngIf="searchQuery; else emptyState">
-      <ng-container *ngIf="searchResults$ | async as results">
-        <div class="search-summary">{{ results.length }} resultados para "{{ searchQuery }}"</div>
-
+    <ng-template #searchResultsArea>
+      <ng-container *ngIf="searchResults$ | async as results; else loadingOrError">
         <ng-container *ngIf="results.length; else noResults">
           <div class="results-list">
             <button
-              *ngFor="let coin of results"
+              *ngFor="let item of results"
               type="button"
               class="result-card"
-              (click)="openCoinById(coin.id)"
+              (click)="openCoinById(item.id)"
             >
               <div class="result-image">
-                <img [src]="coin.image" [alt]="coin.title" />
+                <img [src]="item.image" [alt]="item.title" />
               </div>
               <div class="result-body">
-                <h3>{{ coin.title }}</h3>
-                <p class="result-meta">{{ coin.era }}</p>
-                <div class="result-tags">
-                  <span class="tag">{{ coin.condition }}</span>
-                  <span class="tag" *ngIf="coin.forTrade">Troca</span>
+                <div>
+                  <h3>{{ item.title }}</h3>
+                  <p class="result-meta">{{ item.era }}</p>
                 </div>
-                <p class="result-seller">Por {{ coin.seller }}</p>
+                <div class="result-tags">
+                  <span class="tag">{{ item.condition }}</span>
+                  <span class="tag" *ngIf="item.forTrade">Troca</span>
+                </div>
+                <p class="result-seller">Por {{ item.seller }}</p>
               </div>
-              <div class="result-price">{{ coin.price }}</div>
+              <div class="result-price">{{ item.price }}</div>
             </button>
           </div>
         </ng-container>
       </ng-container>
-    </ng-container>
+    </ng-template>
 
     <ng-template #noResults>
-      <div class="empty-state">
-        <p class="empty-title">Nenhum resultado encontrado</p>
-        <p class="empty-copy">Tente ajustar os filtros ou pesquisar outro termo.</p>
-      </div>
-    </ng-template>
-
-    <ng-template #emptyState>
-      <div class="empty-state empty-state--search">
-        <div class="empty-emoji">🔍</div>
-        <h3>Procura algo específico?</h3>
-        <p>Use a barra de pesquisa para encontrar moedas por era histórica, tipo ou descrição.</p>
-
-        <div class="popular-searches">
-          <div class="popular-label">Pesquisas populares:</div>
-          <div class="popular-buttons">
-            <button
-              *ngFor="let term of popularSearchTerms"
-              type="button"
-              class="popular-button"
-              (click)="setSearchTerm(term)"
-            >
-              {{ term }}
-            </button>
-          </div>
+      <section class="empty-area empty-area--no-results">
+        <div class="empty-illustration">
+          <ion-icon name="sad-outline"></ion-icon>
         </div>
-      </div>
+        <h3>Sem resultados</h3>
+        <p>Tente outro termo ou ajuste os filtros para encontrar uma moeda.</p>
+      </section>
     </ng-template>
-  </div>
+
+    <ng-template #loadingOrError>
+      <section class="empty-area">
+        <ion-spinner name="crescent" color="primary"></ion-spinner>
+        <p>A carregar o catálogo de numismática...</p>
+      </section>
+    </ng-template>
+  </section>
 </ion-content>

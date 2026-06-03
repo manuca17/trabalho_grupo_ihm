@@ -97,9 +97,11 @@ export class Tab1Page {
     private readonly marketplaceService: MarketplaceService,
   ) {}
 
-  updateSearchQuery(value: string): void {
-    this.searchQuery = value;
-    this.searchQuerySubject.next(value ?? '');
+  // CORREÇÃO: Aceita múltiplos tipos de dados para evitar quebras do Ionic Event
+  updateSearchQuery(value: any): void {
+    const safeValue = value ? value.toString() : '';
+    this.searchQuery = safeValue;
+    this.searchQuerySubject.next(safeValue);
   }
 
   toggleFilters(): void {
@@ -162,10 +164,10 @@ export class Tab1Page {
       !normalizedQuery || searchableText.includes(normalizedQuery);
 
     const matchesEra =
-      !filters.era || item.coin.period.toLowerCase().includes(filters.era);
+      !filters.era || item.coin.period.toLowerCase().includes(filters.era.toLowerCase());
 
     const matchesCondition =
-      !filters.condition || item.coin.conservation.toLowerCase() === filters.condition;
+      !filters.condition || item.coin.conservation.toLowerCase() === filters.condition.toLowerCase();
 
     const matchesAvailability =
       !filters.availableFor ||
