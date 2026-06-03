@@ -1,3 +1,35 @@
+.app-toolbar {
+  --background: #f97316;
+  --color: white;
+  --border-width: 0 !important;
+  padding: 0;
+  min-height: auto;
+}
+
+.app-header-body {
+  width: 100%;
+  padding: 16px 16px 10px 16px;
+}
+
+.app-header-body__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.02em;
+  }
+
+  span {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
 .negotiations-content {
   --background: var(--color-background);
   --padding-start: 18px;

@@ -1,13 +1,15 @@
-<ion-header [translucent]="true" class="profile-header">
-  <ion-toolbar class="profile-toolbar">
-    <div class="header-content">
-      <h1>AncientCoins</h1>
-      <p>Colecionadores de Moedas</p>
+<ion-header>
+  <ion-toolbar class="app-toolbar">
+    <div class="app-header-body">
+      <div class="app-header-body__content">
+        <strong>AncientCoins</strong>
+        <span>Colecionadores de Moedas</span>
+      </div>
     </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="profile-host-content">
+<ion-content class="profile-host-content">
   <ng-container *ngIf="currentProfile$ | async as profile">
     <!-- Profile Header Card -->
     <section class="profile-header-card">

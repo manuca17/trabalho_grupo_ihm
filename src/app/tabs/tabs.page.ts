@@ -33,7 +33,7 @@ export class TabsPage {
 
   private getActiveNav(url: string): NavKey {
     if (url.includes('/tabs/tab5')) {
-      return url.includes('nav=profile') ? 'profile' : 'home';
+      return 'profile';
     }
 
     if (url.includes('/tabs/tab2')) {
@@ -48,8 +48,12 @@ export class TabsPage {
       return 'messages';
     }
 
-    if (url.includes('/tabs/tab1')) {
+    if (url.includes('/tabs/tab6')) {
       return 'search';
+    }
+
+    if (url.includes('/tabs/tab1')) {
+      return 'home';
     }
 
     return 'home';

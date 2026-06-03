@@ -1,8 +1,10 @@
-<ion-header [translucent]="true" class="messages-header">
-  <ion-toolbar class="messages-toolbar">
-    <div class="header-content">
-      <h1>AncientCoins</h1>
-      <p>Colecionadores de Moedas</p>
+<ion-header [translucent]="true">
+  <ion-toolbar class="app-toolbar">
+    <div class="app-header-body">
+      <div class="app-header-body__content">
+        <strong>AncientCoins</strong>
+        <span>Colecionadores de Moedas</span>
+      </div>
     </div>
   </ion-toolbar>
 </ion-header>
@@ -68,13 +70,15 @@
 
   <ng-template #conversationList>
     <div class="conversation-shell">
-      <ion-searchbar
-        [(ngModel)]="searchText"
-        name="search"
-        placeholder="Pesquisar conversas..."
-        showCancelButton="never"
-        class="custom-searchbar"
-      ></ion-searchbar>
+      <div class="searchbar-wrapper">
+        <ion-searchbar
+          [(ngModel)]="searchText"
+          name="search"
+          placeholder="Pesquisar conversas..."
+          showCancelButton="never"
+          class="custom-searchbar"
+        ></ion-searchbar>
+      </div>
 
       <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
         <button

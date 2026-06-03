@@ -18,38 +18,38 @@ ion-content.messages-page,
   --padding-end: 0;
 }
 
-// Messages Header (Orange Bar)
-.messages-header {
-  --background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
-  --border-width: 0;
+.app-toolbar {
+  --background: #f97316;
+  --color: white;
+  --border-width: 0 !important;
+  padding: 0;
+  min-height: auto;
 }
 
-.messages-toolbar {
-  --background: transparent;
-  --border-width: 0;
-  padding: 16px;
-  min-height: 120px;
-  display: flex;
-  align-items: center;
-}
-
-.header-content {
+.app-header-body {
   width: 100%;
-  color: white;
+  padding: 16px 16px 10px 16px;
+}
 
-  h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    font-weight: 700;
-    line-height: 1.2;
+.app-header-body__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  strong {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.02em;
   }
 
-  p {
-    margin: 4px 0 0 0;
-    font-size: 0.9rem;
-    opacity: 0.9;
+  span {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
   }
 }
+
 
 // Chat Shell
 .chat-shell,
@@ -65,9 +65,10 @@ ion-content.messages-page,
   align-items: center;
   gap: 0.85rem;
   padding: 1rem;
-  background: #ffd966;
-  color: #111111;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  color: #ffffff;
 }
+
 
 .chat-avatar {
   width: 3rem;
@@ -75,9 +76,11 @@ ion-content.messages-page,
   display: grid;
   place-items: center;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   font-size: 1.4rem;
 }
+
 
 .chat-header-text h2 {
   margin: 0;
@@ -195,15 +198,23 @@ ion-content.messages-page,
 }
 
 // Search Bar
-.custom-searchbar {
-  margin: 12px 16px 0 16px !important;
-  --background: #ffffff;
-  --border-radius: 12px;
-  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.searchbar-wrapper {
+  margin: 12px 32px 0 32px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
-.custom-searchbar ::part(container) {
-  background: #ffffff;
+.custom-searchbar {
+  margin: 0 !important;
+  padding: 0 !important;
+  --background: #f7f7f7;
+  --border-radius: 0;
+  --box-shadow: none;
+  --color: #1e293b;
+  --placeholder-color: #94a3b8;
+  --icon-color: #94a3b8;
+  --clear-button-color: #94a3b8;
 }
 
 // Conversations List
