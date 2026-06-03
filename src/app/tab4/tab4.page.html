@@ -1,6 +1,9 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Mensagens</ion-title>
+<ion-header [translucent]="true" class="messages-header">
+  <ion-toolbar class="messages-toolbar">
+    <div class="header-content">
+      <h1>AncientCoins</h1>
+      <p>Colecionadores de Moedas</p>
+    </div>
   </ion-toolbar>
 </ion-header>
 
@@ -70,23 +73,28 @@
         name="search"
         placeholder="Pesquisar conversas..."
         showCancelButton="never"
+        class="custom-searchbar"
       ></ion-searchbar>
 
-      <ion-list *ngIf="filteredConversations.length > 0; else emptyState">
-        <ion-item button detail lines="full" *ngFor="let conversation of filteredConversations" (click)="openChat(conversation.id)">
-          <ion-avatar slot="start">
-            <div class="avatar">{{ conversation.avatar }}</div>
-          </ion-avatar>
-          <ion-label>
-            <h3>{{ conversation.name }}</h3>
-            <p>{{ conversation.lastMessage }}</p>
-          </ion-label>
-          <ion-note slot="end" class="conversation-time">{{ conversation.time }}</ion-note>
-          <ion-badge *ngIf="conversation.unread > 0" color="warning" slot="end">
+      <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
+        <button
+          class="conversation-item"
+          *ngFor="let conversation of filteredConversations"
+          (click)="openChat(conversation.id)"
+        >
+          <div class="conversation-avatar">{{ conversation.avatar }}</div>
+          <div class="conversation-content">
+            <div class="conversation-header">
+              <h3 class="conversation-name">{{ conversation.name }}</h3>
+              <span class="conversation-time">{{ conversation.time }}</span>
+            </div>
+            <p class="conversation-message">{{ conversation.lastMessage }}</p>
+          </div>
+          <div class="conversation-badge" *ngIf="conversation.unread > 0">
             {{ conversation.unread }}
-          </ion-badge>
-        </ion-item>
-      </ion-list>
+          </div>
+        </button>
+      </div>
 
       <ng-template #emptyState>
         <div class="empty-state">

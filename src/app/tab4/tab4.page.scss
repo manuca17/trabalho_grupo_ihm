@@ -14,14 +14,44 @@ ion-content.messages-page,
   --ion-background-color: #f7f7f7 !important;
   background: #f7f7f7 !important;
   color: #111111 !important;
+  --padding-start: 0;
+  --padding-end: 0;
 }
 
-.messages-page,
-.messages-page .chat-shell,
-.messages-page .conversation-shell {
-  background: #f7f7f7 !important;
+// Messages Header (Orange Bar)
+.messages-header {
+  --background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  --border-width: 0;
 }
 
+.messages-toolbar {
+  --background: transparent;
+  --border-width: 0;
+  padding: 16px;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+}
+
+.header-content {
+  width: 100%;
+  color: white;
+
+  h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+}
+
+// Chat Shell
 .chat-shell,
 .conversation-shell {
   display: flex;
@@ -164,42 +194,116 @@ ion-content.messages-page,
   min-width: 0;
 }
 
-ion-searchbar {
-  margin: 0.9rem 1rem 0 1rem;
+// Search Bar
+.custom-searchbar {
+  margin: 12px 16px 0 16px !important;
   --background: #ffffff;
-  --border-radius: 1rem;
+  --border-radius: 12px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-ion-list {
-  --background: transparent;
-  background: transparent;
+.custom-searchbar ::part(container) {
+  background: #ffffff;
 }
 
-ion-item {
-  --background: #ffffff;
-  --background-activated: #ffffff;
-  --background-focused: #ffffff;
-  --background-hover: #ffffff;
-  --color: #111111;
-  --border-style: none;
-  border-radius: 1rem;
-  margin: 0.5rem 1rem;
-  box-shadow: 0 8px 16px rgba(16, 24, 40, 0.04);
+// Conversations List
+.conversations-list {
+  padding: 12px 16px 0 16px;
 }
 
-ion-avatar .avatar {
-  background: #ffd966;
-  color: #111111;
+.conversation-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  margin-bottom: 12px;
+  background: white;
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s ease;
+
+  &:active {
+    background: #f9f9f9;
+  }
 }
 
+.conversation-avatar {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.conversation-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.conversation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.conversation-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111;
+}
+
+.conversation-time {
+  font-size: 0.75rem;
+  color: #999;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.conversation-message {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-badge {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 50%;
+  background: #fb923c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+// Empty State
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1.5rem;
+  padding: 3rem 1.5rem;
   text-align: center;
   color: #666;
+  margin-top: 2rem;
 }
 
 .empty-emoji {
@@ -207,7 +311,14 @@ ion-avatar .avatar {
   margin-bottom: 1rem;
 }
 
-.conversation-time {
-  font-size: 0.75rem;
-  color: #999;
+.empty-state h3 {
+  margin: 0 0 8px 0;
+  color: #111;
+  font-weight: 600;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #888;
 }
