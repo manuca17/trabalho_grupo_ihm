@@ -45,13 +45,6 @@ export class Tab1Page {
     'Dracma',
   ];
 
-  readonly sellerNames = [
-    'João Silva',
-    'Maria Costa',
-    'Carlos Mendes',
-    'Ana Sousa',
-  ];
-
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
 
   private readonly searchQuerySubject = new BehaviorSubject('');
@@ -76,7 +69,7 @@ export class Tab1Page {
           era: item.coin.period,
           price: this.getPriceLabel(item),
           condition: item.coin.conservation,
-          seller: this.getSellerName(item.coin.id),
+          seller: item.coin.sellerName ?? 'Colecionador Ancient Coins',
           forTrade: this.isTrade(item),
           image: item.coin.image,
         })),
@@ -165,15 +158,16 @@ export class Tab1Page {
       !filters.era || item.coin.period.toLowerCase().includes(filters.era);
 
     const matchesCondition =
-      !filters.condition || item.coin.conservation.toLowerCase() === filters.condition;
+      !filters.condition ||
+      item.coin.conservation.toLowerCase() === filters.condition;
 
     const matchesAvailability =
       !filters.availableFor ||
       (filters.availableFor === 'trade'
         ? !!item.lastOffer?.availableForTrade
         : filters.availableFor === 'sale'
-        ? !item.lastOffer?.availableForTrade
-        : true);
+          ? !item.lastOffer?.availableForTrade
+          : true);
 
     const price = item.lastOffer?.askPrice ?? item.coin.estimatedValue;
     const matchesPriceRange =
@@ -190,14 +184,6 @@ export class Tab1Page {
       matchesPriceRange
     );
   }
-
-  private getSellerName(coinId: string): string {
-    const index = coinId
-      .split('')
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return this.sellerNames[index % this.sellerNames.length];
-  }
-
   private getPriceLabel(item: InventoryCard): string {
     if (item.lastOffer?.availableForTrade) {
       return 'Troca';

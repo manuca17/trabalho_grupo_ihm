@@ -1,0 +1,99 @@
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-shell">
+    <section class="login-hero">
+      <div class="hero-icon-wrap">
+        <div class="hero-icon">
+          <ion-icon name="logo-bitcoin"></ion-icon>
+        </div>
+      </div>
+      <h1>AncientCoins</h1>
+      <p>Colecao · Troca · Historia</p>
+    </section>
+
+    <section class="login-panel">
+      <div class="panel-heading">
+        <h2>Entrar</h2>
+        <p>Acede a tua colecao pessoal</p>
+      </div>
+
+      <form class="login-form" (ngSubmit)="handleLogin()">
+        <label class="field-label" for="email">Email</label>
+        <div class="field-control">
+          <ion-input
+            id="email"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            placeholder="o.teu@email.com"
+            [(ngModel)]="email"
+            name="email"
+          ></ion-input>
+        </div>
+
+        <label class="field-label" for="password">Palavra-passe</label>
+        <div class="field-control field-control--password">
+          <ion-input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            [(ngModel)]="password"
+            name="password"
+          ></ion-input>
+          <button
+            type="button"
+            class="visibility-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'"
+          >
+            <ion-icon
+              [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+            ></ion-icon>
+          </button>
+        </div>
+
+        <div class="helper-row">
+          <button
+            type="button"
+            class="inline-link"
+            (click)="showForgotPasswordHint()"
+          >
+            Esqueceste a palavra-passe?
+          </button>
+        </div>
+
+        <p *ngIf="error" class="feedback feedback--error">{{ error }}</p>
+        <p *ngIf="helperMessage" class="feedback feedback--info">
+          {{ helperMessage }}
+        </p>
+
+        <ion-button
+          type="submit"
+          expand="block"
+          class="login-button"
+          [disabled]="loading"
+        >
+          {{ loading ? 'A entrar...' : 'Entrar' }}
+        </ion-button>
+      </form>
+
+      <div class="divider">
+        <span></span>
+        <small>ou</small>
+        <span></span>
+      </div>
+
+      <div class="demo-box">
+        <strong>Conta real:</strong>
+        <span>Usa o email e a palavra-passe criados no registo.</span>
+      </div>
+
+      <p class="register-copy">
+        Nao tens conta?
+        <button type="button" class="inline-link" (click)="goToRegister()">
+          Regista-te
+        </button>
+      </p>
+    </section>
+  </div>
+</ion-content>

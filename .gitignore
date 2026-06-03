@@ -59,6 +59,8 @@ yarn-error.log
 .sass-cache/
 /.nx
 /.nx/cache
+/serviceAccountKey.json
+/*firebase-adminsdk*.json
 /connect.lock
 /coverage
 /libpeerconnection.log

@@ -1,27 +1,43 @@
 import { Injectable } from '@angular/core';
 import {
-    BehaviorSubject,
-    Observable,
-    combineLatest,
-    firstValueFrom,
-    map,
+  Firestore,
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+} from '@angular/fire/firestore';
+import {
+  BehaviorSubject,
+  Observable,
+  combineLatest,
+  firstValueFrom,
+  map,
 } from 'rxjs';
 
 import {
-    Coin,
-    NegotiationMessage,
-    NegotiationThread,
-    Offer,
-    OfferPhoto,
-} from '../models/coin.model';
+  FirestoreNegotiationThreadDto,
+  FirestoreOfferDto,
+  mapNegotiationThreadFromFirestore,
+  mapNegotiationThreadToFirestore,
+  mapOfferFromFirestore,
+  mapOfferToFirestore,
+} from '../mappers/firestore/marketplace.firestore.mapper';
+import { Coin } from '../models/coin.model';
+import { NegotiationMessage } from '../models/negotiation-message.model';
+import {
+  NegotiationThread,
+  NegotiationThreadModel,
+} from '../models/negotiation-thread.model';
+import { OfferPhoto } from '../models/offer-photo.model';
+import { Offer, OfferModel } from '../models/offer.model';
+import { AuthService } from './auth.service';
 import { ContentService } from './content.service';
-import { LocalStorageService } from './local-storage.service';
 
-const OFFERS_STORAGE_KEY = 'ancient-coins-offers';
-const NEGOTIATIONS_STORAGE_KEY = 'ancient-coins-negotiations';
+const OFFERS_COLLECTION = 'offers';
+const NEGOTIATIONS_COLLECTION = 'negotiations';
 
 /**
- * Coordinates inventory, offers and negotiations using JSON seeds plus local storage.
+ * Coordinates inventory, offers and negotiations using Firestore.
  */
 @Injectable({
   providedIn: 'root',
@@ -52,34 +68,33 @@ export class MarketplaceService {
   );
 
   constructor(
+    private readonly authService: AuthService,
     private readonly contentService: ContentService,
-    private readonly localStorageService: LocalStorageService,
+    private readonly firestore: Firestore,
   ) {}
 
   /**
-   * Loads persisted data and falls back to JSON seeds on the first application start.
+   * Loads offers and negotiations from Firestore on first access.
    */
   async init(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
-    const [storedOffers, storedNegotiations, seededNegotiations] =
-      await Promise.all([
-        this.localStorageService.getItem<Offer[]>(OFFERS_STORAGE_KEY),
-        this.localStorageService.getItem<NegotiationThread[]>(
-          NEGOTIATIONS_STORAGE_KEY,
-        ),
-        firstValueFrom(this.contentService.negotiationSeeds$),
-      ]);
+    const [firestoreOffers, firestoreNegotiations] = await Promise.all([
+      this.loadOffersFromFirestore(),
+      this.loadNegotiationsFromFirestore(),
+    ]);
 
-    this.offersSubject.next(storedOffers ?? []);
-    this.negotiationsSubject.next(storedNegotiations ?? seededNegotiations);
+    this.offersSubject.next(OfferModel.fromJsonArray(firestoreOffers));
+    this.negotiationsSubject.next(
+      NegotiationThreadModel.fromJsonArray(firestoreNegotiations),
+    );
     this.isInitialized = true;
   }
 
   /**
-   * Returns a single coin from the JSON catalog.
+   * Returns a single coin from the Firestore catalog.
    */
   async getCoinById(coinId: string): Promise<Coin | undefined> {
     const catalog = await firstValueFrom(this.catalog$);
@@ -113,8 +128,9 @@ export class MarketplaceService {
     availableForTrade: boolean;
     photos: OfferPhoto[];
   }): Promise<Offer> {
+    const profile = await this.resolveCurrentProfile();
     const offerId = `offer-${Date.now()}`;
-    const offer: Offer = {
+    const offer: Offer = new OfferModel({
       id: offerId,
       coinId: input.coinId,
       quantity: input.quantity,
@@ -124,18 +140,18 @@ export class MarketplaceService {
       photos: input.photos,
       status: 'negotiating',
       createdAt: new Date().toISOString(),
-    };
+    });
 
     const updatedOffers = [...this.offersSubject.value, offer];
     const catalog = await firstValueFrom(this.catalog$);
     const proposerCoin =
       catalog.find((coin) => coin.id !== input.coinId) ?? catalog[0];
-    const nextNegotiation: NegotiationThread = {
+    const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
       id: `thread-${Date.now()}`,
       offerId,
       offerCoinId: input.coinId,
       proposerCoinId: proposerCoin?.id ?? input.coinId,
-      proposerName: 'Carlos',
+      proposerName: profile.displayName,
       sellerName: 'Maria',
       status: 'pending',
       realValue: proposerCoin?.estimatedValue ?? input.askPrice,
@@ -150,7 +166,7 @@ export class MarketplaceService {
           sentAt: new Date().toISOString(),
         },
       ],
-    };
+    });
     const updatedNegotiations = [
       ...this.negotiationsSubject.value,
       nextNegotiation,
@@ -158,11 +174,10 @@ export class MarketplaceService {
 
     this.offersSubject.next(updatedOffers);
     this.negotiationsSubject.next(updatedNegotiations);
-    await this.localStorageService.setItem(OFFERS_STORAGE_KEY, updatedOffers);
-    await this.localStorageService.setItem(
-      NEGOTIATIONS_STORAGE_KEY,
-      updatedNegotiations,
-    );
+    await Promise.all([
+      this.persistOffer(offer),
+      this.persistNegotiation(nextNegotiation),
+    ]);
 
     return offer;
   }
@@ -176,6 +191,7 @@ export class MarketplaceService {
     offerAmount?: number;
     message?: string;
   }): Promise<NegotiationThread> {
+    const profile = await this.resolveCurrentProfile();
     const catalog = await firstValueFrom(this.catalog$);
     const offeredCoins = catalog.filter((coin) =>
       input.proposedCoinIds.includes(coin.id),
@@ -204,12 +220,12 @@ export class MarketplaceService {
     ]
       .filter(Boolean)
       .join(' ');
-    const thread: NegotiationThread = {
+    const thread: NegotiationThread = new NegotiationThreadModel({
       id: `thread-${Date.now()}`,
       offerId: `proposal-${Date.now()}`,
       offerCoinId: input.offerCoinId,
       proposerCoinId: primaryTradeCoin?.id ?? input.offerCoinId,
-      proposerName: 'Carlos',
+      proposerName: profile.displayName,
       sellerName: 'Maria',
       status: 'pending',
       realValue:
@@ -226,14 +242,11 @@ export class MarketplaceService {
           sentAt: new Date().toISOString(),
         },
       ],
-    };
+    });
 
     const updatedNegotiations = [...this.negotiationsSubject.value, thread];
     this.negotiationsSubject.next(updatedNegotiations);
-    await this.localStorageService.setItem(
-      NEGOTIATIONS_STORAGE_KEY,
-      updatedNegotiations,
-    );
+    await this.persistNegotiation(thread);
 
     return thread;
   }
@@ -246,12 +259,13 @@ export class MarketplaceService {
     author: NegotiationMessage['author'],
     body: string,
   ): Promise<void> {
+    let updatedThread: NegotiationThread | undefined;
     const updatedNegotiations = this.negotiationsSubject.value.map((thread) => {
       if (thread.id !== threadId) {
         return thread;
       }
 
-      return {
+      updatedThread = {
         ...thread,
         unreadCount:
           author === 'Carlos' ? thread.unreadCount + 1 : thread.unreadCount,
@@ -265,13 +279,15 @@ export class MarketplaceService {
           },
         ],
       };
+
+      return updatedThread;
     });
 
     this.negotiationsSubject.next(updatedNegotiations);
-    await this.localStorageService.setItem(
-      NEGOTIATIONS_STORAGE_KEY,
-      updatedNegotiations,
-    );
+
+    if (updatedThread) {
+      await this.persistNegotiation(updatedThread);
+    }
   }
 
   /**
@@ -311,12 +327,64 @@ export class MarketplaceService {
 
     this.offersSubject.next(updatedOffers);
     this.negotiationsSubject.next(updatedNegotiations);
+    const updatedOffer = updatedOffers.find(
+      (offer) => offer.id === targetThread.offerId,
+    );
+    const updatedThread = updatedNegotiations.find(
+      (thread) => thread.id === threadId,
+    );
+
     await Promise.all([
-      this.localStorageService.setItem(OFFERS_STORAGE_KEY, updatedOffers),
-      this.localStorageService.setItem(
-        NEGOTIATIONS_STORAGE_KEY,
-        updatedNegotiations,
-      ),
+      updatedOffer ? this.persistOffer(updatedOffer) : Promise.resolve(),
+      updatedThread
+        ? this.persistNegotiation(updatedThread)
+        : Promise.resolve(),
     ]);
+  }
+
+  private async resolveCurrentProfile(): Promise<{ displayName: string }> {
+    await this.authService.ensureInitialized();
+
+    return {
+      displayName:
+        this.authService.currentProfileSnapshot?.displayName ?? 'Carlos',
+    };
+  }
+
+  private async loadOffersFromFirestore(): Promise<Offer[]> {
+    const snapshot = await getDocs(
+      collection(this.firestore, OFFERS_COLLECTION),
+    );
+
+    return snapshot.docs.map((item) =>
+      mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
+    );
+  }
+
+  private async loadNegotiationsFromFirestore(): Promise<NegotiationThread[]> {
+    const snapshot = await getDocs(
+      collection(this.firestore, NEGOTIATIONS_COLLECTION),
+    );
+
+    return snapshot.docs.map((item) =>
+      mapNegotiationThreadFromFirestore(
+        item.id,
+        item.data() as FirestoreNegotiationThreadDto,
+      ),
+    );
+  }
+
+  private async persistOffer(offer: Offer): Promise<void> {
+    const offerRef = doc(this.firestore, OFFERS_COLLECTION, offer.id);
+    await setDoc(offerRef, mapOfferToFirestore(offer));
+  }
+
+  private async persistNegotiation(thread: NegotiationThread): Promise<void> {
+    const negotiationRef = doc(
+      this.firestore,
+      NEGOTIATIONS_COLLECTION,
+      thread.id,
+    );
+    await setDoc(negotiationRef, mapNegotiationThreadToFirestore(thread));
   }
 }

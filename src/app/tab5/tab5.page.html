@@ -120,33 +120,40 @@
     </ng-container>
 
     <ng-template #profileView>
-      <section class="profile-card">
-        <div class="profile-avatar">MF</div>
-        <h1>Manuel Ferreira</h1>
-        <p>
-          Colecionador de moeda antiga com foco em numismatica romana e
-          portuguesa.
-        </p>
-      </section>
+      <ng-container *ngIf="currentProfile$ | async as profile">
+        <section class="profile-card">
+          <div class="profile-avatar">{{ profile.avatarInitials }}</div>
+          <h1>{{ profile.displayName }}</h1>
+          <p>{{ profile.bio }}</p>
+          <div class="profile-interests" *ngIf="profile.interests.length">
+            <span *ngFor="let interest of profile.interests"
+              >{{ interest }}</span
+            >
+          </div>
+          <button type="button" class="logout-link" (click)="logout()">
+            Terminar sessao
+          </button>
+        </section>
 
-      <section class="content-section profile-grid">
-        <article class="profile-stat">
-          <span>Ofertas publicadas</span>
-          <strong>8</strong>
-        </article>
-        <article class="profile-stat">
-          <span>Trocas concluidas</span>
-          <strong>3</strong>
-        </article>
-        <article class="profile-stat">
-          <span>Favoritos</span>
-          <strong>14</strong>
-        </article>
-        <article class="profile-stat">
-          <span>Avaliacao</span>
-          <strong>4.9</strong>
-        </article>
-      </section>
+        <section class="content-section profile-grid">
+          <article class="profile-stat">
+            <span>Ofertas publicadas</span>
+            <strong>{{ profile.stats.publishedOffers }}</strong>
+          </article>
+          <article class="profile-stat">
+            <span>Trocas concluidas</span>
+            <strong>{{ profile.stats.completedTrades }}</strong>
+          </article>
+          <article class="profile-stat">
+            <span>Favoritos</span>
+            <strong>{{ profile.stats.favoritesCount }}</strong>
+          </article>
+          <article class="profile-stat">
+            <span>Avaliacao</span>
+            <strong>{{ profile.stats.rating }}</strong>
+          </article>
+        </section>
+      </ng-container>
     </ng-template>
   </ng-container>
 </ion-content>

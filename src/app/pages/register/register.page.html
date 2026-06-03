@@ -1,0 +1,157 @@
+<ion-content [fullscreen]="true" class="register-content">
+  <div class="register-shell">
+    <section class="register-hero">
+      <div class="hero-topbar">
+        <button
+          type="button"
+          class="back-button"
+          (click)="goBack()"
+          aria-label="Voltar"
+        >
+          <ion-icon name="arrow-back-outline"></ion-icon>
+        </button>
+
+        <div class="brand-lockup">
+          <ion-icon name="logo-bitcoin"></ion-icon>
+          <span>AncientCoins</span>
+        </div>
+
+        <div class="step-dots" aria-hidden="true">
+          <span class="step-dot step-dot--active"></span>
+          <span class="step-dot" [class.step-dot--active]="step === 2"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="register-panel">
+      <ng-container *ngIf="step === 1; else interestsStep">
+        <div class="panel-heading">
+          <h1>Criar conta</h1>
+          <p>Passo 1 de 2 · Os teus dados</p>
+        </div>
+
+        <form class="register-form" (ngSubmit)="continueToStepTwo()">
+          <label class="field-label" for="name">Nome de utilizador</label>
+          <div class="field-control">
+            <ion-input
+              id="name"
+              [(ngModel)]="name"
+              name="name"
+              autocomplete="username"
+              placeholder="Ex: ColecionadorRomano"
+            ></ion-input>
+          </div>
+
+          <label class="field-label" for="register-email">Email</label>
+          <div class="field-control">
+            <ion-input
+              id="register-email"
+              type="email"
+              inputmode="email"
+              [(ngModel)]="email"
+              name="email"
+              autocomplete="email"
+              placeholder="o.teu@email.com"
+            ></ion-input>
+          </div>
+
+          <label class="field-label" for="register-password"
+            >Palavra-passe</label
+          >
+          <div class="field-control field-control--password">
+            <ion-input
+              id="register-password"
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              autocomplete="new-password"
+              placeholder="Minimo 6 caracteres"
+            ></ion-input>
+            <button
+              type="button"
+              class="visibility-toggle"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'"
+            >
+              <ion-icon
+                [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+              ></ion-icon>
+            </button>
+          </div>
+
+          <label class="field-label" for="confirm-password"
+            >Confirmar palavra-passe</label
+          >
+          <div class="field-control">
+            <ion-input
+              id="confirm-password"
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="confirmPassword"
+              name="confirmPassword"
+              autocomplete="new-password"
+              placeholder="Repete a palavra-passe"
+            ></ion-input>
+          </div>
+
+          <p *ngIf="error" class="feedback feedback--error">{{ error }}</p>
+
+          <ion-button type="submit" expand="block" class="primary-button">
+            Continuar
+            <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+          </ion-button>
+        </form>
+      </ng-container>
+
+      <ng-template #interestsStep>
+        <div class="panel-heading">
+          <h1>Os teus interesses</h1>
+          <p>Passo 2 de 2 · Personaliza a tua experiencia (opcional)</p>
+        </div>
+
+        <p class="intro-copy">Que eras historicas te interessam?</p>
+
+        <div class="interest-grid">
+          <button
+            *ngFor="let interest of collectionInterests"
+            type="button"
+            class="interest-pill"
+            [class.interest-pill--selected]="interests.includes(interest)"
+            (click)="toggleInterest(interest)"
+          >
+            <ion-icon
+              *ngIf="interests.includes(interest)"
+              name="checkmark-outline"
+            ></ion-icon>
+            <span>{{ interest }}</span>
+          </button>
+        </div>
+
+        <div class="account-summary">
+          <small>Resumo da conta</small>
+          <strong>{{ name }}</strong>
+          <span>{{ email }}</span>
+        </div>
+
+        <p *ngIf="error" class="feedback feedback--error">{{ error }}</p>
+
+        <form (ngSubmit)="handleRegister()">
+          <ion-button
+            type="submit"
+            expand="block"
+            class="primary-button"
+            [disabled]="loading"
+          >
+            {{ loading ? 'A criar conta...' : 'Criar conta' }}
+          </ion-button>
+        </form>
+      </ng-template>
+
+      <p class="login-copy">
+        Ja tens conta?
+        <button type="button" class="inline-link" (click)="goToLogin()">
+          Entrar
+        </button>
+      </p>
+    </section>
+  </div>
+</ion-content>

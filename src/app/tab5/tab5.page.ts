@@ -2,7 +2,10 @@ import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, combineLatest, map } from 'rxjs';
 
-import { Coin, Offer } from '../core/models/coin.model';
+import { UserProfile } from '../core/models/auth.model';
+import { Coin } from '../core/models/coin.model';
+import { Offer } from '../core/models/offer.model';
+import { AuthService } from '../core/services/auth.service';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
@@ -20,6 +23,8 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
   standalone: false,
 })
 export class Tab5Page {
+  readonly currentProfile$: Observable<UserProfile | null> =
+    this.authService.currentProfile$;
   readonly activeSection$: Observable<'home' | 'profile'> =
     this.activatedRoute.queryParamMap.pipe(
       map((params) => (params.get('nav') === 'profile' ? 'profile' : 'home')),
@@ -51,6 +56,7 @@ export class Tab5Page {
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
+    private readonly authService: AuthService,
     private readonly router: Router,
     private readonly marketplaceService: MarketplaceService,
   ) {}
@@ -81,5 +87,10 @@ export class Tab5Page {
 
   isTrade(item: InventoryCard): boolean {
     return !!item.lastOffer?.availableForTrade;
+  }
+
+  async logout(): Promise<void> {
+    await this.authService.logout();
+    await this.router.navigate(['/login'], { replaceUrl: true });
   }
 }

@@ -2,40 +2,76 @@
   {
     "id": "coin-aureus-augustus",
     "name": "Aureus de Augusto",
+    "sellerName": "João Silva",
+    "sellerRating": 4.8,
     "emperor": "Augusto",
     "period": "27 a.C. - 14 d.C.",
     "material": "Ouro",
     "conservation": "Muito Bom",
     "location": "Viana do Castelo",
+    "origin": "Roma Antiga",
+    "weight": "7.9g",
+    "diameter": "19mm",
     "estimatedValue": 1850,
     "description": "Exemplar romano com busto laureado e boa legibilidade no reverso.",
+    "history": "Cunhada durante o reinado de Augusto, esta peça representa a consolidação do poder imperial e a difusão da imagem do primeiro imperador romano pelo império.",
+    "reference": "RIC I 544",
     "image": "assets/icon/coin-aureus.svg",
+    "images": {
+      "obverse": "assets/icon/coin-aureus.svg",
+      "reverse": "assets/icon/coin-aureus.svg",
+      "edge": "assets/icon/coin-aureus.svg"
+    },
     "tags": ["Roma", "Imperial", "Troca aberta"]
   },
   {
     "id": "coin-denarius-trajan",
     "name": "Denário de Trajano",
+    "sellerName": "Maria Costa",
+    "sellerRating": 4.6,
     "emperor": "Trajano",
     "period": "98 - 117 d.C.",
     "material": "Prata",
     "conservation": "Excelente",
     "location": "Braga",
+    "origin": "Roma Imperial",
+    "weight": "3.2g",
+    "diameter": "18mm",
     "estimatedValue": 620,
     "description": "Moeda muito procurada em feiras de numismática pelo excelente relevo.",
+    "history": "O denário de Trajano é uma das moedas mais procuradas do período alto-imperial, refletindo a expansão territorial romana e o prestígio militar do imperador.",
+    "reference": "RIC II 102",
     "image": "assets/icon/coin-denarius.svg",
+    "images": {
+      "obverse": "assets/icon/coin-denarius.svg",
+      "reverse": "assets/icon/coin-denarius.svg",
+      "edge": "assets/icon/coin-denarius.svg"
+    },
     "tags": ["Prata", "Inventário digital", "Alta procura"]
   },
   {
     "id": "coin-follis-constantine",
     "name": "Follis de Constantino I",
+    "sellerName": "Carlos Mendes",
+    "sellerRating": 4.7,
     "emperor": "Constantino I",
     "period": "306 - 337 d.C.",
     "material": "Bronze",
     "conservation": "Bom",
     "location": "Porto",
+    "origin": "Império Romano Tardio",
+    "weight": "4.6g",
+    "diameter": "22mm",
     "estimatedValue": 240,
     "description": "Peça adequada para troca rápida devido ao valor acessível e estado homogéneo.",
+    "history": "Associada ao período de Constantino I, esta moeda pertence a uma fase de reorganização monetária do império e circulou amplamente em contexto urbano e militar.",
+    "reference": "LRBC I 812",
     "image": "assets/icon/coin-follis.svg",
+    "images": {
+      "obverse": "assets/icon/coin-follis.svg",
+      "reverse": "assets/icon/coin-follis.svg",
+      "edge": "assets/icon/coin-follis.svg"
+    },
     "tags": ["Bronze", "Troca rápida", "Catálogo pessoal"]
   }
 ]

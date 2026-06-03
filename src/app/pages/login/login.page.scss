@@ -1,0 +1,242 @@
+.login-content {
+  --background: linear-gradient(
+    180deg,
+    #f59e0b 0%,
+    #d97706 34%,
+    #f8fafc 34%,
+    #f8fafc 100%
+  );
+}
+
+.login-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-hero {
+  padding: calc(48px + var(--ion-safe-area-top, 0px)) 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #fff8eb;
+
+  h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+  }
+
+  p {
+    margin: 8px 0 0;
+    font-size: 0.95rem;
+    color: rgba(255, 248, 235, 0.9);
+  }
+}
+
+.hero-icon-wrap {
+  width: 88px;
+  height: 88px;
+  margin-bottom: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 40px rgba(120, 53, 15, 0.22);
+}
+
+.hero-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.12);
+
+  ion-icon {
+    font-size: 2.1rem;
+    color: #ffffff;
+  }
+}
+
+.login-panel {
+  flex: 1;
+  margin-top: auto;
+  padding: 28px 24px calc(32px + var(--ion-safe-area-bottom, 0px));
+  border-radius: 32px 32px 0 0;
+  background: #f8fafc;
+  box-shadow: 0 -18px 48px rgba(15, 23, 42, 0.08);
+}
+
+.panel-heading {
+  margin-bottom: 22px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 0.94rem;
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.field-control {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+
+  &:focus-within {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+  }
+
+  ion-input {
+    --padding-top: 14px;
+    --padding-bottom: 14px;
+    --padding-start: 0;
+    --padding-end: 0;
+    --placeholder-color: #9ca3af;
+    color: #111827;
+  }
+}
+
+.field-control--password {
+  gap: 8px;
+}
+
+.visibility-toggle {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: transparent;
+  color: #9ca3af;
+
+  ion-icon {
+    font-size: 1.15rem;
+  }
+}
+
+.helper-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2px;
+}
+
+.inline-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #d97706;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.feedback {
+  margin: 4px 0 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.feedback--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.feedback--info {
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+
+.login-button {
+  margin-top: 8px;
+  --background: #f59e0b;
+  --background-hover: #d97706;
+  --background-activated: #b45309;
+  --border-radius: 18px;
+  --box-shadow: 0 12px 26px rgba(245, 158, 11, 0.28);
+  font-weight: 700;
+}
+
+.divider {
+  margin: 24px 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #9ca3af;
+
+  span {
+    height: 1px;
+    flex: 1;
+    background: #e5e7eb;
+  }
+
+  small {
+    font-size: 0.75rem;
+    text-transform: lowercase;
+  }
+}
+
+.demo-box {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.84rem;
+}
+
+.register-copy {
+  margin: 22px 0 0;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 380px) {
+  .login-hero {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .login-panel {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
