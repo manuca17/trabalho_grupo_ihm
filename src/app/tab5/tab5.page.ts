@@ -11,19 +11,6 @@ import { AuthService } from '../core/services/auth.service';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
-type MyNegotiationCard = {
-  thread: NegotiationThread;
-  coin?: Coin;
-  counterpart: string;
-  lastMessage: string;
-  roleLabel: string;
-};
-
-const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
 
 @Component({
   selector: 'app-tab5',
@@ -39,29 +26,16 @@ export class Tab5Page {
   showEditProfile: boolean = false;
 
   currentUnit: string = 'Gramas (g)';
+  // NOVO: Variável local para exibir o estado atual da moeda comercial na lista
+  currentCurrency: string = 'Euro (€)';
   notificationsEnabled: boolean = true;
   
   newName: string = '';
   newPhotoUrl: string = '';
 
   readonly currentProfile$: Observable<UserProfile | null> = this.authService.currentProfile$;
-  readonly activeSection$: Observable<'home' | 'profile'> = this.activatedRoute.queryParamMap.pipe(
-    map((params) => (params.get('nav') === 'profile' ? 'profile' : 'home')),
-  );
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
   readonly featuredCoins$ = this.inventoryCards$.pipe(map((cards) => cards.slice(0, 4)));
-  
-  readonly recentlyAdded$ = this.inventoryCards$.pipe(
-    map((cards) =>
-      [...cards]
-        .reverse()
-        .slice(0, 2)
-        .map((item, index) => ({
-          ...item,
-          timeLabel: index === 0 ? 'Há 2 horas' : 'Há 5 horas',
-        })),
-    ),
-  );
   
   readonly summary$ = combineLatest([
     this.inventoryCards$,
@@ -80,43 +54,6 @@ export class Tab5Page {
     map(([cards, profile]) => {
       if (!profile) return [];
       return cards.filter((item) => item.lastOffer?.ownerId === profile.id).reverse();
-    }),
-  );
-  
-  readonly myNegotiations$ = combineLatest([
-    this.currentProfile$,
-    this.marketplaceService.negotiations$,
-    this.marketplaceService.offers$,
-    this.inventoryCards$,
-  ]).pipe(
-    map(([profile, threads, offers, cards]) => {
-      if (!profile) return [];
-      const normalizedDisplayName = profile.displayName.trim().toLowerCase();
-
-      return [...threads]
-        .filter((thread) => {
-          const linkedOffer = offers.find((offer) => offer.id === thread.offerId);
-          const isSeller = linkedOffer?.ownerId === profile.id;
-          const isProposer = thread.proposerName.trim().toLowerCase() === normalizedDisplayName;
-          return isSeller || isProposer;
-        })
-        .sort((left, right) => {
-          const leftTimestamp = left.messages[left.messages.length - 1]?.sentAt ?? '';
-          const rightTimestamp = right.messages[right.messages.length - 1]?.sentAt ?? '';
-          return rightTimestamp.localeCompare(leftTimestamp);
-        })
-        .map((thread) => {
-          const linkedOffer = offers.find((offer) => offer.id === thread.offerId);
-          const isSeller = linkedOffer?.ownerId === profile.id;
-
-          return {
-            thread,
-            coin: cards.find((item) => item.coin.id === thread.offerCoinId)?.coin,
-            counterpart: isSeller ? thread.proposerName : thread.sellerName,
-            lastMessage: thread.messages[thread.messages.length - 1]?.body ?? 'Sem mensagens.',
-            roleLabel: isSeller ? 'Como vendedor' : 'Como proponente',
-          } as MyNegotiationCard;
-        });
     }),
   );
 
@@ -159,28 +96,8 @@ export class Tab5Page {
     this.showEditProfile = false;
   }
 
-  openAddOffer(): void {
-    void this.router.navigate(['/tabs/tab2']);
-  }
-
-  openMessages(): void {
-    void this.router.navigate(['/tabs/tab4']);
-  }
-
-  openNegotiation(thread: NegotiationThread): void {
-    void this.router.navigate(['/negotiation', thread.id], {
-      queryParams: { offerId: thread.offerId },
-    });
-  }
-
-  getPriceLabel(item: InventoryCard): string {
-    if (item.lastOffer?.availableForTrade) return 'Troca';
-    return EUR_FORMATTER.format(item.lastOffer?.askPrice ?? item.coin.estimatedValue);
-  }
-
-  isTrade(item: InventoryCard): boolean {
-    return !!item.lastOffer?.availableForTrade;
-  }
+  openAddOffer(): void { void this.router.navigate(['/tabs/tab2']); }
+  openMessages(): void { void this.router.navigate(['/tabs/tab4']); }
 
   openEditProfile() {
     this.showEditProfile = true;
@@ -189,9 +106,7 @@ export class Tab5Page {
     this.newPhotoUrl = currentProfile?.avatarUrl || '';
   }
 
-  closeEditProfile() {
-    this.showEditProfile = false;
-  }
+  closeEditProfile() { this.showEditProfile = false; }
 
   async saveProfileChanges() {
     if (!this.newName.trim()) {
@@ -203,7 +118,6 @@ export class Tab5Page {
       await toast.present();
       return;
     }
-
     try {
       await this.authService.updateProfileFields(this.newName, this.newPhotoUrl);
       const toast = await this.toastController.create({
@@ -223,7 +137,6 @@ export class Tab5Page {
     }
   }
 
-  // ATUALIZADO: Agora notifica reativamente o MarketplaceService da alteração de peso global
   async triggerChangeUnit() {
     const alert = await this.alertController.create({
       header: 'Unidade de Medida',
@@ -239,9 +152,32 @@ export class Tab5Page {
           handler: (data) => {
             if (data) {
               this.currentUnit = data;
-              // Altera o fluxo matemático dinâmico de todas as moedas da app
-              const unitKey = data === 'Gramas (g)' ? 'g' : 'oz';
-              this.marketplaceService.updateActiveUnit(unitKey);
+              this.marketplaceService.updateActiveUnit(data === 'Gramas (g)' ? 'g' : 'oz');
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // NOVO MÉTODO: Caixa de rádio para selecionar a divisa de negociação (EUR/USD) com classe CSS laranja
+  async triggerChangeCurrency() {
+    const alert = await this.alertController.create({
+      header: 'Moeda Comercial',
+      cssClass: 'orange-alert-theme',
+      inputs: [
+        { type: 'radio', label: 'Euro (€)', value: 'Euro (€)', checked: this.currentCurrency === 'Euro (€)' },
+        { type: 'radio', label: 'Dólar ($)', value: 'Dólar ($)', checked: this.currentCurrency === 'Dólar ($)' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Confirmar',
+          handler: (data) => {
+            if (data) {
+              this.currentCurrency = data;
+              this.marketplaceService.updateActiveCurrency(data === 'Euro (€)' ? 'EUR' : 'USD');
             }
           }
         }
@@ -253,7 +189,7 @@ export class Tab5Page {
   async toggleNotificationsEvent(event: any) {
     this.notificationsEnabled = event.detail.checked;
     const toast = await this.toastController.create({
-      message: this.notificationsEnabled ? 'Notificações de propostas ativadas.' : 'Notificações de propostas desativadas.',
+      message: this.notificationsEnabled ? 'Notificações ativadas.' : 'Notificações desativadas.',
       duration: 1500,
       color: this.notificationsEnabled ? 'success' : 'warning'
     });

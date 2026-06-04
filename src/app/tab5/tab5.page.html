@@ -13,7 +13,6 @@
   
   <div *ngIf="showSettings; else profileView">
     
-    <!-- SUB-ECRÃ 1: FORMULÁRIO DE EDIÇÃO -->
     <div *ngIf="showEditProfile; else settingsMenuList" class="settings-view-panel">
       <div class="settings-back-header">
         <button type="button" class="settings-back-btn" (click)="closeEditProfile()">
@@ -47,7 +46,6 @@
       </div>
     </div>
 
-    <!-- SUB-ECRÃ 2: LISTA DE DEFINIÇÕES -->
     <ng-template #settingsMenuList>
       <div class="settings-view-panel">
         <div class="settings-back-header">
@@ -75,6 +73,14 @@
             <span class="settings-value-text">{{ currentUnit }}</span>
           </div>
 
+          <div class="settings-item" (click)="triggerChangeCurrency()">
+            <div class="settings-item-left">
+              <ion-icon name="cash-outline"></ion-icon>
+              <span>Moeda de Exibição (Câmbio)</span>
+            </div>
+            <span class="settings-value-text">{{ currentCurrency }}</span>
+          </div>
+
           <div class="settings-item settings-item--toggle">
             <div class="settings-item-left">
               <ion-icon name="notifications-outline"></ion-icon>
@@ -94,13 +100,11 @@
     </ng-template>
   </div>
 
-  <!-- INTERFACE ORIGINAL DO PERFIL -->
   <ng-template #profileView>
     <ng-container *ngIf="currentProfile$ | async as profile">
       
       <section class="profile-header-card">
         <div class="profile-header-top">
-          <!-- Renderização Reativa da Foto ou Iniciais -->
           <div class="profile-avatar-large">
             <img *ngIf="profile.avatarUrl; else initialsView" [src]="profile.avatarUrl" alt="Avatar" class="avatar-img-render" />
             <ng-template #initialsView>{{ profile.avatarInitials }}</ng-template>
@@ -168,7 +172,7 @@
                     <span class="views-count">45 visualizações</span>
                   </div>
                   <div class="coin-footer">
-                    <span class="coin-price">{{ getPriceLabel(item) }}</span>
+                    <span class="coin-price">{{ item.customDisplayPrice }}</span>
                     <span class="coin-status">Ativa</span>
                   </div>
                 </div>
@@ -186,22 +190,7 @@
             </ng-template>
           </ng-container>
         </div>
-
-        <div class="coins-list" *ngIf="activeTab === 'sold'">
-          <article class="empty-state">
-            <h3>Sem moedas vendidas</h3>
-            <p>Quando vender moedas, elas aparecerão aqui.</p>
-          </article>
-        </div>
-
-        <div class="coins-list" *ngIf="activeTab === 'traded'">
-          <article class="empty-state">
-            <h3>Sem moedas trocadas</h3>
-            <p>Quando trocar moedas, elas aparecerão aqui.</p>
-          </article>
-        </div>
       </section>
-
     </ng-container>
   </ng-template>
 </ion-content>

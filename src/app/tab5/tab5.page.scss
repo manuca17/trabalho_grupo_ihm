@@ -1,12 +1,12 @@
 .profile-host-content {
-  --background: #fbf8f3;
+  --background: #fbf8f3; /* Fundo creme pastel */
   --padding-start: 0;
   --padding-end: 0;
   --padding-bottom: 80px;
 }
 
 .app-toolbar {
-  --background: #f97316;
+  --background: #f97316; /* Laranja oficial */
   --color: white;
   --border-width: 0 !important;
   padding: 0;
@@ -35,6 +35,7 @@
 
 .profile-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 
+/* Contentor Grande do Avatar */
 .profile-avatar-large {
   width: 80px;
   height: 80px;
@@ -46,9 +47,10 @@
   font-size: 1.8rem;
   font-weight: 700;
   border: 3px solid rgba(255, 255, 255, 0.5);
-  overflow: hidden;
+  overflow: hidden; /* Garante o corte perfeito da imagem redonda */
 }
 
+/* Recorte de Imagem Reativa */
 .avatar-img-render {
   width: 100%;
   height: 100%;
@@ -198,7 +200,7 @@
   p { margin: 0; font-size: 0.9rem; color: #888; }
 }
 
-/* DEFINIÇÕES LISTS */
+/* INTERFACE PAINEL DE DEFINIÇÕES */
 .settings-view-panel { padding: 16px; }
 
 .settings-back-header {
@@ -249,6 +251,11 @@
   .arrow-icon { color: #cbd5e1; font-size: 1.1rem; }
   .settings-value-text { font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
 
+  /* Elementos específicos de ícones personalizados */
+  .settings-item-left ion-icon[name="cash-outline"] {
+    color: #10b981; /* Cor verde-moeda emblemática */
+  }
+
   &.settings-item--toggle {
     cursor: default;
     &:active { background: #ffffff; }
@@ -260,7 +267,7 @@
   }
 }
 
-/* FORMULÁRIO DE EDIÇÃO */
+/* COMPONENTES DO FORMULÁRIO DE EDIÇÃO DE PERFIL */
 .edit-profile-form {
   display: flex;
   flex-direction: column;
@@ -321,7 +328,7 @@
   cursor: pointer;
 }
 
-/* COMPONENTES NATIVOS */
+/* CRIAÇÃO DO TEMA PREMIUM DOS COMPONENTES NATIVOS DO IONIC */
 :root {
   --ion-color-primary: #f97316 !important;
   --ion-color-primary-inner: #ffffff !important;
