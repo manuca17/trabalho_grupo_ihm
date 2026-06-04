@@ -60,7 +60,8 @@ export interface FirestoreOfferDto {
 }
 
 export interface FirestoreNegotiationMessageDto {
-  author: 'Carlos' | 'Maria' | 'Sistema';
+  userId: string;
+  displayName: string;
   body: string;
   sentAt: FirestoreDateValue;
 }
@@ -188,7 +189,8 @@ export function mapNegotiationMessageFromFirestore(
 ): NegotiationMessageModel {
   return new NegotiationMessageModel({
     id,
-    author: dto.author,
+    userId: dto.userId,
+    displayName: dto.displayName,
     body: dto.body,
     sentAt: normalizeFirestoreDate(dto.sentAt),
   });
@@ -199,7 +201,8 @@ export function mapNegotiationMessageToFirestore(
 ): FirestoreNegotiationMessageDto & { id: string } {
   return {
     id: message.id,
-    author: message.author,
+    userId: message.userId,
+    displayName: message.displayName,
     body: message.body,
     sentAt: message.sentAt,
   };

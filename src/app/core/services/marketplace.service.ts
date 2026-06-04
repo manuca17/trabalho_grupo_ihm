@@ -1,10 +1,12 @@
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import {
   Firestore,
   collection,
   doc,
   getDocs,
+  onSnapshot,
   setDoc,
+  Unsubscribe,
 } from '@angular/fire/firestore';
 import {
   BehaviorSubject,
@@ -38,16 +40,19 @@ const NEGOTIATIONS_COLLECTION = 'negotiations';
 
 /**
  * Coordinates inventory, offers and negotiations using Firestore.
+ * Now with real-time listeners for chat/negotiations.
  */
 @Injectable({
   providedIn: 'root',
 })
-export class MarketplaceService {
+export class MarketplaceService implements OnDestroy {
   private readonly offersSubject = new BehaviorSubject<Offer[]>([]);
   private readonly negotiationsSubject = new BehaviorSubject<
     NegotiationThread[]
   >([]);
   private isInitialized = false;
+  private negotiationsUnsubscribe: Unsubscribe | null = null;
+  private offersUnsubscribe: Unsubscribe | null = null;
 
   readonly offers$ = this.offersSubject.asObservable();
   readonly negotiations$ = this.negotiationsSubject.asObservable();
@@ -74,7 +79,15 @@ export class MarketplaceService {
   ) {}
 
   /**
-   * Loads offers and negotiations from Firestore on first access.
+   * Cleanup Firestore listeners when the service is destroyed.
+   */
+  ngOnDestroy(): void {
+    this.unsubscribeAll();
+  }
+
+  /**
+   * Loads offers and negotiations from Firestore on first access
+   * and starts real-time listeners.
    */
   async init(): Promise<void> {
     if (this.isInitialized) {
@@ -91,6 +104,10 @@ export class MarketplaceService {
       NegotiationThreadModel.fromJsonArray(firestoreNegotiations),
     );
     this.isInitialized = true;
+
+    // Start real-time listeners for live updates
+    this.startNegotiationsListener();
+    this.startOffersListener();
   }
 
   /**
@@ -114,6 +131,15 @@ export class MarketplaceService {
   getNegotiationById(threadId: string): NegotiationThread | undefined {
     return this.negotiationsSubject.value.find(
       (thread) => thread.id === threadId,
+    );
+  }
+
+  /**
+   * Observable for a single negotiation thread that updates in real-time.
+   */
+  getNegotiationById$(threadId: string): Observable<NegotiationThread | undefined> {
+    return this.negotiations$.pipe(
+      map((threads) => threads.find((thread) => thread.id === threadId)),
     );
   }
 
@@ -161,7 +187,8 @@ export class MarketplaceService {
       messages: [
         {
           id: `msg-${Date.now()}`,
-          author: 'Carlos',
+          userId: profile.id,
+          displayName: profile.displayName,
           body: input.availableForTrade
             ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
             : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
@@ -239,7 +266,8 @@ export class MarketplaceService {
       messages: [
         {
           id: `msg-${Date.now()}`,
-          author: 'Carlos',
+          userId: profile.id,
+          displayName: profile.displayName,
           body: firstMessageBody,
           sentAt: new Date().toISOString(),
         },
@@ -254,42 +282,36 @@ export class MarketplaceService {
   }
 
   /**
-   * Appends a new message to a negotiation thread and stores it locally.
+   * Appends a new message to a negotiation thread and stores it in Firestore.
+   * Changes will be synced in real-time to all clients via onSnapshot.
    */
   async addNegotiationMessage(
     threadId: string,
-    author: NegotiationMessage['author'],
     body: string,
   ): Promise<void> {
-    let updatedThread: NegotiationThread | undefined;
-    const updatedNegotiations = this.negotiationsSubject.value.map((thread) => {
-      if (thread.id !== threadId) {
-        return thread;
-      }
+    const profile = await this.resolveCurrentProfile();
+    const thread = this.getNegotiationById(threadId);
 
-      updatedThread = {
-        ...thread,
-        unreadCount:
-          author === 'Carlos' ? thread.unreadCount + 1 : thread.unreadCount,
-        messages: [
-          ...thread.messages,
-          {
-            id: `msg-${Date.now()}`,
-            author,
-            body,
-            sentAt: new Date().toISOString(),
-          },
-        ],
-      };
-
-      return updatedThread;
-    });
-
-    this.negotiationsSubject.next(updatedNegotiations);
-
-    if (updatedThread) {
-      await this.persistNegotiation(updatedThread);
+    if (!thread || !body.trim()) {
+      return;
     }
+
+    const message: NegotiationMessage = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      userId: profile.id,
+      displayName: profile.displayName,
+      body: body.trim(),
+      sentAt: new Date().toISOString(),
+    };
+
+    const updatedThread: NegotiationThread = {
+      ...thread,
+      unreadCount: thread.unreadCount + 1,
+      messages: [...thread.messages, message],
+    };
+
+    await this.persistNegotiation(updatedThread);
+    // Note: The local subject will be updated automatically via onSnapshot listener
   }
 
   /**
@@ -301,6 +323,8 @@ export class MarketplaceService {
     if (!targetThread) {
       return;
     }
+
+    const profile = await this.resolveCurrentProfile();
 
     const updatedOffers: Offer[] = this.offersSubject.value.map((offer) =>
       offer.id === targetThread.offerId
@@ -318,7 +342,8 @@ export class MarketplaceService {
                 ...thread.messages,
                 {
                   id: `msg-${Date.now()}`,
-                  author: 'Sistema',
+                  userId: 'system',
+                  displayName: 'Sistema',
                   body: 'Estado atualizado automaticamente para Trocado.',
                   sentAt: new Date().toISOString(),
                 },
@@ -354,8 +379,59 @@ export class MarketplaceService {
 
     return {
       id: profile?.id ?? 'anonymous-user',
-      displayName: profile?.displayName ?? 'Carlos',
+      displayName: profile?.displayName ?? 'Visitante',
     };
+  }
+
+  /**
+   * Starts a real-time listener on the negotiations Firestore collection.
+   * Any changes (new messages, status updates) are reflected immediately.
+   */
+  private startNegotiationsListener(): void {
+    this.negotiationsUnsubscribe = onSnapshot(
+      collection(this.firestore, NEGOTIATIONS_COLLECTION),
+      (snapshot) => {
+        const threads: NegotiationThread[] = snapshot.docs.map((item) =>
+          mapNegotiationThreadFromFirestore(
+            item.id,
+            item.data() as FirestoreNegotiationThreadDto,
+          ),
+        );
+        this.negotiationsSubject.next(threads);
+      },
+      (error) => {
+        console.error('Erro no listener de negociações:', error);
+      },
+    );
+  }
+
+  /**
+   * Starts a real-time listener on the offers Firestore collection.
+   */
+  private startOffersListener(): void {
+    this.offersUnsubscribe = onSnapshot(
+      collection(this.firestore, OFFERS_COLLECTION),
+      (snapshot) => {
+        const offers: Offer[] = snapshot.docs.map((item) =>
+          mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
+        );
+        this.offersSubject.next(offers);
+      },
+      (error) => {
+        console.error('Erro no listener de ofertas:', error);
+      },
+    );
+  }
+
+  private unsubscribeAll(): void {
+    if (this.negotiationsUnsubscribe) {
+      this.negotiationsUnsubscribe();
+      this.negotiationsUnsubscribe = null;
+    }
+    if (this.offersUnsubscribe) {
+      this.offersUnsubscribe();
+      this.offersUnsubscribe = null;
+    }
   }
 
   private async loadOffersFromFirestore(): Promise<Offer[]> {

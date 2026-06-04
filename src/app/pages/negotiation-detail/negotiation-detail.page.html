@@ -34,9 +34,9 @@
       <article
         class="message"
         *ngFor="let message of thread.messages"
-        [class.message--self]="message.author === 'Maria'"
+        [class.message--self]="isOwnMessage(message)"
       >
-        <span class="message__author">{{ message.author }}</span>
+        <span class="message__author">{{ message.displayName }}</span>
         <p>{{ message.body }}</p>
         <small>{{ message.sentAt | date:'short' }}</small>
       </article>

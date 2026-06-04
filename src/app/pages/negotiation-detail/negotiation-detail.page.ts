@@ -1,11 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 
 import { Coin, NegotiationThread } from '../../core/models/coin.model';
+import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 
 /**
- * Hosts the local chat that simulates the trade negotiation flow.
+ * Hosts the real-time chat that simulates the trade negotiation flow.
  */
 @Component({
   selector: 'app-negotiation-detail',
@@ -13,18 +15,26 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
   styleUrls: ['./negotiation-detail.page.scss'],
   standalone: false,
 })
-export class NegotiationDetailPage implements OnInit {
+export class NegotiationDetailPage implements OnInit, OnDestroy {
   draftMessage = '';
   offerCoin?: Coin;
   proposerCoin?: Coin;
   thread?: NegotiationThread;
+  currentUserId = '';
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
     private readonly marketplaceService: MarketplaceService,
+    private readonly authService: AuthService,
   ) {}
 
   async ngOnInit(): Promise<void> {
+    await this.authService.ensureInitialized();
+    this.currentUserId =
+      this.authService.currentProfileSnapshot?.id ?? 'anonymous-user';
+
     await this.marketplaceService.init();
 
     const threadId = this.activatedRoute.snapshot.paramMap.get('threadId');
@@ -33,18 +43,29 @@ export class NegotiationDetailPage implements OnInit {
       return;
     }
 
-    this.thread = this.marketplaceService.getNegotiationById(threadId);
+    // Subscribe to real-time updates for this negotiation thread
+    this.marketplaceService
+      .getNegotiationById$(threadId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((updatedThread) => {
+        this.thread = updatedThread;
+      });
 
-    if (!this.thread) {
-      return;
+    // Load coin details
+    const snapshotThread = this.marketplaceService.getNegotiationById(threadId);
+    if (snapshotThread) {
+      const [offerCoin, proposerCoin] = await Promise.all([
+        this.marketplaceService.getCoinById(snapshotThread.offerCoinId),
+        this.marketplaceService.getCoinById(snapshotThread.proposerCoinId),
+      ]);
+      this.offerCoin = offerCoin;
+      this.proposerCoin = proposerCoin;
     }
+  }
 
-    const [offerCoin, proposerCoin] = await Promise.all([
-      this.marketplaceService.getCoinById(this.thread.offerCoinId),
-      this.marketplaceService.getCoinById(this.thread.proposerCoinId),
-    ]);
-    this.offerCoin = offerCoin;
-    this.proposerCoin = proposerCoin;
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   async sendMessage(): Promise<void> {
@@ -56,10 +77,8 @@ export class NegotiationDetailPage implements OnInit {
 
     await this.marketplaceService.addNegotiationMessage(
       this.thread.id,
-      'Maria',
       normalizedMessage,
     );
-    this.thread = this.marketplaceService.getNegotiationById(this.thread.id);
     this.draftMessage = '';
   }
 
@@ -69,6 +88,9 @@ export class NegotiationDetailPage implements OnInit {
     }
 
     await this.marketplaceService.markNegotiationAsTraded(this.thread.id);
-    this.thread = this.marketplaceService.getNegotiationById(this.thread.id);
+  }
+
+  isOwnMessage(message: { userId: string }): boolean {
+    return message.userId === this.currentUserId;
   }
 }

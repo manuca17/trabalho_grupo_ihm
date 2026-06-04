@@ -3,20 +3,23 @@
  */
 export interface NegotiationMessage {
   id: string;
-  author: 'Carlos' | 'Maria' | 'Sistema';
+  userId: string;
+  displayName: string;
   body: string;
   sentAt: string;
 }
 
 export class NegotiationMessageModel implements NegotiationMessage {
   id: string;
-  author: 'Carlos' | 'Maria' | 'Sistema';
+  userId: string;
+  displayName: string;
   body: string;
   sentAt: string;
 
   constructor(data: NegotiationMessage) {
     this.id = data.id;
-    this.author = data.author;
+    this.userId = data.userId;
+    this.displayName = data.displayName;
     this.body = data.body;
     this.sentAt = data.sentAt;
   }
@@ -34,7 +37,8 @@ export class NegotiationMessageModel implements NegotiationMessage {
   toPlainObject(): NegotiationMessage {
     return {
       id: this.id,
-      author: this.author,
+      userId: this.userId,
+      displayName: this.displayName,
       body: this.body,
       sentAt: this.sentAt,
     };
