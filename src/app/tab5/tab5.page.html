@@ -11,7 +11,7 @@
 
 <ion-content class="profile-host-content">
   
-  <div *ngIf="showSettings; else profileView">
+  <div *ngIf="showSettings; else profileViewBlock">
     
     <div *ngIf="showEditProfile; else settingsMenuList" class="settings-view-panel">
       <div class="settings-back-header">
@@ -100,7 +100,7 @@
     </ng-template>
   </div>
 
-  <ng-template #profileView>
+  <ng-template #profileViewBlock>
     <ng-container *ngIf="currentProfile$ | async as profile">
       
       <section class="profile-header-card">
@@ -158,53 +158,53 @@
           </button>
         </div>
 
-      <!-- Coins List -->
-      <div class="coins-list" *ngIf="activeTab === 'active'">
-        <ng-container *ngIf="myCoins$ | async as myCoins">
-          <div *ngIf="myCoins.length; else emptyCoins" class="coins-container">
-            <div class="coin-card" *ngFor="let item of myCoins">
-              <div class="coin-image">
-                <img [src]="item.coin.image" [alt]="item.coin.name" />
-              </div>
-              <div class="coin-info">
-                <h3 class="coin-name">{{ item.coin.name }}</h3>
-                <div class="coin-details">
-                  <span class="condition-tag">{{ item.coin.conservation }}</span>
-                  <span class="views-count">45 visualizações</span>
+        <div class="coins-list" *ngIf="activeTab === 'active'">
+          <ng-container *ngIf="myCoins$ | async as myCoins">
+            <div *ngIf="myCoins.length; else emptyCoins" class="coins-container">
+              <div class="coin-card" *ngFor="let item of myCoins">
+                <div class="coin-image">
+                  <img [src]="item.coin.image" [alt]="item.coin.name" />
                 </div>
-                <div class="coin-footer">
-                  <span class="coin-price">{{ getPriceLabel(item) }}</span>
-                  <span class="coin-status">Ativa</span>
+                <div class="coin-info">
+                  <h3 class="coin-name">{{ item.coin.name }}</h3>
+                  <div class="coin-details">
+                    <span class="condition-tag">{{ item.coin.conservation }}</span>
+                    <span class="views-count">45 visualizações</span>
+                  </div>
+                  <div class="coin-footer">
+                    <span class="coin-price">{{ getPriceLabel(item) }}</span>
+                    <span class="coin-status">Ativa</span>
+                  </div>
                 </div>
-              </div>
-              <div class="coin-actions">
-                <button class="action-btn edit-btn" (click)="editCoin(item.coin)">Editar</button>
-                <button class="action-btn remove-btn" (click)="removeCoin(item.coin)">Remover</button>
+                <div class="coin-actions">
+                  <button class="action-btn edit-btn" (click)="editCoin(item.coin)">Editar</button>
+                  <button class="action-btn remove-btn" (click)="removeCoin(item.coin)">Remover</button>
+                </div>
               </div>
             </div>
-          </div>
-          <ng-template #emptyCoins>
-            <article class="empty-state">
-              <h3>Ainda não tens moedas publicadas</h3>
-              <p>Adiciona uma oferta para ela aparecer aqui no teu perfil.</p>
-            </article>
-          </ng-template>
-        </ng-container>
-      </div>
+            <ng-template #emptyCoins>
+              <article class="empty-state">
+                <h3>Ainda não tens moedas publicadas</h3>
+                <p>Adiciona uma oferta para ela aparecer aqui no teu perfil.</p>
+              </article>
+            </ng-template>
+          </ng-container>
+        </div>
 
-      <div class="coins-list" *ngIf="activeTab === 'sold'">
-        <article class="empty-state">
-          <h3>Sem moedas vendidas</h3>
-          <p>Quando vender moedas, elas aparecerão aqui.</p>
-        </article>
-      </div>
+        <div class="coins-list" *ngIf="activeTab === 'sold'">
+          <article class="empty-state">
+            <h3>Sem moedas vendidas</h3>
+            <p>Quando vender moedas, elas aparecerão aqui.</p>
+          </article>
+        </div>
 
-      <div class="coins-list" *ngIf="activeTab === 'traded'">
-        <article class="empty-state">
-          <h3>Sem moedas trocadas</h3>
-          <p>Quando trocar moedas, elas aparecerão aqui.</p>
-        </article>
-      </div>
-    </section>
-  </ng-container>
+        <div class="coins-list" *ngIf="activeTab === 'traded'">
+          <article class="empty-state">
+            <h3>Sem moedas trocadas</h3>
+            <p>Quando trocar moedas, elas aparecerão aqui.</p>
+          </article>
+        </div>
+      </section>
+    </ng-container>
+  </ng-template>
 </ion-content>

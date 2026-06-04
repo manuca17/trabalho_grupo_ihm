@@ -12,6 +12,12 @@ import { MarketplaceService } from '../core/services/marketplace.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
 
+const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
+  style: 'currency',
+  currency: 'EUR',
+  maximumFractionDigits: 0,
+});
+
 @Component({
   selector: 'app-tab5',
   templateUrl: './tab5.page.html',
@@ -22,6 +28,13 @@ export class Tab5Page implements OnInit {
   activeTab: 'active' | 'sold' | 'traded' = 'active';
   soldCoinsCount = 1;
   tradedCoinsCount = 1;
+  showSettings = false;
+  showEditProfile = false;
+  newName = '';
+  newPhotoUrl = '';
+  currentUnit = 'Gramas (g)';
+  currentCurrency = 'Euro (€)';
+  notificationsEnabled = true;
 
   readonly currentProfile$: Observable<UserProfile | null> =
     this.authService.currentProfile$;
@@ -29,6 +42,7 @@ export class Tab5Page implements OnInit {
     this.activatedRoute.queryParamMap.pipe(
       map((params) => (params.get('nav') === 'profile' ? 'profile' : 'home')),
     );
+  readonly catalog$ = this.marketplaceService.catalog$;
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
   readonly featuredCoins$ = this.inventoryCards$.pipe(map((cards) => cards.slice(0, 4)));
   
@@ -47,14 +61,44 @@ export class Tab5Page implements OnInit {
     this.currentProfile$,
     this.marketplaceService.offers$,
   ]).pipe(
-    map(([cards, profile]) => {
+    map(([catalog, profile, offers]) => {
       if (!profile) {
         return [];
       }
 
-      return cards
-        .filter((item) => item.lastOffer?.ownerId === profile.id)
-        .reverse();
+      // Get user's own offers
+      const myOffers = offers.filter((offer) => offer.ownerId === profile.id);
+
+      // For each offer, try to find a matching catalog coin,
+      // or create a virtual coin from the offer data
+      const result = myOffers.map((offer) => {
+        const catalogCoin = catalog.find((c) => c.id === offer.coinId);
+        if (catalogCoin) {
+          return { coin: catalogCoin, lastOffer: offer };
+        }
+        // Create a virtual coin from the offer metadata
+        const virtualCoin: Coin = {
+          id: offer.coinId,
+          name: offer.title || 'Moeda personalizada',
+          sellerName: offer.ownerDisplayName,
+          sellerRating: 0,
+          emperor: offer.era || '',
+          period: offer.era || '',
+          material: '',
+          conservation: offer.condition || '',
+          location: '',
+          origin: '',
+          estimatedValue: offer.realValue || 0,
+          description: offer.description || '',
+          history: '',
+          reference: '',
+          image: '',
+          tags: [],
+        };
+        return { coin: virtualCoin, lastOffer: offer };
+      });
+
+      return result.reverse();
     }),
   );
   readonly myNegotiations$ = combineLatest([
@@ -103,7 +147,7 @@ export class Tab5Page implements OnInit {
               thread.messages[thread.messages.length - 1]?.body ??
               'Sem mensagens.',
             roleLabel: isSeller ? 'Como vendedor' : 'Como proponente',
-          } as MyNegotiationCard;
+          };
         });
     }),
   );
@@ -159,7 +203,7 @@ export class Tab5Page implements OnInit {
     this.showEditProfile = true;
     const currentProfile = this.authService.currentProfileSnapshot;
     this.newName = currentProfile?.displayName || '';
-    this.newPhotoUrl = currentProfile?.avatarUrl || '';
+    this.newPhotoUrl = (currentProfile as any)?.avatarUrl || '';
   }
 
   closeEditProfile() { this.showEditProfile = false; }
@@ -217,7 +261,6 @@ export class Tab5Page implements OnInit {
     await alert.present();
   }
 
-  // NOVO MÉTODO: Caixa de rádio para selecionar a divisa de negociação (EUR/USD) com classe CSS laranja
   async triggerChangeCurrency() {
     const alert = await this.alertController.create({
       header: 'Moeda Comercial',
@@ -250,6 +293,17 @@ export class Tab5Page implements OnInit {
       color: this.notificationsEnabled ? 'success' : 'warning'
     });
     await toast.present();
+  }
+
+  getPriceLabel(item: { coin: Coin; lastOffer?: Offer }): string {
+    if (item.lastOffer?.availableForTrade) {
+      return 'Troca';
+    }
+    return new Intl.NumberFormat('pt-PT', {
+      style: 'currency',
+      currency: 'EUR',
+      maximumFractionDigits: 0,
+    }).format(item.lastOffer?.askPrice ?? item.coin.estimatedValue);
   }
 
   async logout(): Promise<void> {

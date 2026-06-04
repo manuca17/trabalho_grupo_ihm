@@ -84,10 +84,6 @@ export class Tab2Page implements OnInit {
       return;
     }
 
-    const coinId = requestedCoinId ?? this.coins[0]?.id ?? '';
-    this.offerForm.controls.coinId.setValue(coinId);
-    this.onCoinChange(coinId);
-
     // Lógica para ligar/desligar a obrigatoriedade do preço dependendo da seleção
     this.offerForm.controls.availableFor.valueChanges.subscribe((value) => {
       const priceControl = this.offerForm.controls.salePrice;
@@ -106,7 +102,7 @@ export class Tab2Page implements OnInit {
    */
   private resetFormState(): void {
     this.offerForm.reset({
-      coinId: this.coins[0]?.id ?? '',
+      coinId: `custom-coin-${Date.now()}`,
       title: '',
       quantity: 1,
       era: '',

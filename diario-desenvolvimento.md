@@ -98,3 +98,14 @@ Decisões:
 - Optou-se por desativar o modo standalone das novas páginas geradas automaticamente pelo Ionic CLI.
 - Decidi usar tab4 como a nova tela de mensagens, de forma a deixara a tab3 ignorada para essa função.
 - Preferi corrigir a navegação diretamente em vez de mover o conteúdo para a tab3.
+
+## Sessão 3 - 4 de junho de 2026 - Manuel Ferreira 33196
+
+Objetivo:
+Integrar a aplicação com o Firebase (Firestore e Auth) para persistência real de dados e chat em tempo real. Corrigir bugs de persistência de ofertas e autenticação.
+
+Atividades realizadas:
+
+- **Integração Firebase/AngularFire:** Configurei `provideFirebaseApp`, `provideAuth`, `provideFirestore` e `provideStorage` no `app.module.ts` usando as credenciais do projeto Firebase `projeto-c6e57`.
+
+

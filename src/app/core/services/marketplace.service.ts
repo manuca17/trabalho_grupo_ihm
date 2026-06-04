@@ -458,12 +458,12 @@ export class MarketplaceService implements OnDestroy {
             item.data() as FirestoreNegotiationThreadDto,
           ),
         );
-        const remoteIds = new Set(remoteThreads.map((t) => t.id));
+        const remoteIds = new Set(threads.map((t) => t.id));
         // Merge any local threads not yet persisted to Firestore
         const localPending = this.negotiationsSubject.value.filter(
           (t) => !remoteIds.has(t.id),
         );
-        this.negotiationsSubject.next([...remoteThreads, ...localPending]);
+        this.negotiationsSubject.next([...threads, ...localPending]);
       },
       (error) => { console.error('Erro no listener de negociações:', error); },
     );
@@ -476,10 +476,15 @@ export class MarketplaceService implements OnDestroy {
     this.offersUnsubscribe = onSnapshot(
       collection(this.firestore, OFFERS_COLLECTION),
       (snapshot) => {
-        const offers: Offer[] = snapshot.docs.map((item) =>
+        const remoteOffers: Offer[] = snapshot.docs.map((item) =>
           mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
         );
-        this.offersSubject.next(offers);
+        const remoteIds = new Set(remoteOffers.map((o) => o.id));
+        // Keep local offers not yet persisted to Firestore
+        const localPending = this.offersSubject.value.filter(
+          (o) => !remoteIds.has(o.id),
+        );
+        this.offersSubject.next([...remoteOffers, ...localPending]);
       },
       (error) => {
         console.error('Erro no listener de ofertas:', error);
