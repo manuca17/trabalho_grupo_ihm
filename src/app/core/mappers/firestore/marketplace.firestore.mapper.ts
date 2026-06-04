@@ -50,9 +50,13 @@ export interface FirestoreOfferDto {
   coinId: string;
   ownerId: string;
   ownerDisplayName?: string;
+  title: string;
   quantity: number;
   askPrice: number;
   description: string;
+  era: string;
+  condition: string;
+  realValue: number;
   availableForTrade: boolean;
   photos: FirestoreOfferPhotoDto[];
   status: 'draft' | 'published' | 'negotiating' | 'traded';
@@ -158,9 +162,13 @@ export function mapOfferFromFirestore(
     coinId: dto.coinId,
     ownerId: dto.ownerId,
     ownerDisplayName: dto.ownerDisplayName,
+    title: dto.title ?? '',
     quantity: dto.quantity,
     askPrice: dto.askPrice,
     description: dto.description,
+    era: dto.era ?? '',
+    condition: dto.condition ?? '',
+    realValue: dto.realValue ?? 0,
     availableForTrade: dto.availableForTrade,
     photos: (dto.photos ?? []).map(mapOfferPhotoFromFirestore),
     status: dto.status,
@@ -173,9 +181,13 @@ export function mapOfferToFirestore(offer: Offer): FirestoreOfferDto {
     coinId: offer.coinId,
     ownerId: offer.ownerId,
     ownerDisplayName: offer.ownerDisplayName,
+    title: offer.title,
     quantity: offer.quantity,
     askPrice: offer.askPrice,
     description: offer.description,
+    era: offer.era,
+    condition: offer.condition,
+    realValue: offer.realValue,
     availableForTrade: offer.availableForTrade,
     photos: (offer.photos ?? []).map(mapOfferPhotoToFirestore),
     status: offer.status,

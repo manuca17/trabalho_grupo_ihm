@@ -8,9 +8,13 @@ export interface Offer {
   coinId: string;
   ownerId: string;
   ownerDisplayName?: string;
+  title: string;
   quantity: number;
   askPrice: number;
   description: string;
+  era: string;
+  condition: string;
+  realValue: number;
   availableForTrade: boolean;
   photos: OfferPhoto[];
   status: 'draft' | 'published' | 'negotiating' | 'traded';
@@ -22,9 +26,13 @@ export class OfferModel implements Offer {
   coinId: string;
   ownerId: string;
   ownerDisplayName?: string;
+  title: string;
   quantity: number;
   askPrice: number;
   description: string;
+  era: string;
+  condition: string;
+  realValue: number;
   availableForTrade: boolean;
   photos: OfferPhotoModel[];
   status: 'draft' | 'published' | 'negotiating' | 'traded';
@@ -35,9 +43,13 @@ export class OfferModel implements Offer {
     this.coinId = data.coinId;
     this.ownerId = data.ownerId;
     this.ownerDisplayName = data.ownerDisplayName;
+    this.title = data.title;
     this.quantity = data.quantity;
     this.askPrice = data.askPrice;
     this.description = data.description;
+    this.era = data.era;
+    this.condition = data.condition;
+    this.realValue = data.realValue;
     this.availableForTrade = data.availableForTrade;
     this.photos = OfferPhotoModel.fromJsonArray(data.photos);
     this.status = data.status;
@@ -58,9 +70,13 @@ export class OfferModel implements Offer {
       coinId: this.coinId,
       ownerId: this.ownerId,
       ownerDisplayName: this.ownerDisplayName,
+      title: this.title,
       quantity: this.quantity,
       askPrice: this.askPrice,
       description: this.description,
+      era: this.era,
+      condition: this.condition,
+      realValue: this.realValue,
       availableForTrade: this.availableForTrade,
       photos: this.photos.map((photo) => photo.toPlainObject()),
       status: this.status,

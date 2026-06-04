@@ -42,7 +42,7 @@
     </ion-grid>
 
     <ion-list inset="true">
-      <ion-item *ngFor="let photo of offer.photos">
+      <ion-item *ngFor="let photo of offerPhotos">
         <ion-thumbnail slot="start">
           <img [src]="photo.dataUrl" [alt]="photo.label" />
         </ion-thumbnail>
@@ -53,9 +53,9 @@
       </ion-item>
     </ion-list>
 
-    <ion-button expand="block" color="secondary" (click)="openNegotiations()">
-      <ion-icon slot="start" name="chatbubbles-outline"></ion-icon>
-      Ver negociações relacionadas
+    <ion-button expand="block" color="primary" (click)="navigateToProfile()">
+      <ion-icon slot="start" name="person-outline"></ion-icon>
+      Ver no Perfil
     </ion-button>
   </ng-container>
 </ion-content>

@@ -5,7 +5,7 @@
         type="button"
         class="nav-button"
         [class.nav-button--active]="activeNav === 'home'"
-        [routerLink]="['/tabs/tab1']"
+        (click)="navigateToTab('tab1')"
       >
         <ion-icon aria-hidden="true" name="home-outline"></ion-icon>
         <span>Inicio</span>
@@ -15,7 +15,7 @@
         type="button"
         class="nav-button"
         [class.nav-button--active]="activeNav === 'search'"
-        [routerLink]="['/tabs/tab6']"
+        (click)="navigateToTab('tab6')"
       >
         <ion-icon aria-hidden="true" name="search-outline"></ion-icon>
         <span>Pesquisar</span>
@@ -25,7 +25,7 @@
         type="button"
         class="nav-button"
         [class.nav-button--active]="activeNav === 'add'"
-        [routerLink]="['/tabs/tab2']"
+        (click)="navigateToTab('tab2')"
       >
         <ion-icon aria-hidden="true" name="add-circle-outline"></ion-icon>
         <span>Adicionar</span>
@@ -35,7 +35,7 @@
         type="button"
         class="nav-button nav-button--messages"
         [class.nav-button--active]="activeNav === 'messages'"
-        [routerLink]="['/tabs/tab4']"
+        (click)="navigateToTab('tab3')"
       >
         <ion-icon
           aria-hidden="true"
@@ -53,8 +53,7 @@
         type="button"
         class="nav-button"
         [class.nav-button--active]="activeNav === 'profile'"
-        [routerLink]="['/tabs/tab5']"
-        [queryParams]="{ nav: 'profile' }"
+        (click)="navigateToTab('tab5')"
       >
         <ion-icon aria-hidden="true" name="person-outline"></ion-icon>
         <span>Perfil</span>

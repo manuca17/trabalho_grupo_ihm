@@ -3,110 +3,50 @@
     <div class="app-header-body">
       <div class="app-header-body__content">
         <strong>AncientCoins</strong>
-        <span>Colecionadores de Moedas</span>
+        <span>Mensagens</span>
       </div>
     </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="messages-page">
-  <ng-container *ngIf="activeChat; else conversationList">
-    <div class="chat-shell">
-      <div class="chat-header">
-        <ion-button fill="clear" size="small" (click)="clearChat()">
-          <ion-icon name="arrow-back-outline"></ion-icon>
-        </ion-button>
-        <div class="chat-avatar">👤</div>
-        <div class="chat-header-text">
-          <h2>Carlos Mendes</h2>
-          <p>Online</p>
-        </div>
-      </div>
-
-      <div class="messages-scroll">
-        <div *ngFor="let message of chatMessages" class="message-row" [ngClass]="{ 'sent': message.sender === 'me', 'received': message.sender !== 'me' }">
-          <div class="message-bubble">
-            <p>{{ message.text }}</p>
-
-            <div *ngIf="message.coinPreview" class="coin-preview">
-              <div class="coin-preview-row">
-                <div class="coin-emoji">🪙</div>
-                <div>
-                  <p class="coin-title">{{ message.coinPreview.title }}</p>
-                  <div class="coin-meta">
-                    <span>{{ message.coinPreview.condition }}</span>
-                    <span>{{ message.coinPreview.value }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div *ngIf="message.hasImages" class="image-grid">
-              <div class="image-cell" *ngFor="let image of [1, 2, 3]">🪙</div>
-            </div>
-
-            <p class="message-time">{{ message.time }}</p>
-          </div>
-        </div>
-      </div>
-
-      <form class="message-input" (ngSubmit)="sendMessage()">
-        <ion-button fill="clear" type="button" class="image-button">
-          <ion-icon name="image-outline"></ion-icon>
-        </ion-button>
-        <ion-input
-          type="text"
-          [(ngModel)]="messageInput"
-          name="message"
-          placeholder="Escrever mensagem..."
-          clearInput
-        ></ion-input>
-        <ion-button type="submit" [disabled]="!messageInput.trim()" color="warning">
-          <ion-icon name="send-outline"></ion-icon>
-        </ion-button>
-      </form>
+  <div class="conversation-shell">
+    <div class="searchbar-wrapper">
+      <ion-searchbar
+        [(ngModel)]="searchText"
+        name="search"
+        placeholder="Pesquisar conversas..."
+        showCancelButton="never"
+        class="custom-searchbar"
+      ></ion-searchbar>
     </div>
-  </ng-container>
 
-  <ng-template #conversationList>
-    <div class="conversation-shell">
-      <div class="searchbar-wrapper">
-        <ion-searchbar
-          [(ngModel)]="searchText"
-          name="search"
-          placeholder="Pesquisar conversas..."
-          showCancelButton="never"
-          class="custom-searchbar"
-        ></ion-searchbar>
-      </div>
-
-      <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
-        <button
-          class="conversation-item"
-          *ngFor="let conversation of filteredConversations"
-          (click)="openChat(conversation.id)"
-        >
-          <div class="conversation-avatar">{{ conversation.avatar }}</div>
-          <div class="conversation-content">
-            <div class="conversation-header">
-              <h3 class="conversation-name">{{ conversation.name }}</h3>
-              <span class="conversation-time">{{ conversation.time }}</span>
-            </div>
-            <p class="conversation-message">{{ conversation.lastMessage }}</p>
+    <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
+      <button
+        class="conversation-item"
+        *ngFor="let thread of filteredConversations"
+        (click)="openChat(thread)"
+      >
+        <div class="conversation-avatar">{{ getAvatar() }}</div>
+        <div class="conversation-content">
+          <div class="conversation-header">
+            <h3 class="conversation-name">{{ getConversationName(thread) }}</h3>
+            <span class="conversation-time">{{ getLastMessageTime(thread) }}</span>
           </div>
-          <div class="conversation-badge" *ngIf="conversation.unread > 0">
-            {{ conversation.unread }}
-          </div>
-        </button>
-      </div>
-
-      <ng-template #emptyState>
-        <div class="empty-state">
-          <div class="empty-emoji">💬</div>
-          <h3>Sem mensagens ainda</h3>
-          <p>Quando interessados contactarem sobre as suas moedas, as conversas aparecerão aqui.</p>
+          <p class="conversation-message">{{ getLastMessage(thread) }}</p>
         </div>
-      </ng-template>
+        <div class="conversation-badge" *ngIf="thread.unreadCount > 0">
+          {{ thread.unreadCount }}
+        </div>
+      </button>
     </div>
-  </ng-template>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <div class="empty-emoji">💬</div>
+        <h3>Sem mensagens ainda</h3>
+        <p>Quando interessados contactarem sobre as suas moedas, as conversas aparecerão aqui.</p>
+      </div>
+    </ng-template>
+  </div>
 </ion-content>

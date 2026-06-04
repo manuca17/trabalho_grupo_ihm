@@ -70,6 +70,9 @@ export class Tab2Page implements OnInit {
     await this.marketplaceService.init();
     this.coins = await firstValueFrom(this.contentService.coins$);
 
+    // Reset form and photos when entering the page (fresh state)
+    this.resetFormState();
+
     const requestedCoinId =
       this.activatedRoute.snapshot.queryParamMap.get('coinId');
     this.sourceTab =
@@ -96,6 +99,26 @@ export class Tab2Page implements OnInit {
       }
       priceControl.updateValueAndValidity();
     });
+  }
+
+  /**
+   * Resets form fields and photos to initial state.
+   */
+  private resetFormState(): void {
+    this.offerForm.reset({
+      coinId: this.coins[0]?.id ?? '',
+      title: '',
+      quantity: 1,
+      era: '',
+      condition: '',
+      description: '',
+      realValue: 0,
+      availableFor: 'sale',
+      salePrice: 0,
+    });
+    this.photos = [];
+    this.selectedCoin = undefined;
+    this.submitted = false;
   }
 
   get pageTitle(): string {
@@ -233,14 +256,22 @@ export class Tab2Page implements OnInit {
       // incluindo as novidades do Figma
       const offer = await this.marketplaceService.publishOffer({
         coinId: formValue.coinId,
+        title: formValue.title,
         quantity: formValue.quantity,
         askPrice: formValue.availableFor === 'sale' ? formValue.salePrice : 0,
         description: formValue.description,
+        era: formValue.era,
+        condition: formValue.condition,
+        realValue: formValue.realValue,
         availableForTrade: formValue.availableFor === 'trade',
         photos: this.photos,
       });
 
       await this.router.navigate(['/offer', offer.id]);
+    } catch (err) {
+      console.error('Erro ao publicar oferta:', err);
+      // Mostrar erro ao utilizador
+      alert('Erro ao publicar a oferta. Verifica a consola do navegador (F12) para mais detalhes.');
     } finally {
       this.isSubmitting = false;
     }

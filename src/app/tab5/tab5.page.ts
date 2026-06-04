@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, combineLatest, map } from 'rxjs';
 
@@ -30,7 +30,7 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
   styleUrls: ['./tab5.page.scss'],
   standalone: false,
 })
-export class Tab5Page {
+export class Tab5Page implements OnInit {
   activeTab: 'active' | 'sold' | 'traded' = 'active';
   soldCoinsCount = 1;
   tradedCoinsCount = 1;
@@ -41,6 +41,7 @@ export class Tab5Page {
     this.activatedRoute.queryParamMap.pipe(
       map((params) => (params.get('nav') === 'profile' ? 'profile' : 'home')),
     );
+  readonly catalog$ = this.marketplaceService.catalog$;
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
   readonly featuredCoins$ = this.inventoryCards$.pipe(
     map((cards) => cards.slice(0, 4)),
@@ -66,17 +67,48 @@ export class Tab5Page {
     })),
   );
   readonly myCoins$ = combineLatest([
-    this.inventoryCards$,
+    this.catalog$,
     this.currentProfile$,
+    this.marketplaceService.offers$,
   ]).pipe(
-    map(([cards, profile]) => {
+    map(([catalog, profile, offers]) => {
       if (!profile) {
         return [];
       }
 
-      return cards
-        .filter((item) => item.lastOffer?.ownerId === profile.id)
-        .reverse();
+      // Get user's own offers
+      const myOffers = offers.filter((offer) => offer.ownerId === profile.id);
+
+      // For each offer, try to find a matching catalog coin,
+      // or create a virtual coin from the offer data
+      const result = myOffers.map((offer) => {
+        const catalogCoin = catalog.find((c) => c.id === offer.coinId);
+        if (catalogCoin) {
+          return { coin: catalogCoin, lastOffer: offer };
+        }
+        // Create a virtual coin from the offer metadata
+        const virtualCoin: Coin = {
+          id: offer.coinId,
+          name: offer.title || 'Moeda personalizada',
+          sellerName: offer.ownerDisplayName,
+          sellerRating: 0,
+          emperor: offer.era || '',
+          period: offer.era || '',
+          material: '',
+          conservation: offer.condition || '',
+          location: '',
+          origin: '',
+          estimatedValue: offer.realValue || 0,
+          description: offer.description || '',
+          history: '',
+          reference: '',
+          image: '',
+          tags: [],
+        };
+        return { coin: virtualCoin, lastOffer: offer };
+      });
+
+      return result.reverse();
     }),
   );
   readonly myNegotiations$ = combineLatest([
@@ -136,6 +168,11 @@ export class Tab5Page {
     private readonly router: Router,
     private readonly marketplaceService: MarketplaceService,
   ) {}
+
+  async ngOnInit(): Promise<void> {
+    await this.authService.ensureInitialized();
+    await this.marketplaceService.init();
+  }
 
   setActiveTab(tab: 'active' | 'sold' | 'traded'): void {
     this.activeTab = tab;

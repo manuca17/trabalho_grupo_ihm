@@ -96,8 +96,19 @@ export class CoinDetailPage implements OnInit {
     });
   }
 
-  contactSeller(): void {
-    void this.router.navigate(['/tabs/tab4']);
+  async contactSeller(): Promise<void> {
+    if (!this.coin) {
+      return;
+    }
+
+    // Create a negotiation thread for this coin
+    const thread = await this.marketplaceService.createProposal({
+      offerCoinId: this.coin.id,
+      proposedCoinIds: [],
+      message: `Olá! Tenho interesse na moeda ${this.coin.name}.`,
+    });
+
+    void this.router.navigate(['/negotiation', thread.id]);
   }
 
   navigateToOffer(): void {

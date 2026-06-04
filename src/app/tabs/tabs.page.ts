@@ -31,6 +31,14 @@ export class TabsPage {
     private readonly marketplaceService: MarketplaceService,
   ) {}
 
+  /**
+   * Navigate to a tab, always navigating by URL to ensure clean state
+   * even when coming from a page outside the tabs layout (e.g. negotiation detail).
+   */
+  navigateToTab(tabPath: string): void {
+    void this.router.navigateByUrl(`/tabs/${tabPath}`);
+  }
+
   private getActiveNav(url: string): NavKey {
     if (url.includes('/tabs/tab5')) {
       return 'profile';

@@ -3,49 +3,49 @@
     <div class="app-header-body">
       <div class="app-header-body__content">
         <strong>AncientCoins</strong>
-        <span>Colecionadores de Moedas</span>
+        <span>Mensagens</span>
       </div>
     </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="negotiations-content">
-  <section class="page-intro">
-    <p class="eyebrow">Cenário 3</p>
-    <h1>Chat interno e propostas de troca</h1>
-    <p>
-      Carlos pode anexar uma moeda do inventário digital e Maria valida o valor
-      real antes de aceitar.
-    </p>
-  </section>
+<ion-content [fullscreen]="true" class="chat-content" scrollY="true">
+  <div class="searchbar-wrapper">
+    <ion-searchbar
+      [(ngModel)]="searchText"
+      name="search"
+      placeholder="Pesquisar conversas..."
+      showCancelButton="never"
+      class="custom-searchbar"
+    ></ion-searchbar>
+  </div>
 
-  <ion-list lines="none" class="thread-list">
-    <ion-item
-      *ngFor="let thread of negotiations$ | async"
-      class="thread-card"
-      [class.thread-card--highlight]="isHighlighted(thread)"
-      button="true"
-      detail="false"
+  <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
+    <button
+      class="conversation-item"
+      *ngFor="let thread of filteredConversations"
       (click)="openNegotiation(thread)"
+      [class.conversation-item--highlight]="isHighlighted(thread)"
     >
-      <ion-avatar slot="start">
-        <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-      </ion-avatar>
-      <ion-label>
-        <div class="thread-header">
-          <h2>{{ thread.proposerName }} → {{ thread.sellerName }}</h2>
-          <ion-badge
-            [color]="thread.status === 'traded' ? 'success' : 'warning'"
-            >{{ thread.status | titlecase }}</ion-badge
-          >
+      <div class="conversation-avatar">{{ getAvatar() }}</div>
+      <div class="conversation-content">
+        <div class="conversation-header">
+          <h3 class="conversation-name">{{ getConversationName(thread) }}</h3>
+          <span class="conversation-time">{{ getLastMessageTime(thread) }}</span>
         </div>
-        <p>Valor real indicado: {{ thread.realValue | currency:'EUR' }}</p>
-        <p>{{ thread.messages[thread.messages.length - 1]?.body }}</p>
-      </ion-label>
+        <p class="conversation-message">{{ getLastMessage(thread) }}</p>
+      </div>
+      <div class="conversation-badge" *ngIf="thread.unreadCount > 0">
+        {{ thread.unreadCount }}
+      </div>
+    </button>
+  </div>
 
-      <ion-badge slot="end" color="secondary" *ngIf="thread.unreadCount > 0"
-        >{{ thread.unreadCount }}</ion-badge
-      >
-    </ion-item>
-  </ion-list>
+  <ng-template #emptyState>
+    <div class="empty-state">
+      <div class="empty-emoji">💬</div>
+      <h3>Sem mensagens ainda</h3>
+      <p>Quando interessados contactarem sobre as suas moedas, as conversas aparecerão aqui.</p>
+    </div>
+  </ng-template>
 </ion-content>

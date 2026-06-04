@@ -34,6 +34,7 @@ import { OfferPhoto } from '../models/offer-photo.model';
 import { Offer, OfferModel } from '../models/offer.model';
 import { AuthService } from './auth.service';
 import { ContentService } from './content.service';
+import { LocalStorageService } from './local-storage.service';
 
 const OFFERS_COLLECTION = 'offers';
 const NEGOTIATIONS_COLLECTION = 'negotiations';
@@ -76,6 +77,7 @@ export class MarketplaceService implements OnDestroy {
     private readonly authService: AuthService,
     private readonly contentService: ContentService,
     private readonly firestore: Firestore,
+    private readonly localStorageService: LocalStorageService,
   ) {}
 
   /**
@@ -126,6 +128,21 @@ export class MarketplaceService implements OnDestroy {
   }
 
   /**
+   * Retrieves photos for a given offer from local storage.
+   * Photos are stored separately from Firestore to avoid 1MB document limit.
+   */
+  async getOfferPhotos(offerId: string): Promise<OfferPhoto[]> {
+    try {
+      const photos = await this.localStorageService.getItem<OfferPhoto[]>(
+        `offer_photos_${offerId}`,
+      );
+      return photos ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Returns a single negotiation thread from persisted state.
    */
   getNegotiationById(threadId: string): NegotiationThread | undefined {
@@ -148,67 +165,108 @@ export class MarketplaceService implements OnDestroy {
    */
   async publishOffer(input: {
     coinId: string;
+    title: string;
     quantity: number;
     askPrice: number;
     description: string;
+    era: string;
+    condition: string;
+    realValue: number;
     availableForTrade: boolean;
     photos: OfferPhoto[];
   }): Promise<Offer> {
-    const profile = await this.resolveCurrentProfile();
-    const offerId = `offer-${Date.now()}`;
-    const offer: Offer = new OfferModel({
-      id: offerId,
-      coinId: input.coinId,
-      ownerId: profile.id,
-      ownerDisplayName: profile.displayName,
-      quantity: input.quantity,
-      askPrice: input.askPrice,
-      description: input.description,
-      availableForTrade: input.availableForTrade,
-      photos: input.photos,
-      status: 'negotiating',
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      const profile = await this.resolveCurrentProfile();
+      const offerId = `offer-${Date.now()}`;
 
-    const updatedOffers = [...this.offersSubject.value, offer];
-    const catalog = await firstValueFrom(this.catalog$);
-    const proposerCoin =
-      catalog.find((coin) => coin.id !== input.coinId) ?? catalog[0];
-    const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
-      id: `thread-${Date.now()}`,
-      offerId,
-      offerCoinId: input.coinId,
-      proposerCoinId: proposerCoin?.id ?? input.coinId,
-      proposerName: profile.displayName,
-      sellerName: 'Maria',
-      status: 'pending',
-      realValue: proposerCoin?.estimatedValue ?? input.askPrice,
-      unreadCount: 1,
-      messages: [
-        {
-          id: `msg-${Date.now()}`,
-          userId: profile.id,
-          displayName: profile.displayName,
-          body: input.availableForTrade
-            ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
-            : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
-          sentAt: new Date().toISOString(),
-        },
-      ],
-    });
-    const updatedNegotiations = [
-      ...this.negotiationsSubject.value,
-      nextNegotiation,
-    ];
+      // Save photos locally (Ionic Storage) with the offer ID as key
+      await this.localStorageService.setItem(
+        `offer_photos_${offerId}`,
+        input.photos,
+      );
 
-    this.offersSubject.next(updatedOffers);
-    this.negotiationsSubject.next(updatedNegotiations);
-    await Promise.all([
-      this.persistOffer(offer),
-      this.persistNegotiation(nextNegotiation),
-    ]);
+      // Strip dataUrl for OfferModel - only metadata goes to Firestore
+      const safePhotos: OfferPhoto[] = input.photos.map((p) => ({
+        kind: p.kind,
+        label: p.label,
+        dataUrl: '',
+        brightness: p.brightness,
+      }));
+      const offer: Offer = new OfferModel({
+        id: offerId,
+        coinId: input.coinId,
+        ownerId: profile.id,
+        ownerDisplayName: profile.displayName,
+        title: input.title,
+        quantity: input.quantity,
+        askPrice: input.askPrice,
+        description: input.description,
+        era: input.era,
+        condition: input.condition,
+        realValue: input.realValue,
+        availableForTrade: input.availableForTrade,
+        photos: safePhotos,
+        status: 'negotiating',
+        createdAt: new Date().toISOString(),
+      });
 
-    return offer;
+      const updatedOffers = [...this.offersSubject.value, offer];
+      const catalog = await firstValueFrom(this.catalog$);
+      const proposerCoin =
+        catalog.find((coin) => coin.id !== input.coinId) ?? catalog[0];
+      const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
+        id: `thread-${Date.now()}`,
+        offerId,
+        offerCoinId: input.coinId,
+        proposerCoinId: proposerCoin?.id ?? input.coinId,
+        proposerName: profile.displayName,
+        sellerName: 'Maria',
+        status: 'pending',
+        realValue: proposerCoin?.estimatedValue ?? input.askPrice,
+        unreadCount: 1,
+        messages: [
+          {
+            id: `msg-${Date.now()}`,
+            userId: profile.id,
+            displayName: profile.displayName,
+            body: input.availableForTrade
+              ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
+              : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
+            sentAt: new Date().toISOString(),
+          },
+        ],
+      });
+      const updatedNegotiations = [
+        ...this.negotiationsSubject.value,
+        nextNegotiation,
+      ];
+
+      this.offersSubject.next(updatedOffers);
+      this.negotiationsSubject.next(updatedNegotiations);
+
+      // Persist offer and negotiation separately so one failure doesn't block the other
+      try {
+        await this.persistOffer(offer);
+        console.log('[publishOffer] Offer persisted to Firestore');
+      } catch (err) {
+        console.error('[publishOffer] Failed to persist offer to Firestore:', err);
+        // Still keep the offer locally
+      }
+
+      try {
+        await this.persistNegotiation(nextNegotiation);
+        console.log('[publishOffer] Negotiation persisted to Firestore');
+      } catch (err) {
+        console.error('[publishOffer] Failed to persist negotiation to Firestore:', err);
+        // Still keep the negotiation locally
+      }
+
+      return offer;
+    } catch (err) {
+      console.error('[publishOffer] FAILED:', err);
+      // Throw a user-friendly error
+      throw new Error('Não foi possível publicar a oferta. Verifica a consola do navegador para mais detalhes.');
+    }
   }
 
   /**
@@ -384,41 +442,47 @@ export class MarketplaceService implements OnDestroy {
   }
 
   /**
-   * Starts a real-time listener on the negotiations Firestore collection.
-   * Any changes (new messages, status updates) are reflected immediately.
-   */
-  private startNegotiationsListener(): void {
-    this.negotiationsUnsubscribe = onSnapshot(
-      collection(this.firestore, NEGOTIATIONS_COLLECTION),
-      (snapshot) => {
-        const threads: NegotiationThread[] = snapshot.docs.map((item) =>
-          mapNegotiationThreadFromFirestore(
-            item.id,
-            item.data() as FirestoreNegotiationThreadDto,
-          ),
-        );
-        this.negotiationsSubject.next(threads);
-      },
-      (error) => {
-        console.error('Erro no listener de negociações:', error);
-      },
-    );
-  }
-
-  /**
    * Starts a real-time listener on the offers Firestore collection.
    */
   private startOffersListener(): void {
     this.offersUnsubscribe = onSnapshot(
       collection(this.firestore, OFFERS_COLLECTION),
       (snapshot) => {
-        const offers: Offer[] = snapshot.docs.map((item) =>
+        const remoteOffers: Offer[] = snapshot.docs.map((item) =>
           mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
         );
-        this.offersSubject.next(offers);
+        const remoteIds = new Set(remoteOffers.map((o) => o.id));
+        // Merge any local offers not yet persisted to Firestore
+        const localPending = this.offersSubject.value.filter(
+          (o) => !remoteIds.has(o.id),
+        );
+        this.offersSubject.next([...remoteOffers, ...localPending]);
       },
       (error) => {
         console.error('Erro no listener de ofertas:', error);
+      },
+    );
+  }
+
+  private startNegotiationsListener(): void {
+    this.negotiationsUnsubscribe = onSnapshot(
+      collection(this.firestore, NEGOTIATIONS_COLLECTION),
+      (snapshot) => {
+        const remoteThreads: NegotiationThread[] = snapshot.docs.map((item) =>
+          mapNegotiationThreadFromFirestore(
+            item.id,
+            item.data() as FirestoreNegotiationThreadDto,
+          ),
+        );
+        const remoteIds = new Set(remoteThreads.map((t) => t.id));
+        // Merge any local threads not yet persisted to Firestore
+        const localPending = this.negotiationsSubject.value.filter(
+          (t) => !remoteIds.has(t.id),
+        );
+        this.negotiationsSubject.next([...remoteThreads, ...localPending]);
+      },
+      (error) => {
+        console.error('Erro no listener de negociações:', error);
       },
     );
   }
@@ -459,7 +523,20 @@ export class MarketplaceService implements OnDestroy {
 
   private async persistOffer(offer: Offer): Promise<void> {
     const offerRef = doc(this.firestore, OFFERS_COLLECTION, offer.id);
-    await setDoc(offerRef, mapOfferToFirestore(offer));
+    // Strip dataUrl from photos before persisting to Firestore,
+    // as base64 strings can exceed the 1MB document size limit.
+    // Photos are kept in memory for the current session.
+    const firestoreData = mapOfferToFirestore(offer);
+    const sanitizedData = {
+      ...firestoreData,
+      photos: firestoreData.photos.map((photo) => ({
+        kind: photo.kind,
+        label: photo.label,
+        dataUrl: '', // dataUrl is too large for Firestore
+        brightness: photo.brightness,
+      })),
+    };
+    await setDoc(offerRef, sanitizedData);
   }
 
   private async persistNegotiation(thread: NegotiationThread): Promise<void> {

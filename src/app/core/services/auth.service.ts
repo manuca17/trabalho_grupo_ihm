@@ -2,14 +2,15 @@ import { Injectable } from '@angular/core';
 import {
   Auth,
   User,
-  authState,
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
+  setPersistence,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
 } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
-import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 import {
   FirestoreUserProfileDto,
@@ -47,7 +48,13 @@ export class AuthService {
   constructor(
     private readonly firebaseAuth: Auth,
     private readonly firestore: Firestore,
-  ) {}
+  ) {
+    // Ensure Firebase Auth persists the session to localStorage
+    // rather than IndexedDB, which is more reliable in Capacitor WebView
+    setPersistence(this.firebaseAuth, browserLocalPersistence).catch((err) => {
+      console.warn('[Auth] Failed to set persistence:', err);
+    });
+  }
 
   get isAuthenticated(): boolean {
     return this.authenticatedSubject.value;
@@ -132,7 +139,16 @@ export class AuthService {
   }
 
   private async loadSession(): Promise<void> {
-    const firebaseUser = await firstValueFrom(authState(this.firebaseAuth));
+    // Firebase Auth persists the session to IndexedDB automatically.
+    // authState emits null immediately on subscribe before the SDK
+    // has restored the persisted session. We use a Promise + onAuthStateChanged
+    // to wait for the real state instead of firstValueFrom.
+    const firebaseUser = await new Promise<User | null>((resolve) => {
+      const unsubscribe = this.firebaseAuth.onAuthStateChanged((user) => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
 
     if (!firebaseUser) {
       this.currentSessionSubject.next(null);

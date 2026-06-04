@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { Coin, Offer } from '../../core/models/coin.model';
+import { Coin } from '../../core/models/coin.model';
+import { Offer } from '../../core/models/offer.model';
+import { OfferPhoto } from '../../core/models/offer-photo.model';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 
 /**
@@ -16,6 +18,7 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
 export class OfferDetailPage implements OnInit {
   coin?: Coin;
   offer?: Offer;
+  offerPhotos: OfferPhoto[] = [];
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -36,14 +39,12 @@ export class OfferDetailPage implements OnInit {
 
     if (this.offer) {
       this.coin = await this.marketplaceService.getCoinById(this.offer.coinId);
+      // Load photos from local storage
+      this.offerPhotos = await this.marketplaceService.getOfferPhotos(offerId);
     }
   }
 
-  openNegotiations(): void {
-    void this.router.navigate(['/tabs/tab3'], {
-      queryParams: {
-        offerId: this.offer?.id,
-      },
-    });
+  navigateToProfile(): void {
+    void this.router.navigateByUrl('/tabs/tab5');
   }
 }
