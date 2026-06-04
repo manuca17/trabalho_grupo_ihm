@@ -5,7 +5,6 @@ import {
     AuthSessionModel,
     UserProfile,
     UserProfileModel,
-    UserProfileStatsModel,
 } from '../../models/auth.model';
 import {
     FirestoreDateValue,
@@ -25,6 +24,7 @@ export interface FirestoreUserProfileDto {
   bio: string;
   interests: string[];
   avatarInitials: string;
+  avatarUrl?: string; // Mapeado no DTO do documento Firestore
   createdAt: FirestoreDateValue;
   updatedAt: FirestoreDateValue;
   stats: FirestoreUserProfileStatsDto;
@@ -58,9 +58,10 @@ export function mapUserProfileFromFirestore(
     bio: dto.bio,
     interests: [...(dto.interests ?? [])],
     avatarInitials: dto.avatarInitials,
+    avatarUrl: dto.avatarUrl || '', // Extrai do Firestore para a app
     createdAt: normalizeFirestoreDate(dto.createdAt),
     updatedAt: normalizeFirestoreDate(dto.updatedAt),
-    stats: new UserProfileStatsModel(dto.stats).toPlainObject(),
+    stats: dto.stats,
   });
 }
 
@@ -73,6 +74,7 @@ export function mapUserProfileToFirestore(
     bio: profile.bio,
     interests: [...(profile.interests ?? [])],
     avatarInitials: profile.avatarInitials,
+    avatarUrl: profile.avatarUrl || '', // Grava da app para o Firestore
     createdAt: profile.createdAt,
     updatedAt: profile.updatedAt,
     stats: {

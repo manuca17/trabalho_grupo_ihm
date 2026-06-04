@@ -35,7 +35,15 @@ export class Tab5Page {
   activeTab: 'active' | 'sold' | 'traded' = 'active';
   soldCoinsCount = 1;
   tradedCoinsCount = 1;
+  
   showSettings: boolean = false;
+  showEditProfile: boolean = false;
+
+  currentUnit: string = 'Gramas (g)';
+  notificationsEnabled: boolean = true;
+  
+  newName: string = '';
+  newPhotoUrl: string = '';
 
   readonly currentProfile$: Observable<UserProfile | null> = this.authService.currentProfile$;
   readonly activeSection$: Observable<'home' | 'profile'> = this.activatedRoute.queryParamMap.pipe(
@@ -51,7 +59,7 @@ export class Tab5Page {
         .slice(0, 2)
         .map((item, index) => ({
           ...item,
-          timeLabel: index === 0 ? 'Ha 2 horas' : 'Ha 5 horas',
+          timeLabel: index === 0 ? 'Há 2 horas' : 'Há 5 horas',
         })),
     ),
   );
@@ -126,7 +134,6 @@ export class Tab5Page {
     this.activeTab = tab;
   }
 
-  // Ajustado para passar a flag 'perfil' no retorno
   openCoin(coin: Coin): void {
     void this.router.navigate(['/coin', coin.id], {
       queryParams: { from: 'perfil' },
@@ -145,10 +152,12 @@ export class Tab5Page {
 
   openSettings(): void {
     this.showSettings = true;
+    this.showEditProfile = false;
   }
 
   closeSettings(): void {
     this.showSettings = false;
+    this.showEditProfile = false;
   }
 
   openAddOffer(): void {
@@ -174,36 +183,63 @@ export class Tab5Page {
     return !!item.lastOffer?.availableForTrade;
   }
 
-  async triggerEditProfile() {
-    const toast = await this.toastController.create({
-      message: 'Funcionalidade de Edição de Perfil em desenvolvimento.',
-      duration: 2000,
-      position: 'bottom',
-      color: 'warning'
-    });
-    await toast.present();
+  openEditProfile() {
+    this.showEditProfile = true;
+    const currentProfile = this.authService.currentProfileSnapshot;
+    this.newName = currentProfile?.displayName || '';
+    this.newPhotoUrl = currentProfile?.avatarUrl || '';
   }
 
-  // Tema CSS injetado diretamente na propriedade 'cssClass'
+  closeEditProfile() {
+    this.showEditProfile = false;
+  }
+
+  async saveProfileChanges() {
+    if (!this.newName.trim()) {
+      const toast = await this.toastController.create({
+        message: 'O nome do perfil não pode ficar vazio.',
+        duration: 2000,
+        color: 'danger'
+      });
+      await toast.present();
+      return;
+    }
+
+    try {
+      await this.authService.updateProfileFields(this.newName, this.newPhotoUrl);
+      const toast = await this.toastController.create({
+        message: 'Perfil de numismata atualizado com sucesso!',
+        duration: 2000,
+        color: 'success'
+      });
+      await toast.present();
+      this.showEditProfile = false;
+    } catch {
+      const toast = await this.toastController.create({
+        message: 'Ocorreu um erro ao gravar as alterações.',
+        duration: 2000,
+        color: 'danger'
+      });
+      await toast.present();
+    }
+  }
+
   async triggerChangeUnit() {
     const alert = await this.alertController.create({
       header: 'Unidade de Medida',
       cssClass: 'orange-alert-theme',
       inputs: [
-        { type: 'radio', label: 'Gramas (g)', value: 'g', checked: true },
-        { type: 'radio', label: 'Onças (oz)', value: 'oz' }
+        { type: 'radio', label: 'Gramas (g)', value: 'Gramas (g)', checked: this.currentUnit === 'Gramas (g)' },
+        { type: 'radio', label: 'Onças (oz)', value: 'Onças (oz)', checked: this.currentUnit === 'Onças (oz)' }
       ],
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Confirmar',
-          handler: async (data) => {
-            const toast = await this.toastController.create({
-              message: `Unidade alterada para: ${data === 'g' ? 'Gramas' : 'Onças'}`,
-              duration: 1500,
-              color: 'success'
-            });
-            await toast.present();
+          handler: (data) => {
+            if (data) {
+              this.currentUnit = data;
+            }
           }
         }
       ]
@@ -211,11 +247,12 @@ export class Tab5Page {
     await alert.present();
   }
 
-  async triggerNotifications() {
+  async toggleNotificationsEvent(event: any) {
+    this.notificationsEnabled = event.detail.checked;
     const toast = await this.toastController.create({
-      message: 'Definições de notificações sincronizadas com o dispositivo.',
-      duration: 2000,
-      color: 'success'
+      message: this.notificationsEnabled ? 'Notificações de propostas ativadas.' : 'Notificações desativadas.',
+      duration: 1500,
+      color: this.notificationsEnabled ? 'success' : 'warning'
     });
     await toast.present();
   }

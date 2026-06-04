@@ -22,19 +22,8 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-
-  strong {
-    font-size: 1.35rem;
-    line-height: 1.1;
-    font-weight: 800;
-    color: white;
-    letter-spacing: -0.02em;
-  }
-
-  span {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.9);
-  }
+  strong { font-size: 1.35rem; line-height: 1.1; font-weight: 800; color: white; letter-spacing: -0.02em; }
+  span { font-size: 0.85rem; color: rgba(255, 255, 255, 0.9); }
 }
 
 .profile-header-card {
@@ -44,12 +33,7 @@
   position: relative;
 }
 
-.profile-header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
+.profile-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
 
 .profile-avatar-large {
   width: 80px;
@@ -62,6 +46,14 @@
   font-size: 1.8rem;
   font-weight: 700;
   border: 3px solid rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+}
+
+.avatar-img-render {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .settings-btn {
@@ -106,7 +98,6 @@
   align-items: center;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
-
   .stat-icon { font-size: 1.8rem; margin-bottom: 8px; opacity: 0.9; }
   .stat-content { display: flex; flex-direction: column; gap: 4px; }
   .stat-value { margin: 0; font-size: 1.4rem; font-weight: 700; }
@@ -130,11 +121,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
-  &.active {
-    color: #f97316;
-    border-bottom-color: #f97316;
-  }
+  &.active { color: #f97316; border-bottom-color: #f97316; }
 }
 
 .coins-list { padding: 16px; padding-bottom: 32px; }
@@ -148,6 +135,7 @@
   border-radius: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #f0f0f0;
+  cursor: pointer;
 }
 
 .coin-image {
@@ -205,16 +193,12 @@
 }
 
 .empty-state {
-  text-align: center;
-  padding: 40px 16px;
-  background: white;
-  border-radius: 16px;
-  margin-top: 16px;
+  text-align: center; padding: 40px 16px; background: white; border-radius: 16px; margin-top: 16px;
   h3 { margin: 0 0 8px 0; font-size: 1rem; color: #111; font-weight: 600; }
   p { margin: 0; font-size: 0.9rem; color: #888; }
 }
 
-/* INTERFACE DEFINIÇÕES */
+/* DEFINIÇÕES LISTS */
 .settings-view-panel { padding: 16px; }
 
 .settings-back-header {
@@ -238,14 +222,7 @@
   h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a; }
 }
 
-.settings-menu-list {
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  border-radius: 20px;
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-}
+.settings-menu-list { display: flex; flex-direction: column; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden; }
 
 .settings-item {
   display: flex;
@@ -255,6 +232,7 @@
   background: #ffffff;
   border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
+  min-height: 58px;
 
   &:last-child { border-bottom: 0; }
   &:active { background: #f8fafc; }
@@ -271,32 +249,98 @@
   .arrow-icon { color: #cbd5e1; font-size: 1.1rem; }
   .settings-value-text { font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
 
+  &.settings-item--toggle {
+    cursor: default;
+    &:active { background: #ffffff; }
+  }
+
   &.settings-item--danger {
     .settings-item-left { color: #ef4444; ion-icon { color: #ef4444; } }
     &:active { background: #fef2f2; }
   }
 }
 
-/* FORÇAR DIÁLOGOS NATIVOS DO IONIC A USAR COR LARANJA CONDIDANTE */
+/* FORMULÁRIO DE EDIÇÃO */
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+}
+
+.figma-input-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  label { font-size: 0.85rem; font-weight: 700; color: #475569; }
+  input {
+    width: 100%;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    color: #0f172a;
+    outline: none;
+    &:focus { border-color: #f97316; background: #ffffff; }
+  }
+}
+
+.photo-upload-container {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  input { flex: 1; }
+  .form-camera-btn {
+    width: 48px;
+    height: 46px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    ion-icon { font-size: 1.3rem; color: #475569; }
+  }
+}
+
+.figma-submit-btn {
+  width: 100%;
+  min-height: 48px;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* COMPONENTES NATIVOS */
 :root {
   --ion-color-primary: #f97316 !important;
   --ion-color-primary-inner: #ffffff !important;
 }
 
+ion-toggle {
+  --handle-background: #ffffff;
+  --handle-background-checked: #ffffff;
+  --background: #cbd5e1;
+  --background-checked: #f97316;
+}
+
 .orange-alert-theme {
   --button-color: #f97316 !important;
-  button {
-    color: #f97316 !important;
-    font-weight: 700 !important;
-  }
-  .alert-radio-icon.sc-ion-alert-md {
-    border-color: #f97316 !important;
-  }
+  button { color: #f97316 !important; font-weight: 700 !important; }
+  .alert-radio-icon.sc-ion-alert-md { border-color: #f97316 !important; }
   [aria-checked=true] .alert-radio-icon.sc-ion-alert-md {
     border-color: #f97316 !important;
-    .alert-radio-inner.sc-ion-alert-md {
-      background-color: #f97316 !important;
-    }
+    .alert-radio-inner.sc-ion-alert-md { background-color: #f97316 !important; }
   }
 }
 
