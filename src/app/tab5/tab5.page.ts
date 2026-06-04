@@ -35,7 +35,6 @@ export class Tab5Page {
   activeTab: 'active' | 'sold' | 'traded' = 'active';
   soldCoinsCount = 1;
   tradedCoinsCount = 1;
-  
   showSettings: boolean = false;
   showEditProfile: boolean = false;
 
@@ -224,6 +223,7 @@ export class Tab5Page {
     }
   }
 
+  // ATUALIZADO: Agora notifica reativamente o MarketplaceService da alteração de peso global
   async triggerChangeUnit() {
     const alert = await this.alertController.create({
       header: 'Unidade de Medida',
@@ -239,6 +239,9 @@ export class Tab5Page {
           handler: (data) => {
             if (data) {
               this.currentUnit = data;
+              // Altera o fluxo matemático dinâmico de todas as moedas da app
+              const unitKey = data === 'Gramas (g)' ? 'g' : 'oz';
+              this.marketplaceService.updateActiveUnit(unitKey);
             }
           }
         }
@@ -250,7 +253,7 @@ export class Tab5Page {
   async toggleNotificationsEvent(event: any) {
     this.notificationsEnabled = event.detail.checked;
     const toast = await this.toastController.create({
-      message: this.notificationsEnabled ? 'Notificações de propostas ativadas.' : 'Notificações desativadas.',
+      message: this.notificationsEnabled ? 'Notificações de propostas ativadas.' : 'Notificações de propostas desativadas.',
       duration: 1500,
       color: this.notificationsEnabled ? 'success' : 'warning'
     });
