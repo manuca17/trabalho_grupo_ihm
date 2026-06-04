@@ -1,6 +1,11 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>Mensagens</ion-title>
+  <ion-toolbar class="app-toolbar">
+    <div class="app-header-body">
+      <div class="app-header-body__content">
+        <strong>AncientCoins</strong>
+        <span>Colecionadores de Moedas</span>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
@@ -65,28 +70,35 @@
 
   <ng-template #conversationList>
     <div class="conversation-shell">
-      <ion-searchbar
-        [(ngModel)]="searchText"
-        name="search"
-        placeholder="Pesquisar conversas..."
-        showCancelButton="never"
-      ></ion-searchbar>
+      <div class="searchbar-wrapper">
+        <ion-searchbar
+          [(ngModel)]="searchText"
+          name="search"
+          placeholder="Pesquisar conversas..."
+          showCancelButton="never"
+          class="custom-searchbar"
+        ></ion-searchbar>
+      </div>
 
-      <ion-list *ngIf="filteredConversations.length > 0; else emptyState">
-        <ion-item button detail lines="full" *ngFor="let conversation of filteredConversations" (click)="openChat(conversation.id)">
-          <ion-avatar slot="start">
-            <div class="avatar">{{ conversation.avatar }}</div>
-          </ion-avatar>
-          <ion-label>
-            <h3>{{ conversation.name }}</h3>
-            <p>{{ conversation.lastMessage }}</p>
-          </ion-label>
-          <ion-note slot="end" class="conversation-time">{{ conversation.time }}</ion-note>
-          <ion-badge *ngIf="conversation.unread > 0" color="warning" slot="end">
+      <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
+        <button
+          class="conversation-item"
+          *ngFor="let conversation of filteredConversations"
+          (click)="openChat(conversation.id)"
+        >
+          <div class="conversation-avatar">{{ conversation.avatar }}</div>
+          <div class="conversation-content">
+            <div class="conversation-header">
+              <h3 class="conversation-name">{{ conversation.name }}</h3>
+              <span class="conversation-time">{{ conversation.time }}</span>
+            </div>
+            <p class="conversation-message">{{ conversation.lastMessage }}</p>
+          </div>
+          <div class="conversation-badge" *ngIf="conversation.unread > 0">
             {{ conversation.unread }}
-          </ion-badge>
-        </ion-item>
-      </ion-list>
+          </div>
+        </button>
+      </div>
 
       <ng-template #emptyState>
         <div class="empty-state">

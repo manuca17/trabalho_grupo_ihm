@@ -1,253 +1,130 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title
-      >{{ (activeSection$ | async) === 'profile' ? 'Perfil' : 'Inicio'
-      }}</ion-title
-    >
+<ion-header>
+  <ion-toolbar class="app-toolbar">
+    <div class="app-header-body">
+      <div class="app-header-body__content">
+        <strong>AncientCoins</strong>
+        <span>Colecionadores de Moedas</span>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="home-host-content">
-  <ng-container *ngIf="activeSection$ | async as activeSection">
-    <ng-container *ngIf="activeSection === 'home'; else profileView">
-      <section class="hero-card" *ngIf="summary$ | async as summary">
-        <div class="hero-icon">↗</div>
-        <div class="hero-copy">
-          <p class="eyebrow">Ancient Coins Exchange</p>
-          <h1>Bem-vindo de volta!</h1>
-          <p>
-            Descubra moedas raras, acompanhe negociações e publique novas
-            ofertas.
-          </p>
-        </div>
+<ion-content class="profile-host-content">
+  <ng-container *ngIf="currentProfile$ | async as profile">
+    <!-- Profile Header Card -->
+    <section class="profile-header-card">
+      <div class="profile-header-top">
+        <div class="profile-avatar-large">{{ profile.avatarInitials }}</div>
+        <button class="settings-btn" (click)="openSettings()">
+          <ion-icon name="settings-outline"></ion-icon>
+        </button>
+      </div>
+      <h1 class="profile-name">{{ profile.displayName }}</h1>
+      <p class="profile-bio">{{ profile.bio }}</p>
+      <div class="profile-rating">
+        <ion-icon name="star" class="star-icon"></ion-icon>
+        <span class="rating-text">{{ profile.stats.rating }} (24 avaliações)</span>
+      </div>
+    </section>
 
-        <div class="hero-stats">
-          <div class="stat-card">
-            <span>Moedas disponiveis</span>
-            <strong>{{ summary.availableCount }}</strong>
-          </div>
-          <div class="stat-card">
-            <span>Para troca</span>
-            <strong>{{ summary.tradeCount }}</strong>
-          </div>
+    <!-- Stats Cards -->
+    <section class="stats-grid">
+      <div class="stat-box">
+        <ion-icon name="albums-outline" class="stat-icon"></ion-icon>
+        <div class="stat-content">
+          <p class="stat-value">{{ (myCoins$ | async)?.length || 0 }}</p>
+          <span class="stat-label">Moedas Ativas</span>
         </div>
-      </section>
-
-      <section class="content-section">
-        <div class="section-heading">
-          <h2>Em destaque</h2>
-          <button type="button" class="ghost-link" (click)="openMessages()">
-            Ver tudo
-          </button>
+      </div>
+      <div class="stat-box">
+        <ion-icon name="trending-up-outline" class="stat-icon"></ion-icon>
+        <div class="stat-content">
+          <p class="stat-value">{{ profile.stats.publishedOffers }}</p>
+          <span class="stat-label">Vendas</span>
         </div>
-
-        <div class="featured-grid">
-          <button
-            type="button"
-            class="featured-card"
-            *ngFor="let item of featuredCoins$ | async"
-            (click)="openCoin(item.coin)"
-          >
-            <div class="featured-media">
-              <img [src]="item.coin.image" [alt]="item.coin.name" />
-            </div>
-            <div class="featured-body">
-              <h3>{{ item.coin.name }}</h3>
-              <div class="featured-meta">
-                <span class="price-tag" [class.price-tag--trade]="isTrade(item)"
-                  >{{ getPriceLabel(item) }}</span
-                >
-                <span class="condition-tag">{{ item.coin.conservation }}</span>
-              </div>
-            </div>
-          </button>
+      </div>
+      <div class="stat-box">
+        <ion-icon name="star-outline" class="stat-icon"></ion-icon>
+        <div class="stat-content">
+          <p class="stat-value">{{ profile.stats.rating }}</p>
+          <span class="stat-label">Avaliação</span>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="content-section">
-        <div class="section-heading">
-          <h2>Adicionadas recentemente</h2>
-        </div>
+    <!-- Tabs Section -->
+    <section class="tabs-section">
+      <div class="tabs-header">
+        <button 
+          class="tab-button" 
+          [class.active]="activeTab === 'active'"
+          (click)="setActiveTab('active')"
+        >
+          Minhas Moedas ({{ (myCoins$ | async)?.length || 0 }})
+        </button>
+        <button 
+          class="tab-button"
+          [class.active]="activeTab === 'sold'"
+          (click)="setActiveTab('sold')"
+        >
+          Vendidas ({{ soldCoinsCount || 0 }})
+        </button>
+        <button 
+          class="tab-button"
+          [class.active]="activeTab === 'traded'"
+          (click)="setActiveTab('traded')"
+        >
+          Trocadas ({{ tradedCoinsCount || 0 }})
+        </button>
+      </div>
 
-        <div class="recent-list">
-          <button
-            type="button"
-            class="recent-card"
-            *ngFor="let item of recentlyAdded$ | async"
-            (click)="openCoin(item.coin)"
-          >
-            <div class="recent-main">
-              <div class="recent-thumb">
+      <!-- Coins List -->
+      <div class="coins-list" *ngIf="activeTab === 'active'">
+        <ng-container *ngIf="myCoins$ | async as myCoins">
+          <div *ngIf="myCoins.length; else emptyCoins" class="coins-container">
+            <div class="coin-card" *ngFor="let item of myCoins">
+              <div class="coin-image">
                 <img [src]="item.coin.image" [alt]="item.coin.name" />
               </div>
-              <div class="recent-copy-card">
-                <h3>{{ item.coin.name }}</h3>
-                <div class="recent-meta">
-                  <span>{{ item.timeLabel }}</span>
-                  <span class="condition-tag"
-                    >{{ item.coin.conservation }}</span
-                  >
+              <div class="coin-info">
+                <h3 class="coin-name">{{ item.coin.name }}</h3>
+                <div class="coin-details">
+                  <span class="condition-tag">{{ item.coin.conservation }}</span>
+                  <span class="views-count">45 visualizações</span>
                 </div>
+                <div class="coin-footer">
+                  <span class="coin-price">{{ getPriceLabel(item) }}</span>
+                  <span class="coin-status">Ativa</span>
+                </div>
+              </div>
+              <div class="coin-actions">
+                <button class="action-btn edit-btn" (click)="editCoin(item.coin)">Editar</button>
+                <button class="action-btn remove-btn" (click)="removeCoin(item.coin)">Remover</button>
               </div>
             </div>
-            <div class="recent-side">
-              <strong>{{ getPriceLabel(item) }}</strong>
-            </div>
-          </button>
-        </div>
-      </section>
-
-      <section class="content-section quick-actions">
-        <div class="section-heading">
-          <h2>Acoes rapidas</h2>
-        </div>
-
-        <div class="actions-grid">
-          <button
-            type="button"
-            class="action-card action-card--primary"
-            (click)="openAddOffer()"
-          >
-            <ion-icon name="camera-outline"></ion-icon>
-            <span>Adicionar Moeda</span>
-          </button>
-          <button type="button" class="action-card" (click)="openMessages()">
-            <ion-icon name="chatbubble-ellipses-outline"></ion-icon>
-            <span>Mensagens</span>
-          </button>
-        </div>
-      </section>
-    </ng-container>
-
-    <ng-template #profileView>
-      <ng-container *ngIf="currentProfile$ | async as profile">
-        <section class="profile-card">
-          <div class="profile-avatar">{{ profile.avatarInitials }}</div>
-          <h1>{{ profile.displayName }}</h1>
-          <p>{{ profile.bio }}</p>
-          <div class="profile-interests" *ngIf="profile.interests.length">
-            <span *ngFor="let interest of profile.interests"
-              >{{ interest }}</span
-            >
           </div>
-          <button type="button" class="logout-link" (click)="logout()">
-            Terminar sessao
-          </button>
-        </section>
-
-        <section class="content-section profile-grid">
-          <article class="profile-stat">
-            <span>Ofertas publicadas</span>
-            <strong>{{ profile.stats.publishedOffers }}</strong>
-          </article>
-          <article class="profile-stat">
-            <span>Trocas concluidas</span>
-            <strong>{{ profile.stats.completedTrades }}</strong>
-          </article>
-          <article class="profile-stat">
-            <span>Favoritos</span>
-            <strong>{{ profile.stats.favoritesCount }}</strong>
-          </article>
-          <article class="profile-stat">
-            <span>Avaliacao</span>
-            <strong>{{ profile.stats.rating }}</strong>
-          </article>
-        </section>
-
-        <section class="content-section" *ngIf="myCoins$ | async as myCoins">
-          <div class="section-heading">
-            <h2>As minhas moedas</h2>
-          </div>
-
-          <div class="recent-list" *ngIf="myCoins.length; else emptyMyCoins">
-            <button
-              type="button"
-              class="recent-card"
-              *ngFor="let item of myCoins"
-              (click)="openCoin(item.coin)"
-            >
-              <div class="recent-main">
-                <div class="recent-thumb">
-                  <img [src]="item.coin.image" [alt]="item.coin.name" />
-                </div>
-                <div class="recent-copy-card">
-                  <h3>{{ item.coin.name }}</h3>
-                  <div class="recent-meta">
-                    <span>{{ item.coin.period }}</span>
-                    <span class="condition-tag"
-                      >{{ item.coin.conservation }}</span
-                    >
-                  </div>
-                </div>
-              </div>
-              <div class="recent-side">
-                <strong>{{ getPriceLabel(item) }}</strong>
-              </div>
-            </button>
-          </div>
-
-          <ng-template #emptyMyCoins>
-            <article class="surface-card">
-              <h3>Ainda nao tens moedas publicadas</h3>
+          <ng-template #emptyCoins>
+            <article class="empty-state">
+              <h3>Ainda não tens moedas publicadas</h3>
               <p>Adiciona uma oferta para ela aparecer aqui no teu perfil.</p>
             </article>
           </ng-template>
-        </section>
+        </ng-container>
+      </div>
 
-        <section
-          class="content-section"
-          *ngIf="myNegotiations$ | async as myNegotiations"
-        >
-          <div class="section-heading">
-            <h2>As minhas negociações</h2>
-          </div>
+      <div class="coins-list" *ngIf="activeTab === 'sold'">
+        <article class="empty-state">
+          <h3>Sem moedas vendidas</h3>
+          <p>Quando vender moedas, elas aparecerão aqui.</p>
+        </article>
+      </div>
 
-          <div
-            class="recent-list"
-            *ngIf="myNegotiations.length; else emptyMyNegotiations"
-          >
-            <button
-              type="button"
-              class="recent-card"
-              *ngFor="let item of myNegotiations"
-              (click)="openNegotiation(item.thread)"
-            >
-              <div class="recent-main">
-                <div class="recent-thumb" *ngIf="item.coin; else noCoinPreview">
-                  <img [src]="item.coin.image" [alt]="item.coin.name" />
-                </div>
-                <ng-template #noCoinPreview>
-                  <div class="recent-thumb">💬</div>
-                </ng-template>
-
-                <div class="recent-copy-card">
-                  <h3>{{ item.counterpart }}</h3>
-                  <div class="recent-meta">
-                    <span>{{ item.roleLabel }}</span>
-                    <span class="condition-tag">{{ item.thread.status }}</span>
-                  </div>
-                  <p>{{ item.lastMessage }}</p>
-                </div>
-              </div>
-              <div class="recent-side">
-                <strong
-                  >{{ item.thread.realValue | currency:
-                  'EUR':'symbol':'1.0-0':'pt-PT' }}</strong
-                >
-              </div>
-            </button>
-          </div>
-
-          <ng-template #emptyMyNegotiations>
-            <article class="surface-card">
-              <h3>Ainda nao tens negociações</h3>
-              <p>
-                Quando abrires ou receberes propostas, elas vao aparecer aqui.
-              </p>
-            </article>
-          </ng-template>
-        </section>
-      </ng-container>
-    </ng-template>
+      <div class="coins-list" *ngIf="activeTab === 'traded'">
+        <article class="empty-state">
+          <h3>Sem moedas trocadas</h3>
+          <p>Quando trocar moedas, elas aparecerão aqui.</p>
+        </article>
+      </div>
+    </section>
   </ng-container>
 </ion-content>

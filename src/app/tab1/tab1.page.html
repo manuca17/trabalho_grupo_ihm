@@ -1,120 +1,126 @@
-﻿<ion-header [translucent]="true">
-  <ion-toolbar class="search-toolbar">
-    <div class="search-header">
-      <div class="search-header__content">
+<ion-header [translucent]="true">
+  <ion-toolbar class="app-toolbar">
+    <div class="app-header-body">
+      <div class="app-header-body__content">
         <strong>AncientCoins</strong>
         <span>Colecionadores de Moedas</span>
       </div>
     </div>
   </ion-toolbar>
-
-  <ion-toolbar class="search-bar-toolbar">
-    <div class="search-panel-top">
-      <div class="search-input-row">
-        
-        <div class="search-box">
-          <ion-icon name="search-outline"></ion-icon>
-          <ion-input
-            placeholder="Pesquisar moedas..."
-            [value]="searchQuery"
-            (ionInput)="updateSearchQuery($event.detail.value)"
-          ></ion-input>
-        </div>
-
-        <button type="button" class="filter-toggle-button" (click)="toggleFilters()">
-          <ion-icon name="options-outline"></ion-icon>
-        </button>
-
-      </div>
-    </div>
-  </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="search-content">
-  
-  <div class="search-extended-area">
-    <div class="filters-expanded-panel" *ngIf="showFilters">
-      <p class="filter-group-title">Filtros Avançados</p>
-      <div class="filter-options-grid">
-        <button type="button" [class.active]="filters.priceRange === 'under200'" (click)="setFilter('priceRange', 'under200')">&lt; 200€</button>
-        <button type="button" [class.active]="filters.priceRange === '200-500'" (click)="setFilter('priceRange', '200-500')">200€ - 500€</button>
-        <button type="button" [class.active]="filters.priceRange === 'above500'" (click)="setFilter('priceRange', 'above500')">&gt; 500€</button>
+<ion-content [fullscreen]="true" class="inventory-content">
+  <ng-container *ngIf="summary$ | async as summary">
+    <section class="hero-card">
+      <div class="hero-header">
+        <div>
+          <p class="eyebrow">Ancient Coins Exchange</p>
+          <h1>Bem-vindo de volta!</h1>
+          <p class="hero-copy">
+            Descubra moedas raras, publique novas ofertas e acompanhe trocas da
+            sua coleção.
+          </p>
+        </div>
+        <ion-icon name="trending-up-outline"></ion-icon>
       </div>
-      <button type="button" class="clear-filters-btn" (click)="clearFilters()">Limpar Filtros</button>
-    </div>
 
-    <p class="popular-label">PESQUISAS POPULARES:</p>
-    <div class="popular-buttons">
-      <button
-        *ngFor="let term of popularSearchTerms"
-        type="button"
-        class="popular-button"
-        (click)="setSearchTerm(term)"
-      >
-        {{ term }}
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span>Moedas disponíveis</span>
+          <strong>{{ summary.availableCount }}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Para troca</span>
+          <strong>{{ summary.tradeCount }}</strong>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+
+  <section class="content-section">
+    <div class="section-heading">
+      <h2>Em Destaque</h2>
+      <button type="button" class="ghost-link" (click)="openNegotiations()">
+        Ver tudo
+        <ion-icon name="arrow-forward-outline"></ion-icon>
       </button>
     </div>
-  </div>
 
-  <div class="search-divider"></div>
-
-  <section class="search-page">
-    <ng-container *ngIf="!searchQuery; else searchResultsArea">
-      <section class="empty-area">
-        <div class="empty-illustration">
-          <ion-icon name="search-outline"></ion-icon>
+    <div class="featured-grid">
+      <button
+        type="button"
+        class="featured-card"
+        *ngFor="let item of featuredCoins$ | async"
+        (click)="openCoin(item.coin)"
+      >
+        <div class="featured-media">
+          <img [src]="item.coin.image" [alt]="item.coin.name" />
         </div>
-        <h3>PROCURA ALGO ESPECÍFICO?</h3>
-        <p>Use a barra de pesquisa para encontrar moedas por era histórica, tipo ou descrição.</p>
-      </section>
-    </ng-container>
-
-    <ng-template #searchResultsArea>
-      <ng-container *ngIf="searchResults$ | async as results; else loadingOrError">
-        <ng-container *ngIf="results.length; else noResults">
-          <div class="results-list">
-            <button
-              *ngFor="let item of results"
-              type="button"
-              class="result-card"
-              (click)="openCoinById(item.id)"
-            >
-              <div class="result-image">
-                <img [src]="item.image" [alt]="item.title" />
-              </div>
-              <div class="result-body">
-                <div>
-                  <h3>{{ item.title }}</h3>
-                  <p class="result-meta">{{ item.era }}</p>
-                </div>
-                <div class="result-tags">
-                  <span class="tag">{{ item.condition }}</span>
-                  <span class="tag" *ngIf="item.forTrade">Troca</span>
-                </div>
-                <p class="result-seller">Por {{ item.seller }}</p>
-              </div>
-              <div class="result-price">{{ item.price }}</div>
-            </button>
+        <div class="featured-body">
+          <h3>{{ item.coin.name }}</h3>
+          <div class="featured-meta">
+            <span class="price-tag" [class.price-tag--trade]="isTrade(item)">
+              {{ getPriceLabel(item) }}
+            </span>
+            <span class="condition-tag">{{ item.coin.conservation }}</span>
           </div>
-        </ng-container>
-      </ng-container>
-    </ng-template>
-
-    <ng-template #noResults>
-      <section class="empty-area empty-area--no-results">
-        <div class="empty-illustration">
-          <ion-icon name="sad-outline"></ion-icon>
         </div>
-        <h3>Sem resultados</h3>
-        <p>Tente outro termo ou ajuste os filtros para encontrar uma moeda.</p>
-      </section>
-    </ng-template>
+      </button>
+    </div>
+  </section>
 
-    <ng-template #loadingOrError>
-      <section class="empty-area">
-        <ion-spinner name="crescent" color="primary"></ion-spinner>
-        <p>A carregar o catálogo de numismática...</p>
-      </section>
-    </ng-template>
+  <section class="content-section">
+    <div class="section-heading">
+      <h2>Adicionadas Recentemente</h2>
+    </div>
+
+    <div class="recent-list">
+      <button
+        type="button"
+        class="recent-card"
+        *ngFor="let item of recentlyAdded$ | async"
+        (click)="openCoin(item.coin)"
+      >
+        <div class="recent-main">
+          <div class="recent-thumb">
+            <img [src]="item.coin.image" [alt]="item.coin.name" />
+          </div>
+          <div class="recent-copy">
+            <h3>{{ item.coin.name }}</h3>
+            <div class="recent-meta">
+              <span>{{ item.timeLabel }}</span>
+              <span class="condition-tag">{{ item.coin.conservation }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-side">
+          <strong>{{ getPriceLabel(item) }}</strong>
+          <span>{{ getOfferStateLabel(item.lastOffer) }}</span>
+        </div>
+      </button>
+    </div>
+  </section>
+
+  <section class="content-section quick-actions">
+    <div class="section-heading">
+      <h2>Ações Rápidas</h2>
+    </div>
+
+    <div class="actions-grid">
+      <button
+        type="button"
+        class="action-card action-card--primary"
+        (click)="openAddOffer()"
+      >
+        <ion-icon name="camera-outline"></ion-icon>
+        <span>Adicionar Moeda</span>
+      </button>
+
+      <button type="button" class="action-card" (click)="openNegotiations()">
+        <ion-icon name="search-outline"></ion-icon>
+        <span>Pesquisar Catálogo</span>
+      </button>
+    </div>
   </section>
 </ion-content>

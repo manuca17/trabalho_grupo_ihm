@@ -84,15 +84,33 @@ export class Tab4Page {
   ];
 
   get filteredConversations() {
-    const filter = this.searchText?.toLowerCase().trim();
+    const raw = this.searchText ?? '';
+    const filter = raw.toLowerCase().trim();
+
     if (!filter) {
       return this.conversations;
     }
-    return this.conversations.filter((conversation) =>
-      conversation.name.toLowerCase().includes(filter) ||
-      conversation.lastMessage.toLowerCase().includes(filter)
-    );
+
+    const normalize = (value: string) =>
+      value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '');
+
+    const tokens = filter
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    return this.conversations.filter((conversation) => {
+      const name = normalize(conversation.name);
+      const last = normalize(conversation.lastMessage);
+
+      // Cada token deve aparecer em (name ou last), para dar match com múltiplas palavras.
+      return tokens.every((token) => name.includes(token) || last.includes(token));
+    });
   }
+
 
   openChat(conversationId: number) {
     this.activeChat = conversationId;

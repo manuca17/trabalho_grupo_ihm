@@ -31,6 +31,10 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
   standalone: false,
 })
 export class Tab5Page {
+  activeTab: 'active' | 'sold' | 'traded' = 'active';
+  soldCoinsCount = 1;
+  tradedCoinsCount = 1;
+
   readonly currentProfile$: Observable<UserProfile | null> =
     this.authService.currentProfile$;
   readonly activeSection$: Observable<'home' | 'profile'> =
@@ -133,10 +137,30 @@ export class Tab5Page {
     private readonly marketplaceService: MarketplaceService,
   ) {}
 
+  setActiveTab(tab: 'active' | 'sold' | 'traded'): void {
+    this.activeTab = tab;
+  }
+
   openCoin(coin: Coin): void {
     void this.router.navigate(['/coin', coin.id], {
-      queryParams: { from: 'inicio' },
+      queryParams: { from: 'perfil' },
     });
+  }
+
+  editCoin(coin: Coin): void {
+    void this.router.navigate(['/tabs/tab2'], {
+      queryParams: { coinId: coin.id },
+    });
+  }
+
+  removeCoin(coin: Coin): void {
+    // TODO: Implement coin removal logic
+    console.log('Remover moeda:', coin.name);
+  }
+
+  openSettings(): void {
+    // TODO: Implement settings page
+    console.log('Abrir configurações');
   }
 
   openAddOffer(): void {
