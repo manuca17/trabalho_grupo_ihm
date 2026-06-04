@@ -36,7 +36,7 @@ import { AuthService } from './auth.service';
 import { ContentService } from './content.service';
 
 const OFFERS_COLLECTION = 'offers';
-const NEGOTIATIONS_COLLECTION = 'regions'; // Mantido conforme a tua árvore de base de dados
+const NEGOTIATIONS_COLLECTION = 'negotiations';
 
 @Injectable({
   providedIn: 'root',
@@ -45,8 +45,9 @@ export class MarketplaceService implements OnDestroy {
   private readonly offersSubject = new BehaviorSubject<Offer[]>([]);
   private readonly negotiationsSubject = new BehaviorSubject<NegotiationThread[]>([]);
   
-  // NOVO: Estado centralizado reativo para controlar a unidade de medida global da app
   private readonly activeUnitSubject = new BehaviorSubject<'g' | 'oz'>('g');
+  // NOVO: Estado centralizado reativo para controlar a divisa comercial preferida ('EUR' ou 'USD')
+  private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD'>('EUR');
 
   private isInitialized = false;
   private negotiationsUnsubscribe: Unsubscribe | null = null;
@@ -56,25 +57,23 @@ export class MarketplaceService implements OnDestroy {
   readonly negotiations$ = this.negotiationsSubject.asObservable();
   readonly catalog$ = this.contentService.coins$;
   
-  // NOVO: Exposição do Observable da unidade para ser lido em qualquer ecrã
   readonly activeUnit$ = this.activeUnitSubject.asObservable();
+  // NOVO: Exposição pública do Observable da divisa para os ecrãs subscreverem
+  readonly activeCurrency$ = this.activeCurrencySubject.asObservable();
 
-  // ATUALIZADO: Agora escuta a unidade de medida e transforma o peso (.weight) em tempo real
+  // ATUALIZADO: Agora escuta a unidade de peso e a moeda comercial, aplicando transformações dinâmicas
   readonly inventoryCards$: Observable<
-    Array<{ coin: Coin; lastOffer?: Offer }>
-  > = combineLatest([this.catalog$, this.offers$, this.activeUnit$]).pipe(
-    map(([coins, offers, unit]) =>
+    Array<{ coin: Coin; lastOffer?: Offer; customDisplayPrice?: string }>
+  > = combineLatest([this.catalog$, this.offers$, this.activeUnit$, this.activeCurrency$]).pipe(
+    map(([coins, offers, unit, currency]) =>
       coins.map((coin) => {
-        // Clona a moeda para não corromper o catálogo estático em memória
         const mappedCoin = { ...coin };
         
+        // 1. Conversão de Unidade de Peso
         if (unit === 'oz' && mappedCoin.weight) {
-          // Extrai apenas os números do peso (ex: "7.9g" ou "7.9" passa a 7.9)
           const numericWeight = parseFloat(mappedCoin.weight);
           if (!isNaN(numericWeight)) {
-            // Conversão matemática oficial: 1 grama = 0.035274 Onças
-            const converted = numericWeight * 0.035274;
-            mappedCoin.weight = `${converted.toFixed(2)} oz`;
+            mappedCoin.weight = `${(numericWeight * 0.035274).toFixed(2)} oz`;
           }
         } else if (unit === 'g' && mappedCoin.weight) {
           const numericWeight = parseFloat(mappedCoin.weight);
@@ -83,11 +82,37 @@ export class MarketplaceService implements OnDestroy {
           }
         }
 
+        // 2. Localizar Oferta correspondente
+        const lastOffer = [...offers]
+          .reverse()
+          .find((offer) => offer.coinId === coin.id);
+
+        // 3. Conversão Dinâmica de Moeda (EUR para USD se selecionado)
+        let rawPrice = lastOffer?.askPrice ?? coin.estimatedValue;
+        let isTradeOption = !!lastOffer?.availableForTrade;
+        let formattedPriceLabel = 'Troca';
+
+        if (!isTradeOption) {
+          if (currency === 'USD') {
+            rawPrice = rawPrice * 1.08; // Taxa de conversão base indicativa
+            formattedPriceLabel = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              maximumFractionDigits: 0,
+            }).format(rawPrice);
+          } else {
+            formattedPriceLabel = new Intl.NumberFormat('pt-PT', {
+              style: 'currency',
+              currency: 'EUR',
+              maximumFractionDigits: 0,
+            }).format(rawPrice);
+          }
+        }
+
         return {
           coin: mappedCoin,
-          lastOffer: [...offers]
-            .reverse()
-            .find((offer) => offer.coinId === coin.id),
+          lastOffer,
+          customDisplayPrice: formattedPriceLabel // Injetado rótulo de preço já formatado reativamente
         };
       }),
     ),
@@ -123,9 +148,13 @@ export class MarketplaceService implements OnDestroy {
     this.startOffersListener();
   }
 
-  // NOVO MÉTODO: Permite atualizar a unidade a partir de qualquer ecrã (como a Tab 5)
   updateActiveUnit(unit: 'g' | 'oz'): void {
     this.activeUnitSubject.next(unit);
+  }
+
+  // NOVO MÉTODO: Altera reativamente a divisa preferida na aplicação
+  updateActiveCurrency(currency: 'EUR' | 'USD'): void {
+    this.activeCurrencySubject.next(currency);
   }
 
   async getCoinById(coinId: string): Promise<Coin | undefined> {
@@ -281,10 +310,7 @@ export class MarketplaceService implements OnDestroy {
     return thread;
   }
 
-  async addNegotiationMessage(
-    threadId: string,
-    body: string,
-  ): Promise<void> {
+  async addNegotiationMessage(threadId: string, body: string): Promise<void> {
     const profile = await this.resolveCurrentProfile();
     const thread = this.getNegotiationById(threadId);
 
@@ -317,9 +343,7 @@ export class MarketplaceService implements OnDestroy {
     }
 
     const updatedOffers: Offer[] = this.offersSubject.value.map((offer) =>
-      offer.id === targetThread.offerId
-        ? { ...offer, status: 'traded' }
-        : offer,
+      offer.id === targetThread.offerId ? { ...offer, status: 'traded' } : offer,
     );
     const updatedNegotiations: NegotiationThread[] =
       this.negotiationsSubject.value.map((thread) =>
@@ -344,25 +368,16 @@ export class MarketplaceService implements OnDestroy {
 
     this.offersSubject.next(updatedOffers);
     this.negotiationsSubject.next(updatedNegotiations);
-    const updatedOffer = updatedOffers.find(
-      (offer) => offer.id === targetThread.offerId,
-    );
-    const updatedThread = updatedNegotiations.find(
-      (thread) => thread.id === threadId,
-    );
+    const updatedOffer = updatedOffers.find((offer) => offer.id === targetThread.offerId);
+    const updatedThread = updatedNegotiations.find((thread) => thread.id === threadId);
 
     await Promise.all([
       updatedOffer ? this.persistOffer(updatedOffer) : Promise.resolve(),
-      updatedThread
-        ? this.persistNegotiation(updatedThread)
-        : Promise.resolve(),
+      updatedThread ? this.persistNegotiation(updatedThread) : Promise.resolve(),
     ]);
   }
 
-  private async resolveCurrentProfile(): Promise<{
-    id: string;
-    displayName: string;
-  }> {
+  private async resolveCurrentProfile(): Promise<{ id: string; displayName: string; }> {
     await this.authService.ensureInitialized();
     const profile = this.authService.currentProfileSnapshot;
     return {
@@ -376,16 +391,11 @@ export class MarketplaceService implements OnDestroy {
       collection(this.firestore, NEGOTIATIONS_COLLECTION),
       (snapshot) => {
         const threads: NegotiationThread[] = snapshot.docs.map((item) =>
-          mapNegotiationThreadFromFirestore(
-            item.id,
-            item.data() as FirestoreNegotiationThreadDto,
-          ),
+          mapNegotiationThreadFromFirestore(item.id, item.data() as FirestoreNegotiationThreadDto),
         );
         this.negotiationsSubject.next(threads);
       },
-      (error) => {
-        console.error('Erro no listener de negociações:', error);
-      },
+      (error) => { console.error('Erro no listener de negociações:', error); },
     );
   }
 
@@ -398,38 +408,23 @@ export class MarketplaceService implements OnDestroy {
         );
         this.offersSubject.next(offers);
       },
-      (error) => {
-        console.error('Erro no listener de ofertas:', error);
-      },
+      (error) => { console.error('Erro no listener de ofertas:', error); },
     );
   }
 
   private unsubscribeAll(): void {
-    if (this.negotiationsUnsubscribe) {
-      this.negotiationsUnsubscribe();
-      this.negotiationsUnsubscribe = null;
-    }
-    if (this.offersUnsubscribe) {
-      this.offersUnsubscribe();
-      this.offersUnsubscribe = null;
-    }
+    if (this.negotiationsUnsubscribe) { this.negotiationsUnsubscribe(); this.negotiationsUnsubscribe = null; }
+    if (this.offersUnsubscribe) { this.offersUnsubscribe(); this.offersUnsubscribe = null; }
   }
 
   private async loadOffersFromFirestore(): Promise<Offer[]> {
     const snapshot = await getDocs(collection(this.firestore, OFFERS_COLLECTION));
-    return snapshot.docs.map((item) =>
-      mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
-    );
+    return snapshot.docs.map((item) => mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto));
   }
 
   private async loadNegotiationsFromFirestore(): Promise<NegotiationThread[]> {
     const snapshot = await getDocs(collection(this.firestore, NEGOTIATIONS_COLLECTION));
-    return snapshot.docs.map((item) =>
-      mapNegotiationThreadFromFirestore(
-        item.id,
-        item.data() as FirestoreNegotiationThreadDto,
-      ),
-    );
+    return snapshot.docs.map((item) => mapNegotiationThreadFromFirestore(item.id, item.data() as FirestoreNegotiationThreadDto));
   }
 
   private async persistOffer(offer: Offer): Promise<void> {

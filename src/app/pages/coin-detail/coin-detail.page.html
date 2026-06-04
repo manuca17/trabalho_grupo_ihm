@@ -84,7 +84,6 @@
               <strong>{{ currentCoin.period }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="location-outline"></ion-icon>
             <div>
@@ -92,7 +91,6 @@
               <strong>{{ origin }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="scale-outline"></ion-icon>
             <div>
@@ -100,7 +98,6 @@
               <strong class="reactive-weight-text">{{ weight }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="resize-outline"></ion-icon>
             <div>
@@ -108,7 +105,6 @@
               <strong>{{ diameter }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="shield-half-outline"></ion-icon>
             <div>
@@ -120,12 +116,12 @@
       </article>
 
       <article class="surface-card">
-        <h2>Descrição Breve</h2>
+        <h2>Descrição</h2>
         <p>{{ currentCoin.description }}</p>
       </article>
 
       <article class="surface-card">
-        <h2>Contexto Histórico</h2>
+        <h2>História</h2>
         <p>{{ history }}</p>
       </article>
 
@@ -137,26 +133,17 @@
       <article class="surface-card location-card">
         <ion-icon name="map-outline"></ion-icon>
         <div>
-          <span class="spec-label">Localização de Origem da Oferta</span>
+          <span class="spec-label">Localização do vendedor</span>
           <strong>{{ currentCoin.location }}</strong>
         </div>
       </article>
-
-      <section class="tag-row">
-        <ion-chip *ngFor="let tag of currentCoin.tags">{{ tag }}</ion-chip>
-      </section>
     </div>
   </ng-container>
 </ion-content>
 
 <ion-footer *ngIf="coin as currentCoin" class="detail-footer">
   <div class="footer-actions">
-    <button
-      type="button"
-      class="primary-action"
-      [class.primary-action--trade]="isTrade"
-      (click)="navigateToOffer()"
-    >
+    <button type="button" class="primary-action" [class.primary-action--trade]="isTrade" (click)="navigateToOffer()">
       {{ isTrade ? 'PROPOR TROCA' : 'FAZER OFERTA' }}
     </button>
     <button type="button" class="secondary-action" (click)="toggleSaved()">
