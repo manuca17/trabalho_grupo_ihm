@@ -10,121 +10,165 @@
 </ion-header>
 
 <ion-content class="profile-host-content">
-  <ng-container *ngIf="currentProfile$ | async as profile">
-    <!-- Profile Header Card -->
-    <section class="profile-header-card">
-      <div class="profile-header-top">
-        <div class="profile-avatar-large">{{ profile.avatarInitials }}</div>
-        <button class="settings-btn" (click)="openSettings()">
-          <ion-icon name="settings-outline"></ion-icon>
-        </button>
-      </div>
-      <h1 class="profile-name">{{ profile.displayName }}</h1>
-      <p class="profile-bio">{{ profile.bio }}</p>
-      <div class="profile-rating">
-        <ion-icon name="star" class="star-icon"></ion-icon>
-        <span class="rating-text">{{ profile.stats.rating }} (24 avaliações)</span>
-      </div>
-    </section>
+  
+  <div *ngIf="showSettings; else profileView" class="settings-view-panel">
+    <div class="settings-back-header">
+      <button type="button" class="settings-back-btn" (click)="closeSettings()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+        <span>Voltar ao Perfil</span>
+      </button>
+      <h2>Definições</h2>
+    </div>
 
-    <!-- Stats Cards -->
-    <section class="stats-grid">
-      <div class="stat-box">
-        <ion-icon name="albums-outline" class="stat-icon"></ion-icon>
-        <div class="stat-content">
-          <p class="stat-value">{{ (myCoins$ | async)?.length || 0 }}</p>
-          <span class="stat-label">Moedas Ativas</span>
+    <div class="settings-menu-list">
+      <div class="settings-item" (click)="triggerEditProfile()">
+        <div class="settings-item-left">
+          <ion-icon name="person-circle-outline"></ion-icon>
+          <span>Editar Perfil de Numismata</span>
         </div>
-      </div>
-      <div class="stat-box">
-        <ion-icon name="trending-up-outline" class="stat-icon"></ion-icon>
-        <div class="stat-content">
-          <p class="stat-value">{{ profile.stats.publishedOffers }}</p>
-          <span class="stat-label">Vendas</span>
-        </div>
-      </div>
-      <div class="stat-box">
-        <ion-icon name="star-outline" class="stat-icon"></ion-icon>
-        <div class="stat-content">
-          <p class="stat-value">{{ profile.stats.rating }}</p>
-          <span class="stat-label">Avaliação</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tabs Section -->
-    <section class="tabs-section">
-      <div class="tabs-header">
-        <button 
-          class="tab-button" 
-          [class.active]="activeTab === 'active'"
-          (click)="setActiveTab('active')"
-        >
-          Minhas Moedas ({{ (myCoins$ | async)?.length || 0 }})
-        </button>
-        <button 
-          class="tab-button"
-          [class.active]="activeTab === 'sold'"
-          (click)="setActiveTab('sold')"
-        >
-          Vendidas ({{ soldCoinsCount || 0 }})
-        </button>
-        <button 
-          class="tab-button"
-          [class.active]="activeTab === 'traded'"
-          (click)="setActiveTab('traded')"
-        >
-          Trocadas ({{ tradedCoinsCount || 0 }})
-        </button>
+        <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
       </div>
 
-      <!-- Coins List -->
-      <div class="coins-list" *ngIf="activeTab === 'active'">
-        <ng-container *ngIf="myCoins$ | async as myCoins">
-          <div *ngIf="myCoins.length; else emptyCoins" class="coins-container">
-            <div class="coin-card" *ngFor="let item of myCoins">
-              <div class="coin-image">
-                <img [src]="item.coin.image" [alt]="item.coin.name" />
-              </div>
-              <div class="coin-info">
-                <h3 class="coin-name">{{ item.coin.name }}</h3>
-                <div class="coin-details">
-                  <span class="condition-tag">{{ item.coin.conservation }}</span>
-                  <span class="views-count">45 visualizações</span>
+      <div class="settings-item" (click)="triggerChangeUnit()">
+        <div class="settings-item-left">
+          <ion-icon name="scale-outline"></ion-icon>
+          <span>Unidade de Medida (Peso)</span>
+        </div>
+        <span class="settings-value-text">Gramas (g)</span>
+      </div>
+
+      <div class="settings-item" (click)="triggerNotifications()">
+        <div class="settings-item-left">
+          <ion-icon name="notifications-outline"></ion-icon>
+          <span>Notificações de Propostas</span>
+        </div>
+        <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
+      </div>
+
+      <div class="settings-item settings-item--danger" (click)="logout()">
+        <div class="settings-item-left">
+          <ion-icon name="log-out-outline"></ion-icon>
+          <span>Terminar Sessão (Sair)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #profileView>
+    <ng-container *ngIf="currentProfile$ | async as profile">
+      
+      <section class="profile-header-card">
+        <div class="profile-header-top">
+          <div class="profile-avatar-large">{{ profile.avatarInitials }}</div>
+          <button class="settings-btn" (click)="openSettings()">
+            <ion-icon name="settings-outline"></ion-icon>
+          </button>
+        </div>
+        <h1 class="profile-name">{{ profile.displayName }}</h1>
+        <p class="profile-bio">{{ profile.bio }}</p>
+        <div class="profile-rating">
+          <ion-icon name="star" class="star-icon"></ion-icon>
+          <span class="rating-text">{{ profile.stats.rating }} (24 avaliações)</span>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-box">
+          <ion-icon name="albums-outline" class="stat-icon"></ion-icon>
+          <div class="stat-content">
+            <p class="stat-value">{{ (myCoins$ | async)?.length || 0 }}</p>
+            <span class="stat-label">Moedas Ativas</span>
+          </div>
+        </div>
+        <div class="stat-box">
+          <ion-icon name="trending-up-outline" class="stat-icon"></ion-icon>
+          <div class="stat-content">
+            <p class="stat-value">{{ profile.stats.publishedOffers }}</p>
+            <span class="stat-label">Vendas</span>
+          </div>
+        </div>
+        <div class="stat-box">
+          <ion-icon name="star-outline" class="stat-icon"></ion-icon>
+          <div class="stat-content">
+            <p class="stat-value">{{ profile.stats.rating }}</p>
+            <span class="stat-label">Avaliação</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="tabs-section">
+        <div class="tabs-header">
+          <button 
+            class="tab-button" 
+            [class.active]="activeTab === 'active'"
+            (click)="setActiveTab('active')"
+          >
+            Minhas Moedas ({{ (myCoins$ | async)?.length || 0 }})
+          </button>
+          <button 
+            class="tab-button"
+            [class.active]="activeTab === 'sold'"
+            (click)="setActiveTab('sold')"
+          >
+            Vendidas ({{ soldCoinsCount || 0 }})
+          </button>
+          <button 
+            class="tab-button"
+            [class.active]="activeTab === 'traded'"
+            (click)="setActiveTab('traded')"
+          >
+            Trocadas ({{ tradedCoinsCount || 0 }})
+          </button>
+        </div>
+
+        <div class="coins-list" *ngIf="activeTab === 'active'">
+          <ng-container *ngIf="myCoins$ | async as myCoins">
+            <div *ngIf="myCoins.length; else emptyCoins" class="coins-container">
+              <div class="coin-card" *ngFor="let item of myCoins" (click)="openCoin(item.coin)">
+                <div class="coin-image">
+                  <img [src]="item.coin.image" [alt]="item.coin.name" />
                 </div>
-                <div class="coin-footer">
-                  <span class="coin-price">{{ getPriceLabel(item) }}</span>
-                  <span class="coin-status">Ativa</span>
+                <div class="coin-info">
+                  <h3 class="coin-name">{{ item.coin.name }}</h3>
+                  <div class="coin-details">
+                    <span class="condition-tag">{{ item.coin.conservation }}</span>
+                    <span class="views-count">45 visualizações</span>
+                  </div>
+                  <div class="coin-footer">
+                    <span class="coin-price">{{ getPriceLabel(item) }}</span>
+                    <span class="coin-status">Ativa</span>
+                  </div>
                 </div>
-              </div>
-              <div class="coin-actions">
-                <button class="action-btn edit-btn" (click)="editCoin(item.coin)">Editar</button>
-                <button class="action-btn remove-btn" (click)="removeCoin(item.coin)">Remover</button>
+                <div class="coin-actions" (click)="$event.stopPropagation()">
+                  <button class="action-btn edit-btn" (click)="editCoin(item.coin)">Editar</button>
+                  <button class="action-btn remove-btn" (click)="removeCoin(item.coin)">Remover</button>
+                </div>
               </div>
             </div>
-          </div>
-          <ng-template #emptyCoins>
-            <article class="empty-state">
-              <h3>Ainda não tens moedas publicadas</h3>
-              <p>Adiciona uma oferta para ela aparecer aqui no teu perfil.</p>
-            </article>
-          </ng-template>
-        </ng-container>
-      </div>
+            <ng-template #emptyCoins>
+              <article class="empty-state">
+                <h3>Ainda não tens moedas publicadas</h3>
+                <p>Adiciona uma oferta para ela aparecer aqui no teu perfil.</p>
+              </article>
+            </ng-template>
+          </ng-container>
+        </div>
 
-      <div class="coins-list" *ngIf="activeTab === 'sold'">
-        <article class="empty-state">
-          <h3>Sem moedas vendidas</h3>
-          <p>Quando vender moedas, elas aparecerão aqui.</p>
-        </article>
-      </div>
+        <div class="coins-list" *ngIf="activeTab === 'sold'">
+          <article class="empty-state">
+            <h3>Sem moedas vendidas</h3>
+            <p>Quando vender moedas, elas aparecerão aqui.</p>
+          </article>
+        </div>
 
-      <div class="coins-list" *ngIf="activeTab === 'traded'">
-        <article class="empty-state">
-          <h3>Sem moedas trocadas</h3>
-          <p>Quando trocar moedas, elas aparecerão aqui.</p>
-        </article>
-      </div>
-    </section>
-  </ng-container>
+        <div class="coins-list" *ngIf="activeTab === 'traded'">
+          <article class="empty-state">
+            <h3>Sem moedas trocadas</h3>
+            <p>Quando trocar moedas, elas aparecerão aqui.</p>
+          </article>
+        </div>
+      </section>
+
+    </ng-container>
+  </ng-template>
 </ion-content>

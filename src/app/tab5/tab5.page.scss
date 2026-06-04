@@ -1,5 +1,5 @@
 .profile-host-content {
-  --background: #f7f7f7;
+  --background: #fbf8f3;
   --padding-start: 0;
   --padding-end: 0;
   --padding-bottom: 80px;
@@ -37,7 +37,6 @@
   }
 }
 
-// Profile Header Card
 .profile-header-card {
   background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
   padding: 24px 16px;
@@ -75,43 +74,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
-  ion-icon {
-    font-size: 1.5rem;
-  }
+  ion-icon { font-size: 1.5rem; }
 }
 
-.profile-name {
-  margin: 0;
-  font-size: 1.6rem;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.profile-bio {
-  margin: 0;
-  font-size: 0.95rem;
-  opacity: 0.9;
-  margin-bottom: 12px;
-}
-
+.profile-name { margin: 0; font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+.profile-bio { margin: 0; font-size: 0.95rem; opacity: 0.9; margin-bottom: 12px; }
 .profile-rating {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.9rem;
-
-  .star-icon {
-    color: #fbbf24;
-    font-size: 1.1rem;
-  }
-
-  .rating-text {
-    opacity: 0.95;
-  }
+  .star-icon { color: #fbbf24; font-size: 1.1rem; }
+  .rating-text { opacity: 0.95; }
 }
 
-// Stats Grid
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -131,43 +107,14 @@
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
 
-  .stat-icon {
-    font-size: 1.8rem;
-    margin-bottom: 8px;
-    opacity: 0.9;
-  }
-
-  .stat-content {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .stat-value {
-    margin: 0;
-    font-size: 1.4rem;
-    font-weight: 700;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    opacity: 0.85;
-    font-weight: 500;
-  }
+  .stat-icon { font-size: 1.8rem; margin-bottom: 8px; opacity: 0.9; }
+  .stat-content { display: flex; flex-direction: column; gap: 4px; }
+  .stat-value { margin: 0; font-size: 1.4rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; opacity: 0.85; font-weight: 500; }
 }
 
-// Tabs Section
-.tabs-section {
-  background: white;
-  padding: 0;
-  margin-top: 16px;
-}
-
-.tabs-header {
-  display: flex;
-  border-bottom: 1px solid #e5e5e5;
-  background: white;
-}
+.tabs-section { background: white; padding: 0; margin-top: 16px; }
+.tabs-header { display: flex; border-bottom: 1px solid #e5e5e5; background: white; }
 
 .tab-button {
   flex: 1;
@@ -190,16 +137,8 @@
   }
 }
 
-// Coins List
-.coins-list {
-  padding: 16px;
-  padding-bottom: 32px;
-}
-
-.coins-container {
-  display: grid;
-  gap: 16px;
-}
+.coins-list { padding: 16px; padding-bottom: 32px; }
+.coins-container { display: grid; gap: 16px; }
 
 .coin-card {
   display: flex;
@@ -221,43 +160,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
+  img { width: 100%; height: 100%; object-fit: contain; }
 }
 
-.coin-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.coin-name {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #111;
-}
-
+.coin-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.coin-name { margin: 0; font-size: 0.95rem; font-weight: 600; color: #111; }
 .coin-details {
   display: flex;
   gap: 8px;
   margin-top: 6px;
-
-  .condition-tag {
-    font-size: 0.75rem;
-    color: #666;
-    font-weight: 500;
-  }
-
-  .views-count {
-    font-size: 0.75rem;
-    color: #999;
-  }
+  .condition-tag { font-size: 0.75rem; color: #666; font-weight: 500; }
+  .views-count { font-size: 0.75rem; color: #999; }
 }
 
 .coin-footer {
@@ -265,13 +178,7 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 8px;
-
-  .coin-price {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #f97316;
-  }
-
+  .coin-price { font-size: 1rem; font-weight: 700; color: #f97316; }
   .coin-status {
     font-size: 0.75rem;
     color: #4ade80;
@@ -282,12 +189,7 @@
   }
 }
 
-.coin-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content: center;
-}
+.coin-actions { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
 
 .action-btn {
   background: transparent;
@@ -298,56 +200,107 @@
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-
-  &.edit-btn {
-    color: #666;
-    border-color: #ddd;
-
-    &:hover {
-      background: #f5f5f5;
-    }
-  }
-
-  &.remove-btn {
-    color: #ef4444;
-    border-color: #fecaca;
-
-    &:hover {
-      background: rgba(239, 68, 68, 0.05);
-    }
-  }
+  &.edit-btn { color: #666; border-color: #ddd; &:hover { background: #f5f5f5; } }
+  &.remove-btn { color: #ef4444; border-color: #fecaca; &:hover { background: rgba(239, 68, 68, 0.05); } }
 }
 
-// Empty State
 .empty-state {
   text-align: center;
   padding: 40px 16px;
   background: white;
   border-radius: 16px;
   margin-top: 16px;
+  h3 { margin: 0 0 8px 0; font-size: 1rem; color: #111; font-weight: 600; }
+  p { margin: 0; font-size: 0.9rem; color: #888; }
+}
 
-  h3 {
-    margin: 0 0 8px 0;
-    font-size: 1rem;
-    color: #111;
-    font-weight: 600;
+/* INTERFACE DEFINIÇÕES */
+.settings-view-panel { padding: 16px; }
+
+.settings-back-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  .settings-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 0;
+    color: #f97316;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0;
+    cursor: pointer;
+    ion-icon { font-size: 1.1rem; }
+  }
+  h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #0f172a; }
+}
+
+.settings-menu-list {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+
+  &:last-child { border-bottom: 0; }
+  &:active { background: #f8fafc; }
+
+  .settings-item-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #334155;
+    ion-icon { font-size: 1.4rem; color: #64748b; }
+    span { font-size: 0.95rem; font-weight: 600; }
   }
 
-  p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #888;
+  .arrow-icon { color: #cbd5e1; font-size: 1.1rem; }
+  .settings-value-text { font-size: 0.85rem; color: #94a3b8; font-weight: 600; }
+
+  &.settings-item--danger {
+    .settings-item-left { color: #ef4444; ion-icon { color: #ef4444; } }
+    &:active { background: #fef2f2; }
   }
 }
 
-// Responsive
-@media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+/* FORÇAR DIÁLOGOS NATIVOS DO IONIC A USAR COR LARANJA CONDIDANTE */
+:root {
+  --ion-color-primary: #f97316 !important;
+  --ion-color-primary-inner: #ffffff !important;
+}
 
-  .tab-button {
-    font-size: 0.8rem;
-    padding: 12px 8px;
+.orange-alert-theme {
+  --button-color: #f97316 !important;
+  button {
+    color: #f97316 !important;
+    font-weight: 700 !important;
   }
+  .alert-radio-icon.sc-ion-alert-md {
+    border-color: #f97316 !important;
+  }
+  [aria-checked=true] .alert-radio-icon.sc-ion-alert-md {
+    border-color: #f97316 !important;
+    .alert-radio-inner.sc-ion-alert-md {
+      background-color: #f97316 !important;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .tab-button { font-size: 0.8rem; padding: 12px 8px; }
 }

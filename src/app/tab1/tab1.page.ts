@@ -25,8 +25,10 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
 export class Tab1Page {
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
   readonly strings$: Observable<AppStrings> = this.stringsService.strings$;
+  
   readonly featuredCoins$: Observable<InventoryCard[]> =
     this.inventoryCards$.pipe(map((cards) => cards.slice(0, 4)));
+    
   readonly recentlyAdded$: Observable<RecentInventoryCard[]> =
     this.inventoryCards$.pipe(
       map((cards) =>
@@ -39,6 +41,7 @@ export class Tab1Page {
           })),
       ),
     );
+    
   readonly summary$ = combineLatest([
     this.inventoryCards$,
     this.marketplaceService.offers$,
@@ -55,10 +58,11 @@ export class Tab1Page {
     private readonly stringsService: StringsService,
   ) {}
 
+  // CORREÇÃO DEFINITIVA: Mudado de 'inventario' para 'inicio' para o botão de voltar funcionar!
   openCoin(coin: Coin): void {
     void this.router.navigate(['/coin', coin.id], {
       queryParams: {
-        from: 'inventario',
+        from: 'inicio',
       },
     });
   }
