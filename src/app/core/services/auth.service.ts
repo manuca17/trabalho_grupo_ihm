@@ -131,6 +131,36 @@ export class AuthService {
     return profile;
   }
 
+  // Grava de forma persistente os novos dados de Perfil (Nome e Link da Foto) no ecossistema Firebase
+  async updateProfileFields(displayName: string, photoUrl?: string): Promise<void> {
+    const currentUser = this.firebaseAuth.currentUser;
+    const currentProfile = this.currentProfileSnapshot;
+
+    if (!currentUser || !currentProfile) {
+      throw new Error('Nenhum utilizador autenticado encontrado.');
+    }
+
+    // 1. Atualizar Perfil Nativo de Autenticação do Firebase
+    await updateProfile(currentUser, {
+      displayName: displayName,
+      photoURL: photoUrl || currentUser.photoURL
+    });
+
+    // 2. Criar uma nova instância do modelo incluindo os dados estritos atualizados
+    const updatedProfile = new UserProfileModel({
+      ...currentProfile,
+      displayName: displayName,
+      avatarUrl: photoUrl || currentProfile.avatarUrl || '',
+      avatarInitials: UserProfileModel.buildInitials(displayName)
+    });
+
+    // 3. Persistir na base de dados Firestore do projeto
+    await this.saveProfile(updatedProfile);
+
+    // 4. Notificar todos os Observables da app para atualizar a UI em tempo real
+    this.currentProfileSubject.next(updatedProfile);
+  }
+
   async logout(): Promise<void> {
     await signOut(this.firebaseAuth);
     this.currentSessionSubject.next(null);

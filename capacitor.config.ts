@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'AncientCoins',
+  appId: 'com.ancientcoin.exchange',
+  appName: 'Ancient Coin',
   webDir: 'www'
 };
 

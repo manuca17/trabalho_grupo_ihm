@@ -10,73 +10,153 @@
 </ion-header>
 
 <ion-content class="profile-host-content">
-  <ng-container *ngIf="currentProfile$ | async as profile">
-    <!-- Profile Header Card -->
-    <section class="profile-header-card">
-      <div class="profile-header-top">
-        <div class="profile-avatar-large">{{ profile.avatarInitials }}</div>
-        <button class="settings-btn" (click)="openSettings()">
-          <ion-icon name="settings-outline"></ion-icon>
+  
+  <div *ngIf="showSettings; else profileView">
+    
+    <div *ngIf="showEditProfile; else settingsMenuList" class="settings-view-panel">
+      <div class="settings-back-header">
+        <button type="button" class="settings-back-btn" (click)="closeEditProfile()">
+          <ion-icon name="arrow-back-outline"></ion-icon>
+          <span>Voltar às Definições</span>
         </button>
+        <h2>Editar Perfil</h2>
       </div>
-      <h1 class="profile-name">{{ profile.displayName }}</h1>
-      <p class="profile-bio">{{ profile.bio }}</p>
-      <div class="profile-rating">
-        <ion-icon name="star" class="star-icon"></ion-icon>
-        <span class="rating-text">{{ profile.stats.rating }} (24 avaliações)</span>
-      </div>
-    </section>
 
-    <!-- Stats Cards -->
-    <section class="stats-grid">
-      <div class="stat-box">
-        <ion-icon name="albums-outline" class="stat-icon"></ion-icon>
-        <div class="stat-content">
-          <p class="stat-value">{{ (myCoins$ | async)?.length || 0 }}</p>
-          <span class="stat-label">Moedas Ativas</span>
+      <div class="edit-profile-form">
+        <div class="figma-input-item">
+          <label>Nome do Colecionador</label>
+          <input type="text" [(ngModel)]="newName" placeholder="Ex: João Silva" />
         </div>
-      </div>
-      <div class="stat-box">
-        <ion-icon name="trending-up-outline" class="stat-icon"></ion-icon>
-        <div class="stat-content">
-          <p class="stat-value">{{ profile.stats.publishedOffers }}</p>
-          <span class="stat-label">Vendas</span>
-        </div>
-      </div>
-      <div class="stat-box">
-        <ion-icon name="star-outline" class="stat-icon"></ion-icon>
-        <div class="stat-content">
-          <p class="stat-value">{{ profile.stats.rating }}</p>
-          <span class="stat-label">Avaliação</span>
-        </div>
-      </div>
-    </section>
 
-    <!-- Tabs Section -->
-    <section class="tabs-section">
-      <div class="tabs-header">
-        <button 
-          class="tab-button" 
-          [class.active]="activeTab === 'active'"
-          (click)="setActiveTab('active')"
-        >
-          Minhas Moedas ({{ (myCoins$ | async)?.length || 0 }})
-        </button>
-        <button 
-          class="tab-button"
-          [class.active]="activeTab === 'sold'"
-          (click)="setActiveTab('sold')"
-        >
-          Vendidas ({{ soldCoinsCount || 0 }})
-        </button>
-        <button 
-          class="tab-button"
-          [class.active]="activeTab === 'traded'"
-          (click)="setActiveTab('traded')"
-        >
-          Trocadas ({{ tradedCoinsCount || 0 }})
-        </button>
+        <div class="figma-input-item">
+          <label>Fotografia de Perfil (URL da Imagem)</label>
+          <div class="photo-upload-container">
+            <input type="text" [(ngModel)]="newPhotoUrl" placeholder="Cole o link da imagem aqui..." />
+            <button type="button" class="form-camera-btn">
+              <ion-icon name="camera-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="submit-container" style="margin-top: 24px;">
+          <button type="button" class="figma-submit-btn" (click)="saveProfileChanges()">
+            GUARDAR ALTERAÇÕES
+          </button>
+        </div>
       </div>
+    </div>
+
+    <ng-template #settingsMenuList>
+      <div class="settings-view-panel">
+        <div class="settings-back-header">
+          <button type="button" class="settings-back-btn" (click)="closeSettings()">
+            <ion-icon name="arrow-back-outline"></ion-icon>
+            <span>Voltar ao Perfil</span>
+          </button>
+          <h2>Definições</h2>
+        </div>
+
+        <div class="settings-menu-list">
+          <div class="settings-item" (click)="openEditProfile()">
+            <div class="settings-item-left">
+              <ion-icon name="person-circle-outline"></ion-icon>
+              <span>Editar Perfil de Numismata</span>
+            </div>
+            <ion-icon name="chevron-forward-outline" class="arrow-icon"></ion-icon>
+          </div>
+
+          <div class="settings-item" (click)="triggerChangeUnit()">
+            <div class="settings-item-left">
+              <ion-icon name="scale-outline"></ion-icon>
+              <span>Unidade de Medida (Peso)</span>
+            </div>
+            <span class="settings-value-text">{{ currentUnit }}</span>
+          </div>
+
+          <div class="settings-item" (click)="triggerChangeCurrency()">
+            <div class="settings-item-left">
+              <ion-icon name="cash-outline"></ion-icon>
+              <span>Moeda de Exibição (Câmbio)</span>
+            </div>
+            <span class="settings-value-text">{{ currentCurrency }}</span>
+          </div>
+
+          <div class="settings-item settings-item--toggle">
+            <div class="settings-item-left">
+              <ion-icon name="notifications-outline"></ion-icon>
+              <span>Notificações de Propostas</span>
+            </div>
+            <ion-toggle [checked]="notificationsEnabled" (ionChange)="toggleNotificationsEvent($event)"></ion-toggle>
+          </div>
+
+          <div class="settings-item settings-item--danger" (click)="logout()">
+            <div class="settings-item-left">
+              <ion-icon name="log-out-outline"></ion-icon>
+              <span>Terminar Sessão (Sair)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <ng-template #profileView>
+    <ng-container *ngIf="currentProfile$ | async as profile">
+      
+      <section class="profile-header-card">
+        <div class="profile-header-top">
+          <div class="profile-avatar-large">
+            <img *ngIf="profile.avatarUrl; else initialsView" [src]="profile.avatarUrl" alt="Avatar" class="avatar-img-render" />
+            <ng-template #initialsView>{{ profile.avatarInitials }}</ng-template>
+          </div>
+          <button class="settings-btn" (click)="openSettings()">
+            <ion-icon name="settings-outline"></ion-icon>
+          </button>
+        </div>
+        <h1 class="profile-name">{{ profile.displayName }}</h1>
+        <p class="profile-bio">{{ profile.bio }}</p>
+        <div class="profile-rating">
+          <ion-icon name="star" class="star-icon"></ion-icon>
+          <span class="rating-text">{{ profile.stats.rating }} (24 avaliações)</span>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-box">
+          <ion-icon name="albums-outline" class="stat-icon"></ion-icon>
+          <div class="stat-content">
+            <p class="stat-value">{{ (myCoins$ | async)?.length || 0 }}</p>
+            <span class="stat-label">Moedas Ativas</span>
+          </div>
+        </div>
+        <div class="stat-box">
+          <ion-icon name="trending-up-outline" class="stat-icon"></ion-icon>
+          <div class="stat-content">
+            <p class="stat-value">{{ profile.stats.publishedOffers }}</p>
+            <span class="stat-label">Vendas</span>
+          </div>
+        </div>
+        <div class="stat-box">
+          <ion-icon name="star-outline" class="stat-icon"></ion-icon>
+          <div class="stat-content">
+            <p class="stat-value">{{ profile.stats.rating }}</p>
+            <span class="stat-label">Avaliação</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="tabs-section">
+        <div class="tabs-header">
+          <button class="tab-button" [class.active]="activeTab === 'active'" (click)="setActiveTab('active')">
+            Minhas Moedas ({{ (myCoins$ | async)?.length || 0 }})
+          </button>
+          <button class="tab-button" [class.active]="activeTab === 'sold'" (click)="setActiveTab('sold')">
+            Vendidas ({{ soldCoinsCount || 0 }})
+          </button>
+          <button class="tab-button" [class.active]="activeTab === 'traded'" (click)="setActiveTab('traded')">
+            Trocadas ({{ tradedCoinsCount || 0 }})
+          </button>
+        </div>
 
       <!-- Coins List -->
       <div class="coins-list" *ngIf="activeTab === 'active'">
@@ -98,6 +178,7 @@
                 </div>
               </div>
               <div class="coin-actions">
+                <button class="action-btn edit-btn" (click)="editCoin(item.coin)">Editar</button>
                 <button class="action-btn remove-btn" (click)="removeCoin(item.coin)">Remover</button>
               </div>
             </div>

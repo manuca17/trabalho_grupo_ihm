@@ -16,14 +16,10 @@
         <div>
           <p class="eyebrow">Ancient Coins Exchange</p>
           <h1>Bem-vindo de volta!</h1>
-          <p class="hero-copy">
-            Descubra moedas raras, publique novas ofertas e acompanhe trocas da
-            sua coleção.
-          </p>
+          <p class="hero-copy">Descubra moedas raras, publique novas ofertas e acompanhe trocas da sua coleção.</p>
         </div>
         <ion-icon name="trending-up-outline"></ion-icon>
       </div>
-
       <div class="hero-stats">
         <div class="stat-card">
           <span>Moedas disponíveis</span>
@@ -41,27 +37,16 @@
     <div class="section-heading">
       <h2>Em Destaque</h2>
       <button type="button" class="ghost-link" (click)="openNegotiations()">
-        Ver tudo
-        <ion-icon name="arrow-forward-outline"></ion-icon>
+        Ver tudo <ion-icon name="arrow-forward-outline"></ion-icon>
       </button>
     </div>
-
     <div class="featured-grid">
-      <button
-        type="button"
-        class="featured-card"
-        *ngFor="let item of featuredCoins$ | async"
-        (click)="openCoin(item.coin)"
-      >
-        <div class="featured-media">
-          <img [src]="item.coin.image" [alt]="item.coin.name" />
-        </div>
+      <button type="button" class="featured-card" *ngFor="let item of featuredCoins$ | async" (click)="openCoin(item.coin)">
+        <div class="featured-media"><img [src]="item.coin.image" [alt]="item.coin.name" /></div>
         <div class="featured-body">
           <h3>{{ item.coin.name }}</h3>
           <div class="featured-meta">
-            <span class="price-tag" [class.price-tag--trade]="isTrade(item)">
-              {{ getPriceLabel(item) }}
-            </span>
+            <span class="price-tag" [class.price-tag--trade]="isTrade(item)">{{ item.customDisplayPrice }}</span>
             <span class="condition-tag">{{ item.coin.conservation }}</span>
           </div>
         </div>
@@ -70,56 +55,20 @@
   </section>
 
   <section class="content-section">
-    <div class="section-heading">
-      <h2>Adicionadas Recentemente</h2>
-    </div>
-
+    <div class="section-heading"><h2>Adicionadas Recentemente</h2></div>
     <div class="recent-list">
-      <button
-        type="button"
-        class="recent-card"
-        *ngFor="let item of recentlyAdded$ | async"
-        (click)="openCoin(item.coin)"
-      >
+      <button type="button" class="recent-card" *ngFor="let item of recentlyAdded$ | async" (click)="openCoin(item.coin)">
         <div class="recent-main">
-          <div class="recent-thumb">
-            <img [src]="item.coin.image" [alt]="item.coin.name" />
-          </div>
+          <div class="recent-thumb"><img [src]="item.coin.image" [alt]="item.coin.name" /></div>
           <div class="recent-copy">
             <h3>{{ item.coin.name }}</h3>
-            <div class="recent-meta">
-              <span>{{ item.timeLabel }}</span>
-              <span class="condition-tag">{{ item.coin.conservation }}</span>
-            </div>
+            <div class="recent-meta"><span>{{ item.timeLabel }}</span><span class="condition-tag">{{ item.coin.conservation }}</span></div>
           </div>
         </div>
-
         <div class="recent-side">
-          <strong>{{ getPriceLabel(item) }}</strong>
+          <strong>{{ item.customDisplayPrice }}</strong>
           <span>{{ getOfferStateLabel(item.lastOffer) }}</span>
         </div>
-      </button>
-    </div>
-  </section>
-
-  <section class="content-section quick-actions">
-    <div class="section-heading">
-      <h2>Ações Rápidas</h2>
-    </div>
-
-    <div class="actions-grid">
-      <button
-        type="button"
-        class="action-card action-card--primary"
-        (click)="openAddOffer()"
-      >
-        <ion-icon name="camera-outline"></ion-icon>
-        <span>Adicionar Moeda</span>
-      </button>
-
-      <button type="button" class="action-card" (click)="openNegotiations()">
-        <ion-icon name="search-outline"></ion-icon>
-        <span>Pesquisar Catálogo</span>
       </button>
     </div>
   </section>

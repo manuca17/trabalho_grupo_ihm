@@ -1,5 +1,6 @@
 <ion-header [translucent]="true">
-  <ion-toolbar class="app-toolbar">
+  <!-- CABEÇALHO UNIFICADO: Agora com o mesmo estilo das restantes páginas (Print 1) -->
+  <ion-toolbar class="search-toolbar">
     <ion-buttons slot="start" *ngIf="mode === 'proposal'">
       <button
         type="button"
@@ -9,8 +10,8 @@
         <ion-icon name="arrow-back-outline"></ion-icon>
       </button>
     </ion-buttons>
-    <div class="app-header-body">
-      <div class="app-header-body__content">
+    <div class="search-header">
+      <div class="search-header__content">
         <strong>AncientCoins</strong>
         <span>Colecionadores de Moedas</span>
       </div>
@@ -23,6 +24,7 @@
   [class.add-coin-content]="mode === 'create'"
   [class.make-offer-content]="mode === 'proposal'"
 >
+  <!-- CÓDIGO MISTURADO PRESERVADO: Ecrã de Proposta ao Vendedor intocado -->
   <ng-container *ngIf="mode === 'proposal'; else createOfferView">
     <ng-container *ngIf="selectedCoin as currentCoin">
       <section class="offer-page-header">
@@ -136,9 +138,7 @@
       </section>
 
       <section class="proposal-section">
-        <label class="field-label" for="proposal-message"
-          >Mensagem ao Vendedor</label
-        >
+        <label class="field-label" for="proposal-message">Mensagem ao Vendedor</label>
         <textarea
           id="proposal-message"
           [(ngModel)]="message"
@@ -146,7 +146,7 @@
           rows="5"
           placeholder="Escreva uma mensagem opcional..."
         ></textarea>
-        <p class="hint-text">{{ message.length }}/500 caracteres</p>
+        <p class="hint-text">Preço pedido: {{ proposalPriceLabel }}</p>
       </section>
 
       <section class="proposal-summary">
@@ -176,16 +176,14 @@
     </ng-container>
   </ng-container>
 
+  <!-- FORMULÁRIO DE CRIAÇÃO ATUALIZADO COM O DESIGN INTEGRADO -->
   <ng-template #createOfferView>
     <div *ngIf="submitted" class="success-screen">
       <div class="success-icon-container">
         <ion-icon name="checkmark-circle" color="success"></ion-icon>
       </div>
       <h3>Moeda Adicionada!</h3>
-      <p>
-        A sua moeda foi publicada com sucesso e já está disponível para outros
-        colecionadores.
-      </p>
+      <p>A sua moeda foi publicada com sucesso e já está disponível para outros colecionadores.</p>
     </div>
 
     <div *ngIf="!submitted" class="form-container">
@@ -194,11 +192,9 @@
         <p>Preencha os detalhes e tire fotografias da sua moeda.</p>
       </section>
 
-      <form
-        [formGroup]="offerForm"
-        class="offer-form"
-        (ngSubmit)="handleSubmit()"
-      >
+      <form [formGroup]="offerForm" class="offer-form" (ngSubmit)="handleSubmit()">
+        
+        <!-- Bloco de Fotos Corrigido e Alinhado com a Estética Geral -->
         <section class="photos-section">
           <label class="section-label">Fotografias da Moeda</label>
 
@@ -209,9 +205,7 @@
               *ngFor="let step of photoSteps; let i = index"
               (click)="capturePhoto(step)"
             >
-              <ng-container
-                *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder"
-              >
+              <ng-container *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder">
                 <div class="photo-wrapper">
                   <img [src]="captured.dataUrl" [alt]="captured.label" />
                   <button
@@ -232,125 +226,83 @@
               </ng-template>
             </button>
           </div>
-          <p class="hint-text">
-            Recomendamos 3 fotos: anverso, reverso e bordo da moeda
-          </p>
+          <p class="hint-text">Recomendamos 3 fotos: anverso, reverso e bordo da moeda</p>
         </section>
 
-        <ion-list inset="true" class="form-list">
-          <ion-item>
-            <ion-input
-              label="Título / Descrição Breve"
-              labelPlacement="stacked"
-              type="text"
-              formControlName="title"
-              placeholder="Ex: Denário Romano - Augusto"
-            ></ion-input>
-          </ion-item>
-
-          <ion-item>
-            <ion-input
-              label="Quantidade"
-              labelPlacement="stacked"
-              type="number"
-              min="1"
-              formControlName="quantity"
-            ></ion-input>
-          </ion-item>
-
-          <ion-item>
-            <ion-select
-              label="Era Histórica"
-              labelPlacement="stacked"
-              formControlName="era"
-              placeholder="Selecionar"
-            >
-              <ion-select-option value="romano"
-                >Império Romano</ion-select-option
-              >
-              <ion-select-option value="grego">Grécia Antiga</ion-select-option>
-              <ion-select-option value="portugues">Portugal</ion-select-option>
-              <ion-select-option value="bizantino"
-                >Império Bizantino</ion-select-option
-              >
-            </ion-select>
-          </ion-item>
-
-          <ion-item>
-            <ion-select
-              label="Estado de Conservação"
-              labelPlacement="stacked"
-              formControlName="condition"
-              placeholder="Selecionar"
-            >
-              <ion-select-option value="bc"
-                >BC (Bem Conservada)</ion-select-option
-              >
-              <ion-select-option value="mbc"
-                >MBC (Muito Bem Conservada)</ion-select-option
-              >
-              <ion-select-option value="bela">Bela</ion-select-option>
-              <ion-select-option value="soberba">Soberba</ion-select-option>
-            </ion-select>
-          </ion-item>
-
-          <ion-item>
-            <ion-textarea
-              label="Descrição Detalhada"
-              labelPlacement="stacked"
-              autoGrow="true"
-              rows="4"
-              formControlName="description"
-              placeholder="Detalhes sobre origem, características, história..."
-            ></ion-textarea>
-          </ion-item>
-
-          <ion-item>
-            <ion-input
-              label="Valor Real Estimado (€)"
-              labelPlacement="stacked"
-              type="number"
-              step="0.01"
-              formControlName="realValue"
-              placeholder="0.00"
-            ></ion-input>
-          </ion-item>
-
-          <ion-item lines="none">
-            <ion-label>Disponível para</ion-label>
-          </ion-item>
-          <div class="segment-container">
-            <ion-segment formControlName="availableFor">
-              <ion-segment-button value="sale">
-                <ion-label>Venda</ion-label>
-              </ion-segment-button>
-              <ion-segment-button value="trade">
-                <ion-label>Troca</ion-label>
-              </ion-segment-button>
-            </ion-segment>
+        <!-- Elementos de Detalhes Estilizados -->
+        <div class="figma-form-group">
+          <div class="figma-input-item">
+            <label>Título / Descrição Breve</label>
+            <input type="text" formControlName="title" placeholder="Ex: Denário Romano - Augusto" />
           </div>
 
-          <ion-item *ngIf="offerForm.get('availableFor')?.value === 'sale'">
-            <ion-input
-              label="Preço de Venda (€)"
-              labelPlacement="stacked"
-              type="number"
-              step="0.01"
-              formControlName="salePrice"
-              placeholder="0.00"
-            ></ion-input>
-          </ion-item>
-        </ion-list>
+          <div class="figma-row-grid">
+            <div class="figma-input-item">
+              <label>Quantidade</label>
+              <input type="number" min="1" formControlName="quantity" />
+            </div>
+
+            <div class="figma-input-item">
+              <label>Era Histórica</label>
+              <select formControlName="era">
+                <option value="" disabled selected>Selecionar</option>
+                <option value="romano">Império Romano</option>
+                <option value="grego">Grécia Antiga</option>
+                <option value="portugues">Portugal</option>
+                <option value="bizantino">Império Bizantino</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="figma-input-item">
+            <label>Estado de Conservação</label>
+            <select formControlName="condition">
+              <option value="" disabled selected>Selecionar</option>
+              <option value="bc">BC (Bem Conservada)</option>
+              <option value="mbc">MBC (Muito Bem Conservada)</option>
+              <option value="bela">Bela</option>
+              <option value="soberba">Soberba</option>
+            </select>
+          </div>
+
+          <div class="figma-input-item">
+            <label>Descrição Detalhada</label>
+            <textarea rows="4" formControlName="description" placeholder="Detalhes sobre origem, características, história..."></textarea>
+          </div>
+
+          <div class="figma-input-item">
+            <label>Valor Real Estimado (€)</label>
+            <input type="number" step="0.01" formControlName="realValue" placeholder="0" />
+          </div>
+
+          <div class="availability-section">
+            <label class="availability-label">Disponível para</label>
+            <div class="segment-container">
+              <ion-segment formControlName="availableFor">
+                <ion-segment-button value="sale">
+                  <ion-label>VENDA</ion-label>
+                </ion-segment-button>
+                <ion-segment-button value="trade">
+                  <ion-label>TROCA</ion-label>
+                </ion-segment-button>
+              </ion-segment>
+            </div>
+          </div>
+
+          <div class="figma-input-item" *ngIf="offerForm.get('availableFor')?.value === 'sale'">
+            <label>Preço de Venda (€)</label>
+            <input type="number" step="0.01" formControlName="salePrice" placeholder="0" />
+          </div>
+        </div>
 
         <div class="submit-container">
-          <ion-button
+          <button
             type="submit"
-            expand="block"
-            color="warning"
+            class="figma-submit-btn"
             [disabled]="offerForm.invalid || photos.length < 3"
           >
-            Publicar Moeda
-          </ion-button>
+            PUBLICAR MOEDA
+          </button>
         </div>
       </form>
     </div>

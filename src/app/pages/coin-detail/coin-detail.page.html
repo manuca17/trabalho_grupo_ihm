@@ -1,5 +1,22 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="app-toolbar">
+    <ion-buttons slot="start">
+      <button type="button" class="back-nav-btn" (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </button>
+    </ion-buttons>
+    <div class="app-header-body">
+      <div class="app-header-body__content">
+        <strong>AncientCoins</strong>
+        <span>Detalhes da Relíquia</span>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
 <ion-content [fullscreen]="true" class="detail-content">
   <ng-container *ngIf="coin as currentCoin">
+    
     <section class="media-hero">
       <div class="media-stage">
         <img
@@ -8,17 +25,9 @@
         />
       </div>
 
-      <button
-        type="button"
-        class="floating-icon floating-icon--left"
-        (click)="goBack()"
-      >
-        <ion-icon name="arrow-back-outline"></ion-icon>
-      </button>
-
       <div class="floating-actions">
         <button type="button" class="floating-icon" (click)="toggleSaved()">
-          <ion-icon [name]="isSaved ? 'heart' : 'heart-outline'"></ion-icon>
+          <ion-icon [name]="isSaved ? 'heart' : 'heart-outline'" [class.saved-active]="isSaved"></ion-icon>
         </button>
         <button type="button" class="floating-icon" (click)="shareCoin()">
           <ion-icon name="share-social-outline"></ion-icon>
@@ -38,30 +47,28 @@
       </div>
     </section>
 
-    <section class="detail-stack">
+    <div class="detail-stack">
       <article class="surface-card headline-card">
         <h1>{{ currentCoin.name }}</h1>
-
         <div class="headline-row">
-          <strong class="price" [class.price--trade]="isTrade"
-            >{{ displayPrice }}</strong
-          >
+          <strong class="price" [class.price--trade]="isTrade">{{ displayPrice }}</strong>
           <span class="condition-pill">{{ currentCoin.conservation }}</span>
         </div>
       </article>
 
       <article class="surface-card seller-card">
         <div class="seller-main">
-          <div class="seller-avatar">👤</div>
+          <div class="seller-avatar">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
           <div>
             <h2>{{ sellerName }}</h2>
             <div class="seller-rating">
-              <span>⭐</span>
-              <span>{{ sellerRating }}</span>
+              <ion-icon name="star" class="star-gold"></ion-icon>
+              <span>{{ sellerRating }} (24 avaliações)</span>
             </div>
           </div>
         </div>
-
         <button type="button" class="contact-button" (click)="contactSeller()">
           Contactar
         </button>
@@ -69,32 +76,28 @@
 
       <article class="surface-card specs-card">
         <h2>Especificações</h2>
-
         <div class="spec-list">
           <div class="spec-row">
             <ion-icon name="calendar-outline"></ion-icon>
             <div>
-              <span class="spec-label">Ano</span>
+              <span class="spec-label">Ano / Período</span>
               <strong>{{ currentCoin.period }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="location-outline"></ion-icon>
             <div>
-              <span class="spec-label">Origem</span>
+              <span class="spec-label">Origem Histórica</span>
               <strong>{{ origin }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
-            <ion-icon name="barbell-outline"></ion-icon>
+            <ion-icon name="scale-outline"></ion-icon>
             <div>
-              <span class="spec-label">Peso</span>
-              <strong>{{ weight }}</strong>
+              <span class="spec-label">Peso da Moeda</span>
+              <strong class="reactive-weight-text">{{ weight }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="resize-outline"></ion-icon>
             <div>
@@ -102,11 +105,10 @@
               <strong>{{ diameter }}</strong>
             </div>
           </div>
-
           <div class="spec-row">
             <ion-icon name="shield-half-outline"></ion-icon>
             <div>
-              <span class="spec-label">Material</span>
+              <span class="spec-label">Material / Metal</span>
               <strong>{{ currentCoin.material }}</strong>
             </div>
           </div>
@@ -135,26 +137,17 @@
           <strong>{{ currentCoin.location }}</strong>
         </div>
       </article>
-
-      <section class="tag-row">
-        <ion-chip *ngFor="let tag of currentCoin.tags">{{ tag }}</ion-chip>
-      </section>
-    </section>
+    </div>
   </ng-container>
 </ion-content>
 
 <ion-footer *ngIf="coin as currentCoin" class="detail-footer">
   <div class="footer-actions">
-    <button
-      type="button"
-      class="primary-action"
-      [class.primary-action--trade]="isTrade"
-      (click)="navigateToOffer()"
-    >
-      {{ isTrade ? 'Propor Troca' : 'Fazer Oferta' }}
+    <button type="button" class="primary-action" [class.primary-action--trade]="isTrade" (click)="navigateToOffer()">
+      {{ isTrade ? 'PROPOR TROCA' : 'FAZER OFERTA' }}
     </button>
     <button type="button" class="secondary-action" (click)="toggleSaved()">
-      {{ isSaved ? 'Guardado' : 'Guardar' }}
+      {{ isSaved ? 'GUARDADO' : 'GUARDAR' }}
     </button>
   </div>
 </ion-footer>

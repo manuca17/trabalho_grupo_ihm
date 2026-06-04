@@ -1,6 +1,6 @@
 import {
-    UserProfileStats,
-    UserProfileStatsModel,
+  UserProfileStats,
+  UserProfileStatsModel,
 } from './user-profile-stat.model';
 
 export interface UserProfile {
@@ -10,6 +10,7 @@ export interface UserProfile {
   bio: string;
   interests: string[];
   avatarInitials: string;
+  avatarUrl?: string; // NOVO: Propriedade opcional adicionada à interface
   createdAt: string;
   updatedAt: string;
   stats: UserProfileStats;
@@ -22,6 +23,7 @@ export class UserProfileModel implements UserProfile {
   bio: string;
   interests: string[];
   avatarInitials: string;
+  avatarUrl?: string; // NOVO: Propriedade opcional adicionada à classe
   createdAt: string;
   updatedAt: string;
   stats: UserProfileStatsModel;
@@ -33,6 +35,7 @@ export class UserProfileModel implements UserProfile {
     this.bio = data.bio;
     this.interests = [...(data.interests ?? [])];
     this.avatarInitials = data.avatarInitials;
+    this.avatarUrl = data.avatarUrl || ''; // NOVO: Inicialização do campo
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
     this.stats = UserProfileStatsModel.fromJson(data.stats);
@@ -54,6 +57,7 @@ export class UserProfileModel implements UserProfile {
     email: string;
     interests?: string[];
     bio?: string;
+    avatarUrl?: string; // NOVO: Suporte opcional no factory por defeito
   }): UserProfileModel {
     const now = new Date().toISOString();
     const displayName = input.displayName.trim();
@@ -67,6 +71,7 @@ export class UserProfileModel implements UserProfile {
         'Colecionador registado na Ancient Coins Exchange.',
       interests: [...(input.interests ?? [])],
       avatarInitials: UserProfileModel.buildInitials(displayName),
+      avatarUrl: input.avatarUrl || '', // NOVO: Mapeia string vazia ou imagem informada
       createdAt: now,
       updatedAt: now,
       stats: UserProfileStatsModel.createDefault().toPlainObject(),
@@ -90,6 +95,7 @@ export class UserProfileModel implements UserProfile {
       bio: this.bio,
       interests: [...this.interests],
       avatarInitials: this.avatarInitials,
+      avatarUrl: this.avatarUrl || '', // NOVO: Expõe a propriedade no objeto simples
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       stats: this.stats.toPlainObject(),

@@ -39,37 +39,83 @@ import { LocalStorageService } from './local-storage.service';
 const OFFERS_COLLECTION = 'offers';
 const NEGOTIATIONS_COLLECTION = 'negotiations';
 
-/**
- * Coordinates inventory, offers and negotiations using Firestore.
- * Now with real-time listeners for chat/negotiations.
- */
 @Injectable({
   providedIn: 'root',
 })
 export class MarketplaceService implements OnDestroy {
   private readonly offersSubject = new BehaviorSubject<Offer[]>([]);
-  private readonly negotiationsSubject = new BehaviorSubject<
-    NegotiationThread[]
-  >([]);
+  private readonly negotiationsSubject = new BehaviorSubject<NegotiationThread[]>([]);
+  
+  private readonly activeUnitSubject = new BehaviorSubject<'g' | 'oz'>('g');
+  // NOVO: Estado centralizado reativo para controlar a divisa comercial preferida ('EUR' ou 'USD')
+  private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD'>('EUR');
+
   private isInitialized = false;
   private negotiationsUnsubscribe: Unsubscribe | null = null;
   private offersUnsubscribe: Unsubscribe | null = null;
 
   readonly offers$ = this.offersSubject.asObservable();
   readonly negotiations$ = this.negotiationsSubject.asObservable();
-
   readonly catalog$ = this.contentService.coins$;
+  
+  readonly activeUnit$ = this.activeUnitSubject.asObservable();
+  // NOVO: Exposição pública do Observable da divisa para os ecrãs subscreverem
+  readonly activeCurrency$ = this.activeCurrencySubject.asObservable();
 
+  // ATUALIZADO: Agora escuta a unidade de peso e a moeda comercial, aplicando transformações dinâmicas
   readonly inventoryCards$: Observable<
-    Array<{ coin: Coin; lastOffer?: Offer }>
-  > = combineLatest([this.catalog$, this.offers$]).pipe(
-    map(([coins, offers]) =>
-      coins.map((coin) => ({
-        coin,
-        lastOffer: [...offers]
+    Array<{ coin: Coin; lastOffer?: Offer; customDisplayPrice?: string }>
+  > = combineLatest([this.catalog$, this.offers$, this.activeUnit$, this.activeCurrency$]).pipe(
+    map(([coins, offers, unit, currency]) =>
+      coins.map((coin) => {
+        const mappedCoin = { ...coin };
+        
+        // 1. Conversão de Unidade de Peso
+        if (unit === 'oz' && mappedCoin.weight) {
+          const numericWeight = parseFloat(mappedCoin.weight);
+          if (!isNaN(numericWeight)) {
+            mappedCoin.weight = `${(numericWeight * 0.035274).toFixed(2)} oz`;
+          }
+        } else if (unit === 'g' && mappedCoin.weight) {
+          const numericWeight = parseFloat(mappedCoin.weight);
+          if (!isNaN(numericWeight)) {
+            mappedCoin.weight = `${numericWeight.toFixed(1)}g`;
+          }
+        }
+
+        // 2. Localizar Oferta correspondente
+        const lastOffer = [...offers]
           .reverse()
-          .find((offer) => offer.coinId === coin.id),
-      })),
+          .find((offer) => offer.coinId === coin.id);
+
+        // 3. Conversão Dinâmica de Moeda (EUR para USD se selecionado)
+        let rawPrice = lastOffer?.askPrice ?? coin.estimatedValue;
+        let isTradeOption = !!lastOffer?.availableForTrade;
+        let formattedPriceLabel = 'Troca';
+
+        if (!isTradeOption) {
+          if (currency === 'USD') {
+            rawPrice = rawPrice * 1.08; // Taxa de conversão base indicativa
+            formattedPriceLabel = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+              maximumFractionDigits: 0,
+            }).format(rawPrice);
+          } else {
+            formattedPriceLabel = new Intl.NumberFormat('pt-PT', {
+              style: 'currency',
+              currency: 'EUR',
+              maximumFractionDigits: 0,
+            }).format(rawPrice);
+          }
+        }
+
+        return {
+          coin: mappedCoin,
+          lastOffer,
+          customDisplayPrice: formattedPriceLabel // Injetado rótulo de preço já formatado reativamente
+        };
+      }),
     ),
   );
 
@@ -80,17 +126,10 @@ export class MarketplaceService implements OnDestroy {
     private readonly localStorageService: LocalStorageService,
   ) {}
 
-  /**
-   * Cleanup Firestore listeners when the service is destroyed.
-   */
   ngOnDestroy(): void {
     this.unsubscribeAll();
   }
 
-  /**
-   * Loads offers and negotiations from Firestore on first access
-   * and starts real-time listeners.
-   */
   async init(): Promise<void> {
     if (this.isInitialized) {
       return;
@@ -107,22 +146,24 @@ export class MarketplaceService implements OnDestroy {
     );
     this.isInitialized = true;
 
-    // Start real-time listeners for live updates
     this.startNegotiationsListener();
     this.startOffersListener();
   }
 
-  /**
-   * Returns a single coin from the Firestore catalog.
-   */
+  updateActiveUnit(unit: 'g' | 'oz'): void {
+    this.activeUnitSubject.next(unit);
+  }
+
+  // NOVO MÉTODO: Altera reativamente a divisa preferida na aplicação
+  updateActiveCurrency(currency: 'EUR' | 'USD'): void {
+    this.activeCurrencySubject.next(currency);
+  }
+
   async getCoinById(coinId: string): Promise<Coin | undefined> {
     const catalog = await firstValueFrom(this.catalog$);
     return catalog.find((coin) => coin.id === coinId);
   }
 
-  /**
-   * Returns a single offer from persisted state.
-   */
   getOfferById(offerId: string): Offer | undefined {
     return this.offersSubject.value.find((offer) => offer.id === offerId);
   }
@@ -142,27 +183,18 @@ export class MarketplaceService implements OnDestroy {
     }
   }
 
-  /**
-   * Returns a single negotiation thread from persisted state.
-   */
   getNegotiationById(threadId: string): NegotiationThread | undefined {
     return this.negotiationsSubject.value.find(
       (thread) => thread.id === threadId,
     );
   }
 
-  /**
-   * Observable for a single negotiation thread that updates in real-time.
-   */
   getNegotiationById$(threadId: string): Observable<NegotiationThread | undefined> {
     return this.negotiations$.pipe(
       map((threads) => threads.find((thread) => thread.id === threadId)),
     );
   }
 
-  /**
-   * Creates a new offer and stores it locally.
-   */
   async publishOffer(input: {
     coinId: string;
     title: string;
@@ -269,9 +301,6 @@ export class MarketplaceService implements OnDestroy {
     }
   }
 
-  /**
-   * Creates a negotiation thread directly from a coin detail proposal flow.
-   */
   async createProposal(input: {
     offerCoinId: string;
     proposedCoinIds: string[];
@@ -339,14 +368,7 @@ export class MarketplaceService implements OnDestroy {
     return thread;
   }
 
-  /**
-   * Appends a new message to a negotiation thread and stores it in Firestore.
-   * Changes will be synced in real-time to all clients via onSnapshot.
-   */
-  async addNegotiationMessage(
-    threadId: string,
-    body: string,
-  ): Promise<void> {
+  async addNegotiationMessage(threadId: string, body: string): Promise<void> {
     const profile = await this.resolveCurrentProfile();
     const thread = this.getNegotiationById(threadId);
 
@@ -369,12 +391,8 @@ export class MarketplaceService implements OnDestroy {
     };
 
     await this.persistNegotiation(updatedThread);
-    // Note: The local subject will be updated automatically via onSnapshot listener
   }
 
-  /**
-   * Accepts a trade and updates the linked offer state to traded.
-   */
   async markNegotiationAsTraded(threadId: string): Promise<void> {
     const targetThread = this.getNegotiationById(threadId);
 
@@ -382,12 +400,8 @@ export class MarketplaceService implements OnDestroy {
       return;
     }
 
-    const profile = await this.resolveCurrentProfile();
-
     const updatedOffers: Offer[] = this.offersSubject.value.map((offer) =>
-      offer.id === targetThread.offerId
-        ? { ...offer, status: 'traded' }
-        : offer,
+      offer.id === targetThread.offerId ? { ...offer, status: 'traded' } : offer,
     );
     const updatedNegotiations: NegotiationThread[] =
       this.negotiationsSubject.value.map((thread) =>
@@ -412,29 +426,18 @@ export class MarketplaceService implements OnDestroy {
 
     this.offersSubject.next(updatedOffers);
     this.negotiationsSubject.next(updatedNegotiations);
-    const updatedOffer = updatedOffers.find(
-      (offer) => offer.id === targetThread.offerId,
-    );
-    const updatedThread = updatedNegotiations.find(
-      (thread) => thread.id === threadId,
-    );
+    const updatedOffer = updatedOffers.find((offer) => offer.id === targetThread.offerId);
+    const updatedThread = updatedNegotiations.find((thread) => thread.id === threadId);
 
     await Promise.all([
       updatedOffer ? this.persistOffer(updatedOffer) : Promise.resolve(),
-      updatedThread
-        ? this.persistNegotiation(updatedThread)
-        : Promise.resolve(),
+      updatedThread ? this.persistNegotiation(updatedThread) : Promise.resolve(),
     ]);
   }
 
-  private async resolveCurrentProfile(): Promise<{
-    id: string;
-    displayName: string;
-  }> {
+  private async resolveCurrentProfile(): Promise<{ id: string; displayName: string; }> {
     await this.authService.ensureInitialized();
-
     const profile = this.authService.currentProfileSnapshot;
-
     return {
       id: profile?.id ?? 'anonymous-user',
       displayName: profile?.displayName ?? 'Visitante',
@@ -442,33 +445,14 @@ export class MarketplaceService implements OnDestroy {
   }
 
   /**
-   * Starts a real-time listener on the offers Firestore collection.
+   * Starts a real-time listener on the negotiations Firestore collection.
+   * Any changes (new messages, status updates) are reflected immediately.
    */
-  private startOffersListener(): void {
-    this.offersUnsubscribe = onSnapshot(
-      collection(this.firestore, OFFERS_COLLECTION),
-      (snapshot) => {
-        const remoteOffers: Offer[] = snapshot.docs.map((item) =>
-          mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
-        );
-        const remoteIds = new Set(remoteOffers.map((o) => o.id));
-        // Merge any local offers not yet persisted to Firestore
-        const localPending = this.offersSubject.value.filter(
-          (o) => !remoteIds.has(o.id),
-        );
-        this.offersSubject.next([...remoteOffers, ...localPending]);
-      },
-      (error) => {
-        console.error('Erro no listener de ofertas:', error);
-      },
-    );
-  }
-
   private startNegotiationsListener(): void {
     this.negotiationsUnsubscribe = onSnapshot(
       collection(this.firestore, NEGOTIATIONS_COLLECTION),
       (snapshot) => {
-        const remoteThreads: NegotiationThread[] = snapshot.docs.map((item) =>
+        const threads: NegotiationThread[] = snapshot.docs.map((item) =>
           mapNegotiationThreadFromFirestore(
             item.id,
             item.data() as FirestoreNegotiationThreadDto,
@@ -481,44 +465,41 @@ export class MarketplaceService implements OnDestroy {
         );
         this.negotiationsSubject.next([...remoteThreads, ...localPending]);
       },
+      (error) => { console.error('Erro no listener de negociações:', error); },
+    );
+  }
+
+  /**
+   * Starts a real-time listener on the offers Firestore collection.
+   */
+  private startOffersListener(): void {
+    this.offersUnsubscribe = onSnapshot(
+      collection(this.firestore, OFFERS_COLLECTION),
+      (snapshot) => {
+        const offers: Offer[] = snapshot.docs.map((item) =>
+          mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
+        );
+        this.offersSubject.next(offers);
+      },
       (error) => {
-        console.error('Erro no listener de negociações:', error);
+        console.error('Erro no listener de ofertas:', error);
       },
     );
   }
 
   private unsubscribeAll(): void {
-    if (this.negotiationsUnsubscribe) {
-      this.negotiationsUnsubscribe();
-      this.negotiationsUnsubscribe = null;
-    }
-    if (this.offersUnsubscribe) {
-      this.offersUnsubscribe();
-      this.offersUnsubscribe = null;
-    }
+    if (this.negotiationsUnsubscribe) { this.negotiationsUnsubscribe(); this.negotiationsUnsubscribe = null; }
+    if (this.offersUnsubscribe) { this.offersUnsubscribe(); this.offersUnsubscribe = null; }
   }
 
   private async loadOffersFromFirestore(): Promise<Offer[]> {
-    const snapshot = await getDocs(
-      collection(this.firestore, OFFERS_COLLECTION),
-    );
-
-    return snapshot.docs.map((item) =>
-      mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
-    );
+    const snapshot = await getDocs(collection(this.firestore, OFFERS_COLLECTION));
+    return snapshot.docs.map((item) => mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto));
   }
 
   private async loadNegotiationsFromFirestore(): Promise<NegotiationThread[]> {
-    const snapshot = await getDocs(
-      collection(this.firestore, NEGOTIATIONS_COLLECTION),
-    );
-
-    return snapshot.docs.map((item) =>
-      mapNegotiationThreadFromFirestore(
-        item.id,
-        item.data() as FirestoreNegotiationThreadDto,
-      ),
-    );
+    const snapshot = await getDocs(collection(this.firestore, NEGOTIATIONS_COLLECTION));
+    return snapshot.docs.map((item) => mapNegotiationThreadFromFirestore(item.id, item.data() as FirestoreNegotiationThreadDto));
   }
 
   private async persistOffer(offer: Offer): Promise<void> {
@@ -540,11 +521,7 @@ export class MarketplaceService implements OnDestroy {
   }
 
   private async persistNegotiation(thread: NegotiationThread): Promise<void> {
-    const negotiationRef = doc(
-      this.firestore,
-      NEGOTIATIONS_COLLECTION,
-      thread.id,
-    );
+    const negotiationRef = doc(this.firestore, NEGOTIATIONS_COLLECTION, thread.id);
     await setDoc(negotiationRef, mapNegotiationThreadToFirestore(thread));
   }
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, combineLatest, map } from 'rxjs';
+import { AlertController, ToastController } from '@ionic/angular';
 
 import { UserProfile } from '../core/models/auth.model';
 import { Coin } from '../core/models/coin.model';
@@ -10,19 +11,6 @@ import { AuthService } from '../core/services/auth.service';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
-type MyNegotiationCard = {
-  thread: NegotiationThread;
-  coin?: Coin;
-  counterpart: string;
-  lastMessage: string;
-  roleLabel: string;
-};
-
-const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
 
 @Component({
   selector: 'app-tab5',
@@ -41,22 +29,9 @@ export class Tab5Page implements OnInit {
     this.activatedRoute.queryParamMap.pipe(
       map((params) => (params.get('nav') === 'profile' ? 'profile' : 'home')),
     );
-  readonly catalog$ = this.marketplaceService.catalog$;
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
-  readonly featuredCoins$ = this.inventoryCards$.pipe(
-    map((cards) => cards.slice(0, 4)),
-  );
-  readonly recentlyAdded$ = this.inventoryCards$.pipe(
-    map((cards) =>
-      [...cards]
-        .reverse()
-        .slice(0, 2)
-        .map((item, index) => ({
-          ...item,
-          timeLabel: index === 0 ? 'Ha 2 horas' : 'Ha 5 horas',
-        })),
-    ),
-  );
+  readonly featuredCoins$ = this.inventoryCards$.pipe(map((cards) => cards.slice(0, 4)));
+  
   readonly summary$ = combineLatest([
     this.inventoryCards$,
     this.marketplaceService.offers$,
@@ -66,49 +41,20 @@ export class Tab5Page implements OnInit {
       tradeCount: offers.filter((offer) => offer.availableForTrade).length,
     })),
   );
+  
   readonly myCoins$ = combineLatest([
     this.catalog$,
     this.currentProfile$,
     this.marketplaceService.offers$,
   ]).pipe(
-    map(([catalog, profile, offers]) => {
+    map(([cards, profile]) => {
       if (!profile) {
         return [];
       }
 
-      // Get user's own offers
-      const myOffers = offers.filter((offer) => offer.ownerId === profile.id);
-
-      // For each offer, try to find a matching catalog coin,
-      // or create a virtual coin from the offer data
-      const result = myOffers.map((offer) => {
-        const catalogCoin = catalog.find((c) => c.id === offer.coinId);
-        if (catalogCoin) {
-          return { coin: catalogCoin, lastOffer: offer };
-        }
-        // Create a virtual coin from the offer metadata
-        const virtualCoin: Coin = {
-          id: offer.coinId,
-          name: offer.title || 'Moeda personalizada',
-          sellerName: offer.ownerDisplayName,
-          sellerRating: 0,
-          emperor: offer.era || '',
-          period: offer.era || '',
-          material: '',
-          conservation: offer.condition || '',
-          location: '',
-          origin: '',
-          estimatedValue: offer.realValue || 0,
-          description: offer.description || '',
-          history: '',
-          reference: '',
-          image: '',
-          tags: [],
-        };
-        return { coin: virtualCoin, lastOffer: offer };
-      });
-
-      return result.reverse();
+      return cards
+        .filter((item) => item.lastOffer?.ownerId === profile.id)
+        .reverse();
     }),
   );
   readonly myNegotiations$ = combineLatest([
@@ -167,6 +113,8 @@ export class Tab5Page implements OnInit {
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly marketplaceService: MarketplaceService,
+    private readonly alertController: AlertController,
+    private readonly toastController: ToastController
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -191,47 +139,121 @@ export class Tab5Page implements OnInit {
   }
 
   removeCoin(coin: Coin): void {
-    // TODO: Implement coin removal logic
     console.log('Remover moeda:', coin.name);
   }
 
   openSettings(): void {
-    // TODO: Implement settings page
-    console.log('Abrir configurações');
+    this.showSettings = true;
+    this.showEditProfile = false;
   }
 
-  openAddOffer(): void {
-    void this.router.navigate(['/tabs/tab2']);
+  closeSettings(): void {
+    this.showSettings = false;
+    this.showEditProfile = false;
   }
 
-  openMessages(): void {
-    void this.router.navigate(['/tabs/tab4']);
+  openAddOffer(): void { void this.router.navigate(['/tabs/tab2']); }
+  openMessages(): void { void this.router.navigate(['/tabs/tab4']); }
+
+  openEditProfile() {
+    this.showEditProfile = true;
+    const currentProfile = this.authService.currentProfileSnapshot;
+    this.newName = currentProfile?.displayName || '';
+    this.newPhotoUrl = currentProfile?.avatarUrl || '';
   }
 
-  openNegotiation(thread: NegotiationThread): void {
-    void this.router.navigate(['/negotiation', thread.id], {
-      queryParams: {
-        offerId: thread.offerId,
-      },
-    });
-  }
+  closeEditProfile() { this.showEditProfile = false; }
 
-  getPriceLabel(item: InventoryCard): string {
-    if (item.lastOffer?.availableForTrade) {
-      return 'Troca';
+  async saveProfileChanges() {
+    if (!this.newName.trim()) {
+      const toast = await this.toastController.create({
+        message: 'O nome do perfil não pode ficar vazio.',
+        duration: 2000,
+        color: 'danger'
+      });
+      await toast.present();
+      return;
     }
-
-    return EUR_FORMATTER.format(
-      item.lastOffer?.askPrice ?? item.coin.estimatedValue,
-    );
+    try {
+      await this.authService.updateProfileFields(this.newName, this.newPhotoUrl);
+      const toast = await this.toastController.create({
+        message: 'Perfil de numismata atualizado com sucesso!',
+        duration: 2000,
+        color: 'success'
+      });
+      await toast.present();
+      this.showEditProfile = false;
+    } catch {
+      const toast = await this.toastController.create({
+        message: 'Ocorreu um erro ao gravar as alterações.',
+        duration: 2000,
+        color: 'danger'
+      });
+      await toast.present();
+    }
   }
 
-  isTrade(item: InventoryCard): boolean {
-    return !!item.lastOffer?.availableForTrade;
+  async triggerChangeUnit() {
+    const alert = await this.alertController.create({
+      header: 'Unidade de Medida',
+      cssClass: 'orange-alert-theme',
+      inputs: [
+        { type: 'radio', label: 'Gramas (g)', value: 'Gramas (g)', checked: this.currentUnit === 'Gramas (g)' },
+        { type: 'radio', label: 'Onças (oz)', value: 'Onças (oz)', checked: this.currentUnit === 'Onças (oz)' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Confirmar',
+          handler: (data) => {
+            if (data) {
+              this.currentUnit = data;
+              this.marketplaceService.updateActiveUnit(data === 'Gramas (g)' ? 'g' : 'oz');
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // NOVO MÉTODO: Caixa de rádio para selecionar a divisa de negociação (EUR/USD) com classe CSS laranja
+  async triggerChangeCurrency() {
+    const alert = await this.alertController.create({
+      header: 'Moeda Comercial',
+      cssClass: 'orange-alert-theme',
+      inputs: [
+        { type: 'radio', label: 'Euro (€)', value: 'Euro (€)', checked: this.currentCurrency === 'Euro (€)' },
+        { type: 'radio', label: 'Dólar ($)', value: 'Dólar ($)', checked: this.currentCurrency === 'Dólar ($)' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Confirmar',
+          handler: (data) => {
+            if (data) {
+              this.currentCurrency = data;
+              this.marketplaceService.updateActiveCurrency(data === 'Euro (€)' ? 'EUR' : 'USD');
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  async toggleNotificationsEvent(event: any) {
+    this.notificationsEnabled = event.detail.checked;
+    const toast = await this.toastController.create({
+      message: this.notificationsEnabled ? 'Notificações ativadas.' : 'Notificações desativadas.',
+      duration: 1500,
+      color: this.notificationsEnabled ? 'success' : 'warning'
+    });
+    await toast.present();
   }
 
   async logout(): Promise<void> {
     await this.authService.logout();
-    await this.router.navigate(['/login'], { replaceUrl: true });
+    await this.router.navigate(['/'], { replaceUrl: true });
   }
 }

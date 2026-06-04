@@ -1,4 +1,21 @@
-.app-toolbar {
+.add-coin-content {
+  --background: #f8fafc;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 14px;
+  --padding-bottom: 40px;
+}
+
+.make-offer-content {
+  --background: #f8fafc;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 18px;
+  --padding-bottom: 120px;
+}
+
+/* Nova Toolbar com Suporte ao Título e Subtítulo Numismático */
+.search-toolbar {
   --background: #f97316;
   --color: white;
   --border-width: 0 !important;
@@ -6,15 +23,15 @@
   min-height: auto;
 }
 
-.app-header-body {
+.search-header {
   width: 100%;
-  padding: 16px 16px 10px 16px;
+  padding: 20px 16px 16px 16px;
 }
 
-.app-header-body__content {
+.search-header__content {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 
   strong {
     font-size: 1.35rem;
@@ -25,25 +42,9 @@
   }
 
   span {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.9);
   }
-}
-
-.add-coin-content {
-  --background: var(--color-background);
-  --padding-start: 18px;
-  --padding-end: 18px;
-  --padding-top: 18px;
-  --padding-bottom: 32px;
-}
-
-.make-offer-content {
-  --background: var(--color-background);
-  --padding-start: 16px;
-  --padding-end: 16px;
-  --padding-top: 18px;
-  --padding-bottom: 120px;
 }
 
 .header-back-button,
@@ -61,12 +62,9 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-
-  ion-icon {
-    font-size: 1.2rem;
-  }
+  background: #f1f5f9;
+  color: #0f172a;
+  ion-icon { font-size: 1.2rem; }
 }
 
 .offer-page-header,
@@ -75,10 +73,10 @@
 .proposal-summary {
   margin-bottom: 16px;
   padding: 18px;
-  border: 1px solid var(--color-border);
+  border: 1px solid #e2e8f0;
   border-radius: 22px;
-  background: var(--color-card);
-  box-shadow: var(--app-shadow-sm);
+  background: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .offer-page-header h1,
@@ -86,6 +84,7 @@
 .proposal-summary h2,
 .selected-coin-card h2 {
   margin: 0 0 8px;
+  color: #0f172a;
 }
 
 .offer-page-header p,
@@ -94,7 +93,7 @@
 .hint-text,
 .warning-text {
   margin: 0;
-  color: var(--color-muted-foreground);
+  color: #64748b;
 }
 
 .selected-coin-card {
@@ -104,8 +103,7 @@
 }
 
 .selected-coin-card__media img,
-.trade-coin-card__media img,
-.selected-coin img {
+.trade-coin-card__media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -120,92 +118,63 @@
 .selected-coin-card__copy {
   display: grid;
   gap: 6px;
-
   strong {
-    color: var(--color-primary);
+    color: #f97316;
     font-size: 1.15rem;
   }
 }
 
 .proposal-type-list,
-.trade-coin-list {
-  display: grid;
-  gap: 12px;
-}
+.trade-coin-list { display: grid; gap: 12px; }
 
 .proposal-type-card,
 .trade-coin-card {
   width: 100%;
   text-align: left;
   border-radius: 18px;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
-.proposal-type-card {
-  display: grid;
-  gap: 4px;
-  padding: 14px;
-}
-
-.proposal-type-card span {
-  color: var(--color-muted-foreground);
-  font-size: 0.86rem;
-}
-
+.proposal-type-card { display: grid; gap: 4px; padding: 14px; }
+.proposal-type-card span { color: #64748b; font-size: 0.86rem; }
 .proposal-type-card--active {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 8%, var(--color-card));
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
 }
 
-.field-label {
-  display: block;
-  margin-bottom: 10px;
-  font-weight: 700;
-  color: var(--color-foreground);
-}
+.field-label { display: block; margin-bottom: 10px; font-weight: 700; color: #0f172a; }
 
 .currency-field {
   position: relative;
-
   span {
     position: absolute;
     top: 50%;
     left: 14px;
     transform: translateY(-50%);
-    color: var(--color-muted-foreground);
+    color: #64748b;
     font-size: 0.82rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
   }
-
   input {
     width: 100%;
     min-height: 52px;
     padding: 0 14px 0 52px;
-    border: 1px solid var(--color-border);
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
-    background: var(--color-background);
-    color: var(--color-foreground);
-    font: inherit;
+    background: #f8fafc;
+    color: #0f172a;
   }
 }
 
 .proposal-section textarea {
   width: 100%;
   padding: 14px;
-  border: 1px solid var(--color-border);
+  border: 1px solid #e2e8f0;
   border-radius: 16px;
-  background: var(--color-background);
-  color: var(--color-foreground);
-  font: inherit;
+  background: #f8fafc;
+  color: #0f172a;
   resize: none;
-}
-
-.section-heading--stacked {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 12px;
 }
 
 .trade-coin-card {
@@ -215,132 +184,66 @@
   align-items: center;
   padding: 12px;
 }
-
-.trade-coin-card__media {
-  width: 64px;
-  height: 64px;
-}
-
+.trade-coin-card__media { width: 64px; height: 64px; }
 .trade-coin-card__copy {
   display: grid;
   gap: 4px;
-
-  span,
-  em {
-    color: var(--color-muted-foreground);
-    font-size: 0.84rem;
-    font-style: normal;
-  }
-
-  em {
-    color: var(--color-primary);
-    font-weight: 700;
-  }
+  span, em { color: #64748b; font-size: 0.84rem; font-style: normal; }
+  em { color: #f97316; font-weight: 700; }
 }
-
 .trade-coin-card__check {
   width: 28px;
   height: 28px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--color-chart-2);
+  background: #10b981;
   color: #ffffff;
 }
-
 .trade-coin-card--selected {
-  border-color: var(--color-chart-2);
-  background: color-mix(in srgb, var(--color-chart-2) 10%, var(--color-card));
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
 }
 
-.warning-text {
-  margin-top: 10px;
-  color: var(--color-destructive);
-}
-
-.proposal-summary {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--color-primary) 8%, var(--color-card)),
-    var(--color-card)
-  );
-}
-
-.summary-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.summary-row + .summary-row {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-border);
-}
-
-.proposal-footer {
-  --background: transparent;
-  box-shadow: none;
-}
+.summary-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.summary-row + .summary-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
 
 .proposal-footer__actions {
   display: grid;
   gap: 10px;
-  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-card) 96%, transparent);
+  padding: 14px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(16px);
 }
+.proposal-submit, .proposal-cancel { min-height: 52px; border-radius: 16px; font-weight: 700; }
+.proposal-submit { background: #f97316; color: #ffffff; }
+.proposal-submit:disabled { background: #cbd5e1; color: #94a3b8; }
+.proposal-cancel { background: #f1f5f9; color: #0f172a; }
 
-.proposal-submit,
-.proposal-cancel {
-  min-height: 52px;
-  border-radius: 16px;
-  font-weight: 700;
+/* ---------------------------------------------------- */
+/*           ESTILO ATUALIZADO DO FORMULÁRIO            */
+/* ---------------------------------------------------- */
+.form-container { padding: 12px 4px; }
+.page-intro {
+  margin-bottom: 24px;
+  h1 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; }
+  p { font-size: 0.9rem; color: #64748b; margin: 0; }
 }
 
-.proposal-submit {
-  background: var(--color-primary);
-  color: var(--color-primary-foreground);
-}
-
-.proposal-submit:disabled {
-  background: var(--color-muted);
-  color: var(--color-muted-foreground);
-}
-
-.proposal-cancel {
-  background: var(--color-secondary);
-  color: var(--color-secondary-foreground);
-}
-
-.offer-form {
-  display: grid;
-  gap: 18px;
-}
-
-.selected-coin {
-  display: grid;
-  grid-template-columns: 84px 1fr;
-  gap: 14px;
+.photos-section {
+  background: #ffffff;
   padding: 16px;
-  border-radius: 24px;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--app-shadow-sm);
-
-  img {
-    width: 100%;
-    border-radius: 16px;
-  }
-
-  h2 {
-    margin: 6px 0;
-  }
-
-  p {
-    color: var(--color-muted-foreground);
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+  
+  .section-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 12px;
   }
 }
 
@@ -355,50 +258,149 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 110px;
-  padding: 12px 8px;
-  border: 2px dashed #f97316;
+  min-height: 140px;
+  padding: 10px;
   border-radius: 16px;
-  background: rgba(249, 115, 22, 0.04);
-  color: var(--color-card-foreground);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  text-align: center;
 
-  ion-icon {
-    font-size: 1.8rem;
-    color: #f97316;
-  }
+  .camera-icon { font-size: 1.6rem; color: #f97316; margin-bottom: 6px; }
+  strong { font-size: 0.8rem; color: #1e293b; display: block; margin-bottom: 2px; }
+  span { font-size: 0.65rem; color: #94a3b8; line-height: 1.2; }
+}
 
-  strong {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #f97316;
-    text-align: center;
-  }
-
-  img {
-    width: 100%;
-    height: 70px;
-    object-fit: cover;
-    border-radius: 10px;
-  }
-
-  span {
-    color: var(--color-muted-foreground);
-    font-size: 0.72rem;
-    text-align: center;
+.photo-wrapper {
+  position: relative;
+  width: 100%;
+  height: 74px;
+  margin-bottom: 4px;
+  
+  img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+  .remove-btn {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    ion-icon { font-size: 1.3rem; color: #ef4444; }
   }
 }
 
-@media (max-width: 768px) {
-  .selected-coin-card,
-  .trade-coin-card {
-    grid-template-columns: 1fr;
+.figma-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.figma-row-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 12px;
+}
+
+.figma-input-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    padding-left: 2px;
   }
 
-  .trade-coin-card__media,
-  .selected-coin-card__media {
+  input, select, textarea {
     width: 100%;
-    height: auto;
-    aspect-ratio: 1;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+    color: #0f172a;
+    transition: border-color 0.15s ease;
+    outline: none;
+
+    &:focus {
+      border-color: #f97316;
+      background: #ffffff;
+    }
+  }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+  }
+}
+
+.availability-section {
+  margin-top: 6px;
+  padding: 14px 0 4px 0;
+  
+  .availability-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 12px;
+  }
+}
+
+.segment-container {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 4px;
+  
+  ion-segment {
+    --background: transparent;
+    background: transparent;
+  }
+  
+  ion-segment-button {
+    --indicator-box-shadow: none !important;
+    --background-checked: transparent !important;
+    --color: #94a3b8;
+    --color-checked: #f97316;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    min-height: 40px;
+    
+    &::part(indicator) {
+      background: #f97316;
+      height: 3px;
+      border-radius: 99px;
+    }
+    
+    &::part(native) {
+      background: transparent !important;
+    }
+  }
+}
+
+.submit-container { margin-top: 28px; }
+.figma-submit-btn {
+  width: 100%;
+  min-height: 50px;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
+
+  &:disabled {
+    background: #cbd5e1;
+    color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 }
