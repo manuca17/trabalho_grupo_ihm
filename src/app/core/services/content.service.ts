@@ -1,62 +1,29 @@
 import { Injectable } from '@angular/core';
-import {
-  Firestore,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-} from '@angular/fire/firestore';
 import { Observable, defer, shareReplay } from 'rxjs';
 
-import {
-  FirestoreCoinDto,
-  mapCoinFromFirestore,
-} from '../mappers/firestore/marketplace.firestore.mapper';
 import { AppStrings } from '../models/app-strings.model';
-import { Coin } from '../models/coin.model';
+import { Coin, CoinModel } from '../models/coin.model';
 
-const COINS_COLLECTION = 'coins';
-const APP_STRINGS_COLLECTION = 'app_strings';
-const APP_STRINGS_DOCUMENT = 'default';
+import coinsData from '../../../assets/data/coins.json';
+import appStringsData from '../../../assets/data/app-strings.json';
 
-/**
- * Loads shared application content from Firestore.
- */
 @Injectable({
   providedIn: 'root',
 })
 export class ContentService {
   readonly coins$: Observable<Coin[]> = defer(() =>
-    this.loadCoinsFromFirestore(),
+    Promise.resolve(this.loadCoins()),
   ).pipe(shareReplay(1));
 
   readonly strings$: Observable<AppStrings> = defer(() =>
-    this.loadStringsFromFirestore(),
+    Promise.resolve(this.loadStrings()),
   ).pipe(shareReplay(1));
 
-  constructor(private readonly firestore: Firestore) {}
-
-  private async loadCoinsFromFirestore(): Promise<Coin[]> {
-    const snapshot = await getDocs(
-      collection(this.firestore, COINS_COLLECTION),
-    );
-
-    return snapshot.docs.map((item) =>
-      mapCoinFromFirestore(item.id, item.data() as FirestoreCoinDto),
-    );
+  private loadCoins(): Coin[] {
+    return (coinsData as Coin[]).map((coin) => new CoinModel(coin));
   }
 
-  private async loadStringsFromFirestore(): Promise<AppStrings> {
-    const snapshot = await getDoc(
-      doc(this.firestore, APP_STRINGS_COLLECTION, APP_STRINGS_DOCUMENT),
-    );
-
-    if (!snapshot.exists()) {
-      throw new Error(
-        'Documento app_strings/default em falta na Firestore. Executa npm run seed:all.',
-      );
-    }
-
-    return snapshot.data() as AppStrings;
+  private loadStrings(): AppStrings {
+    return appStringsData as AppStrings;
   }
 }

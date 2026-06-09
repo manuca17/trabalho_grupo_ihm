@@ -1,13 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
-import {
-  Firestore,
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
-  setDoc,
-  Unsubscribe,
-} from '@angular/fire/firestore';
+import { Injectable } from '@angular/core';
 import {
   BehaviorSubject,
   Observable,
@@ -16,14 +7,6 @@ import {
   map,
 } from 'rxjs';
 
-import {
-  FirestoreNegotiationThreadDto,
-  FirestoreOfferDto,
-  mapNegotiationThreadFromFirestore,
-  mapNegotiationThreadToFirestore,
-  mapOfferFromFirestore,
-  mapOfferToFirestore,
-} from '../mappers/firestore/marketplace.firestore.mapper';
 import { Coin } from '../models/coin.model';
 import { NegotiationMessage } from '../models/negotiation-message.model';
 import {
@@ -36,41 +19,35 @@ import { AuthService } from './auth.service';
 import { ContentService } from './content.service';
 import { LocalStorageService } from './local-storage.service';
 
-const OFFERS_COLLECTION = 'offers';
-const NEGOTIATIONS_COLLECTION = 'negotiations';
+const LS_OFFERS_KEY = 'ls_offers';
+const LS_NEGOTIATIONS_KEY = 'ls_negotiations';
 
 @Injectable({
   providedIn: 'root',
 })
-export class MarketplaceService implements OnDestroy {
+export class MarketplaceService {
   private readonly offersSubject = new BehaviorSubject<Offer[]>([]);
   private readonly negotiationsSubject = new BehaviorSubject<NegotiationThread[]>([]);
-  
+
   private readonly activeUnitSubject = new BehaviorSubject<'g' | 'oz'>('g');
-  // NOVO: Estado centralizado reativo para controlar a divisa comercial preferida ('EUR' ou 'USD')
   private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD'>('EUR');
 
   private isInitialized = false;
-  private negotiationsUnsubscribe: Unsubscribe | null = null;
-  private offersUnsubscribe: Unsubscribe | null = null;
 
   readonly offers$ = this.offersSubject.asObservable();
   readonly negotiations$ = this.negotiationsSubject.asObservable();
   readonly catalog$ = this.contentService.coins$;
-  
+
   readonly activeUnit$ = this.activeUnitSubject.asObservable();
-  // NOVO: Exposição pública do Observable da divisa para os ecrãs subscreverem
   readonly activeCurrency$ = this.activeCurrencySubject.asObservable();
 
-  // ATUALIZADO: Agora escuta a unidade de peso e a moeda comercial, aplicando transformações dinâmicas
   readonly inventoryCards$: Observable<
     Array<{ coin: Coin; lastOffer?: Offer; customDisplayPrice?: string }>
   > = combineLatest([this.catalog$, this.offers$, this.activeUnit$, this.activeCurrency$]).pipe(
     map(([coins, offers, unit, currency]) =>
       coins.map((coin) => {
         const mappedCoin = { ...coin };
-        
-        // 1. Conversão de Unidade de Peso
+
         if (unit === 'oz' && mappedCoin.weight) {
           const numericWeight = parseFloat(mappedCoin.weight);
           if (!isNaN(numericWeight)) {
@@ -83,19 +60,17 @@ export class MarketplaceService implements OnDestroy {
           }
         }
 
-        // 2. Localizar Oferta correspondente
         const lastOffer = [...offers]
           .reverse()
           .find((offer) => offer.coinId === coin.id);
 
-        // 3. Conversão Dinâmica de Moeda (EUR para USD se selecionado)
         let rawPrice = lastOffer?.askPrice ?? coin.estimatedValue;
         let isTradeOption = !!lastOffer?.availableForTrade;
         let formattedPriceLabel = 'Troca';
 
         if (!isTradeOption) {
           if (currency === 'USD') {
-            rawPrice = rawPrice * 1.08; // Taxa de conversão base indicativa
+            rawPrice = rawPrice * 1.08;
             formattedPriceLabel = new Intl.NumberFormat('en-US', {
               style: 'currency',
               currency: 'USD',
@@ -113,7 +88,7 @@ export class MarketplaceService implements OnDestroy {
         return {
           coin: mappedCoin,
           lastOffer,
-          customDisplayPrice: formattedPriceLabel // Injetado rótulo de preço já formatado reativamente
+          customDisplayPrice: formattedPriceLabel,
         };
       }),
     ),
@@ -122,39 +97,30 @@ export class MarketplaceService implements OnDestroy {
   constructor(
     private readonly authService: AuthService,
     private readonly contentService: ContentService,
-    private readonly firestore: Firestore,
     private readonly localStorageService: LocalStorageService,
   ) {}
-
-  ngOnDestroy(): void {
-    this.unsubscribeAll();
-  }
 
   async init(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
-    const [firestoreOffers, firestoreNegotiations] = await Promise.all([
-      this.loadOffersFromFirestore(),
-      this.loadNegotiationsFromFirestore(),
+    const [storedOffers, storedNegotiations] = await Promise.all([
+      this.localStorageService.getItem<Offer[]>(LS_OFFERS_KEY),
+      this.localStorageService.getItem<NegotiationThread[]>(LS_NEGOTIATIONS_KEY),
     ]);
 
-    this.offersSubject.next(OfferModel.fromJsonArray(firestoreOffers));
+    this.offersSubject.next(OfferModel.fromJsonArray(storedOffers ?? []));
     this.negotiationsSubject.next(
-      NegotiationThreadModel.fromJsonArray(firestoreNegotiations),
+      NegotiationThreadModel.fromJsonArray(storedNegotiations ?? []),
     );
     this.isInitialized = true;
-
-    this.startNegotiationsListener();
-    this.startOffersListener();
   }
 
   updateActiveUnit(unit: 'g' | 'oz'): void {
     this.activeUnitSubject.next(unit);
   }
 
-  // NOVO MÉTODO: Altera reativamente a divisa preferida na aplicação
   updateActiveCurrency(currency: 'EUR' | 'USD'): void {
     this.activeCurrencySubject.next(currency);
   }
@@ -168,10 +134,6 @@ export class MarketplaceService implements OnDestroy {
     return this.offersSubject.value.find((offer) => offer.id === offerId);
   }
 
-  /**
-   * Retrieves photos for a given offer from local storage.
-   * Photos are stored separately from Firestore to avoid 1MB document limit.
-   */
   async getOfferPhotos(offerId: string): Promise<OfferPhoto[]> {
     try {
       const photos = await this.localStorageService.getItem<OfferPhoto[]>(
@@ -211,19 +173,18 @@ export class MarketplaceService implements OnDestroy {
       const profile = await this.resolveCurrentProfile();
       const offerId = `offer-${Date.now()}`;
 
-      // Save photos locally (Ionic Storage) with the offer ID as key
       await this.localStorageService.setItem(
         `offer_photos_${offerId}`,
         input.photos,
       );
 
-      // Strip dataUrl for OfferModel - only metadata goes to Firestore
       const safePhotos: OfferPhoto[] = input.photos.map((p) => ({
         kind: p.kind,
         label: p.label,
         dataUrl: '',
         brightness: p.brightness,
       }));
+
       const offer: Offer = new OfferModel({
         id: offerId,
         coinId: input.coinId,
@@ -276,28 +237,13 @@ export class MarketplaceService implements OnDestroy {
       this.offersSubject.next(updatedOffers);
       this.negotiationsSubject.next(updatedNegotiations);
 
-      // Persist offer and negotiation separately so one failure doesn't block the other
-      try {
-        await this.persistOffer(offer);
-        console.log('[publishOffer] Offer persisted to Firestore');
-      } catch (err) {
-        console.error('[publishOffer] Failed to persist offer to Firestore:', err);
-        // Still keep the offer locally
-      }
-
-      try {
-        await this.persistNegotiation(nextNegotiation);
-        console.log('[publishOffer] Negotiation persisted to Firestore');
-      } catch (err) {
-        console.error('[publishOffer] Failed to persist negotiation to Firestore:', err);
-        // Still keep the negotiation locally
-      }
+      await this.persistOffers(updatedOffers);
+      await this.persistNegotiations(updatedNegotiations);
 
       return offer;
     } catch (err) {
       console.error('[publishOffer] FAILED:', err);
-      // Throw a user-friendly error
-      throw new Error('Não foi possível publicar a oferta. Verifica a consola do navegador para mais detalhes.');
+      throw new Error('Não foi possível publicar a oferta.');
     }
   }
 
@@ -336,6 +282,7 @@ export class MarketplaceService implements OnDestroy {
     ]
       .filter(Boolean)
       .join(' ');
+
     const thread: NegotiationThread = new NegotiationThreadModel({
       id: `thread-${Date.now()}`,
       offerId: `proposal-${Date.now()}`,
@@ -363,7 +310,7 @@ export class MarketplaceService implements OnDestroy {
 
     const updatedNegotiations = [...this.negotiationsSubject.value, thread];
     this.negotiationsSubject.next(updatedNegotiations);
-    await this.persistNegotiation(thread);
+    await this.persistNegotiations(updatedNegotiations);
 
     return thread;
   }
@@ -390,7 +337,12 @@ export class MarketplaceService implements OnDestroy {
       messages: [...thread.messages, message],
     };
 
-    await this.persistNegotiation(updatedThread);
+    const updatedNegotiations = this.negotiationsSubject.value.map((t) =>
+      t.id === threadId ? updatedThread : t,
+    );
+
+    this.negotiationsSubject.next(updatedNegotiations);
+    await this.persistNegotiations(updatedNegotiations);
   }
 
   async markNegotiationAsTraded(threadId: string): Promise<void> {
@@ -426,16 +378,14 @@ export class MarketplaceService implements OnDestroy {
 
     this.offersSubject.next(updatedOffers);
     this.negotiationsSubject.next(updatedNegotiations);
-    const updatedOffer = updatedOffers.find((offer) => offer.id === targetThread.offerId);
-    const updatedThread = updatedNegotiations.find((thread) => thread.id === threadId);
 
     await Promise.all([
-      updatedOffer ? this.persistOffer(updatedOffer) : Promise.resolve(),
-      updatedThread ? this.persistNegotiation(updatedThread) : Promise.resolve(),
+      this.persistOffers(updatedOffers),
+      this.persistNegotiations(updatedNegotiations),
     ]);
   }
 
-  private async resolveCurrentProfile(): Promise<{ id: string; displayName: string; }> {
+  private async resolveCurrentProfile(): Promise<{ id: string; displayName: string }> {
     await this.authService.ensureInitialized();
     const profile = this.authService.currentProfileSnapshot;
     return {
@@ -444,89 +394,33 @@ export class MarketplaceService implements OnDestroy {
     };
   }
 
-  /**
-   * Starts a real-time listener on the negotiations Firestore collection.
-   * Any changes (new messages, status updates) are reflected immediately.
-   */
-  private startNegotiationsListener(): void {
-    this.negotiationsUnsubscribe = onSnapshot(
-      collection(this.firestore, NEGOTIATIONS_COLLECTION),
-      (snapshot) => {
-        const threads: NegotiationThread[] = snapshot.docs.map((item) =>
-          mapNegotiationThreadFromFirestore(
-            item.id,
-            item.data() as FirestoreNegotiationThreadDto,
-          ),
-        );
-        const remoteIds = new Set(threads.map((t) => t.id));
-        // Merge any local threads not yet persisted to Firestore
-        const localPending = this.negotiationsSubject.value.filter(
-          (t) => !remoteIds.has(t.id),
-        );
-        this.negotiationsSubject.next([...threads, ...localPending]);
-      },
-      (error) => { console.error('Erro no listener de negociações:', error); },
-    );
-  }
-
-  /**
-   * Starts a real-time listener on the offers Firestore collection.
-   */
-  private startOffersListener(): void {
-    this.offersUnsubscribe = onSnapshot(
-      collection(this.firestore, OFFERS_COLLECTION),
-      (snapshot) => {
-        const remoteOffers: Offer[] = snapshot.docs.map((item) =>
-          mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto),
-        );
-        const remoteIds = new Set(remoteOffers.map((o) => o.id));
-        // Keep local offers not yet persisted to Firestore
-        const localPending = this.offersSubject.value.filter(
-          (o) => !remoteIds.has(o.id),
-        );
-        this.offersSubject.next([...remoteOffers, ...localPending]);
-      },
-      (error) => {
-        console.error('Erro no listener de ofertas:', error);
-      },
-    );
-  }
-
-  private unsubscribeAll(): void {
-    if (this.negotiationsUnsubscribe) { this.negotiationsUnsubscribe(); this.negotiationsUnsubscribe = null; }
-    if (this.offersUnsubscribe) { this.offersUnsubscribe(); this.offersUnsubscribe = null; }
-  }
-
-  private async loadOffersFromFirestore(): Promise<Offer[]> {
-    const snapshot = await getDocs(collection(this.firestore, OFFERS_COLLECTION));
-    return snapshot.docs.map((item) => mapOfferFromFirestore(item.id, item.data() as FirestoreOfferDto));
-  }
-
-  private async loadNegotiationsFromFirestore(): Promise<NegotiationThread[]> {
-    const snapshot = await getDocs(collection(this.firestore, NEGOTIATIONS_COLLECTION));
-    return snapshot.docs.map((item) => mapNegotiationThreadFromFirestore(item.id, item.data() as FirestoreNegotiationThreadDto));
-  }
-
-  private async persistOffer(offer: Offer): Promise<void> {
-    const offerRef = doc(this.firestore, OFFERS_COLLECTION, offer.id);
-    // Strip dataUrl from photos before persisting to Firestore,
-    // as base64 strings can exceed the 1MB document size limit.
-    // Photos are kept in memory for the current session.
-    const firestoreData = mapOfferToFirestore(offer);
-    const sanitizedData = {
-      ...firestoreData,
-      photos: firestoreData.photos.map((photo) => ({
-        kind: photo.kind,
-        label: photo.label,
-        dataUrl: '', // dataUrl is too large for Firestore
-        brightness: photo.brightness,
+  private async persistOffers(offers: Offer[]): Promise<void> {
+    const plain = offers.map((o) => ({
+      id: o.id,
+      coinId: o.coinId,
+      ownerId: o.ownerId,
+      ownerDisplayName: o.ownerDisplayName,
+      title: o.title,
+      quantity: o.quantity,
+      askPrice: o.askPrice,
+      description: o.description,
+      era: o.era,
+      condition: o.condition,
+      realValue: o.realValue,
+      availableForTrade: o.availableForTrade,
+      photos: (o.photos ?? []).map((p) => ({
+        kind: p.kind,
+        label: p.label,
+        dataUrl: '',
+        brightness: p.brightness,
       })),
-    };
-    await setDoc(offerRef, sanitizedData);
+      status: o.status,
+      createdAt: o.createdAt,
+    }));
+    await this.localStorageService.setItem(LS_OFFERS_KEY, plain);
   }
 
-  private async persistNegotiation(thread: NegotiationThread): Promise<void> {
-    const negotiationRef = doc(this.firestore, NEGOTIATIONS_COLLECTION, thread.id);
-    await setDoc(negotiationRef, mapNegotiationThreadToFirestore(thread));
+  private async persistNegotiations(threads: NegotiationThread[]): Promise<void> {
+    await this.localStorageService.setItem(LS_NEGOTIATIONS_KEY, threads);
   }
 }

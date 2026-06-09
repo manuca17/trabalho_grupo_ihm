@@ -1,23 +1,9 @@
 import { Injectable } from '@angular/core';
-import {
-  Auth,
-  User,
-  browserLocalPersistence,
-  createUserWithEmailAndPassword,
-  setPersistence,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-} from '@angular/fire/auth';
-import { Firestore, doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { BehaviorSubject } from 'rxjs';
 
 import {
-  FirestoreUserProfileDto,
-  mapUserProfileFromFirestore,
-  mapUserProfileToFirestore,
-} from '../mappers/firestore/auth.firestore.mapper';
-import {
+  AuthAccountRecord,
+  AuthAccountRecordModel,
   AuthSession,
   AuthSessionModel,
   LoginCredentials,
@@ -27,8 +13,11 @@ import {
   UserProfile,
   UserProfileModel,
 } from '../models/auth.model';
+import { LocalStorageService } from './local-storage.service';
 
-const USERS_COLLECTION = 'users';
+const LS_ACCOUNTS_KEY = 'ls_accounts';
+const LS_USERS_KEY = 'ls_users';
+const LS_SESSION_KEY = 'ls_session';
 
 @Injectable({
   providedIn: 'root',
@@ -45,16 +34,7 @@ export class AuthService {
   readonly currentSession$ = this.currentSessionSubject.asObservable();
   readonly currentProfile$ = this.currentProfileSubject.asObservable();
 
-  constructor(
-    private readonly firebaseAuth: Auth,
-    private readonly firestore: Firestore,
-  ) {
-    // Ensure Firebase Auth persists the session to localStorage
-    // rather than IndexedDB, which is more reliable in Capacitor WebView
-    setPersistence(this.firebaseAuth, browserLocalPersistence).catch((err) => {
-      console.warn('[Auth] Failed to set persistence:', err);
-    });
-  }
+  constructor(private readonly localStorageService: LocalStorageService) {}
 
   get isAuthenticated(): boolean {
     return this.authenticatedSubject.value;
@@ -85,14 +65,25 @@ export class AuthService {
             password: password ?? '',
           })
         : new LoginCredentialsModel(emailOrCredentials);
+
     try {
-      const credential = await signInWithEmailAndPassword(
-        this.firebaseAuth,
-        credentials.email,
-        credentials.password,
+      const accounts = await this.loadAccounts();
+      const account = accounts.find(
+        (a) => a.email === credentials.email && a.passwordHash === credentials.password,
       );
-      const profile = await this.ensureProfileForUser(credential.user);
-      await this.setSession(credential.user, profile);
+
+      if (!account) {
+        return false;
+      }
+
+      const users = await this.loadUsers();
+      const profile = users.find((u) => u.id === account.userId);
+
+      if (!profile) {
+        return false;
+      }
+
+      await this.setSession(account, new UserProfileModel(profile));
       return true;
     } catch {
       return false;
@@ -107,157 +98,144 @@ export class AuthService {
     }
 
     const normalizedInput = new RegisterAccountInputModel(input);
-    const credential = await createUserWithEmailAndPassword(
-      this.firebaseAuth,
-      normalizedInput.email,
-      normalizedInput.password,
-    );
 
-    await updateProfile(credential.user, {
-      displayName: normalizedInput.displayName,
-    });
+    const accounts = await this.loadAccounts();
+    const existing = accounts.find((a) => a.email === normalizedInput.email);
+    if (existing) {
+      throw new Error('Já existe uma conta com este endereço de e-mail.');
+    }
+
+    const userId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
+    const account: AuthAccountRecord = {
+      userId,
+      email: normalizedInput.email,
+      passwordHash: normalizedInput.password,
+      provider: 'password',
+      createdAt: new Date().toISOString(),
+    };
 
     const profile = UserProfileModel.createDefault({
-      id: credential.user.uid,
+      id: userId,
       displayName: normalizedInput.displayName,
       email: normalizedInput.email,
       interests: normalizedInput.interests,
       bio: normalizedInput.bio,
     });
 
+    await this.saveAccount(account);
     await this.saveProfile(profile);
-    await this.setSession(credential.user, profile);
+    await this.setSession(account, profile);
 
     return profile;
   }
 
-  // Grava de forma persistente os novos dados de Perfil (Nome e Link da Foto) no ecossistema Firebase
   async updateProfileFields(displayName: string, photoUrl?: string): Promise<void> {
-    const currentUser = this.firebaseAuth.currentUser;
     const currentProfile = this.currentProfileSnapshot;
+    const currentSession = this.currentSessionSubject.value;
 
-    if (!currentUser || !currentProfile) {
+    if (!currentProfile || !currentSession) {
       throw new Error('Nenhum utilizador autenticado encontrado.');
     }
 
-    // 1. Atualizar Perfil Nativo de Autenticação do Firebase
-    await updateProfile(currentUser, {
-      displayName: displayName,
-      photoURL: photoUrl || currentUser.photoURL
-    });
-
-    // 2. Criar uma nova instância do modelo incluindo os dados estritos atualizados
     const updatedProfile = new UserProfileModel({
       ...currentProfile,
       displayName: displayName,
       avatarUrl: photoUrl || currentProfile.avatarUrl || '',
-      avatarInitials: UserProfileModel.buildInitials(displayName)
+      avatarInitials: UserProfileModel.buildInitials(displayName),
     });
 
-    // 3. Persistir na base de dados Firestore do projeto
     await this.saveProfile(updatedProfile);
 
-    // 4. Notificar todos os Observables da app para atualizar a UI em tempo real
+    const updatedSession = new AuthSessionModel({
+      ...currentSession,
+      displayName: displayName,
+    });
+
+    await this.localStorageService.setItem(LS_SESSION_KEY, updatedSession.toPlainObject());
+
     this.currentProfileSubject.next(updatedProfile);
+    this.currentSessionSubject.next(updatedSession);
   }
 
   async logout(): Promise<void> {
-    await signOut(this.firebaseAuth);
+    await this.localStorageService.setItem(LS_SESSION_KEY, null);
     this.currentSessionSubject.next(null);
     this.currentProfileSubject.next(null);
-    await this.setAuthenticated(false);
+    this.authenticatedSubject.next(false);
   }
 
   private async loadSession(): Promise<void> {
-    // Firebase Auth persists the session to IndexedDB automatically.
-    // authState emits null immediately on subscribe before the SDK
-    // has restored the persisted session. We use a Promise + onAuthStateChanged
-    // to wait for the real state instead of firstValueFrom.
-    const firebaseUser = await new Promise<User | null>((resolve) => {
-      const unsubscribe = this.firebaseAuth.onAuthStateChanged((user) => {
-        unsubscribe();
-        resolve(user);
-      });
-    });
+    const session = await this.localStorageService.getItem<AuthSession>(LS_SESSION_KEY);
 
-    if (!firebaseUser) {
+    if (!session) {
       this.currentSessionSubject.next(null);
       this.currentProfileSubject.next(null);
       this.authenticatedSubject.next(false);
       return;
     }
 
-    const profile = await this.ensureProfileForUser(firebaseUser);
-    await this.setSession(firebaseUser, profile);
-  }
+    const users = await this.loadUsers();
+    const profile = users.find((u) => u.id === session.userId);
 
-  private async setAuthenticated(isAuthenticated: boolean): Promise<void> {
-    this.authenticatedSubject.next(isAuthenticated);
+    if (!profile) {
+      await this.localStorageService.setItem(LS_SESSION_KEY, null);
+      this.authenticatedSubject.next(false);
+      return;
+    }
+
+    this.currentSessionSubject.next(new AuthSessionModel(session));
+    this.currentProfileSubject.next(new UserProfileModel(profile));
+    this.authenticatedSubject.next(true);
   }
 
   private async setSession(
-    firebaseUser: User,
+    account: AuthAccountRecord,
     profile: UserProfileModel,
   ): Promise<void> {
     const session = AuthSessionModel.fromJson({
-      userId: firebaseUser.uid,
-      email: firebaseUser.email ?? profile.email,
+      userId: account.userId,
+      email: account.email,
       displayName: profile.displayName,
-      provider: this.resolveProvider(firebaseUser),
+      provider: account.provider,
       loggedInAt: new Date().toISOString(),
     });
+
+    await this.localStorageService.setItem(LS_SESSION_KEY, session.toPlainObject());
     this.currentSessionSubject.next(session);
     this.currentProfileSubject.next(profile);
-    await this.setAuthenticated(true);
+    this.authenticatedSubject.next(true);
   }
 
-  private async ensureProfileForUser(
-    firebaseUser: User,
-  ): Promise<UserProfileModel> {
-    const profileRef = doc(this.firestore, USERS_COLLECTION, firebaseUser.uid);
-    const profileSnapshot = await getDoc(profileRef);
+  private async loadAccounts(): Promise<AuthAccountRecord[]> {
+    const accounts = await this.localStorageService.getItem<AuthAccountRecord[]>(LS_ACCOUNTS_KEY);
+    return accounts ?? [];
+  }
 
-    if (profileSnapshot.exists()) {
-      return mapUserProfileFromFirestore(
-        profileSnapshot.id,
-        profileSnapshot.data() as FirestoreUserProfileDto,
-      );
+  private async saveAccount(account: AuthAccountRecord): Promise<void> {
+    const accounts = await this.loadAccounts();
+    const existing = accounts.findIndex((a) => a.userId === account.userId);
+    if (existing >= 0) {
+      accounts[existing] = account;
+    } else {
+      accounts.push(account);
     }
+    await this.localStorageService.setItem(LS_ACCOUNTS_KEY, accounts);
+  }
 
-    const profile = UserProfileModel.createDefault({
-      id: firebaseUser.uid,
-      displayName:
-        firebaseUser.displayName?.trim() ||
-        this.buildDisplayNameFromEmail(firebaseUser.email),
-      email: firebaseUser.email ?? '',
-      interests: [],
-      bio: 'Colecionador registado na Ancient Coins Exchange.',
-    });
-
-    await this.saveProfile(profile);
-    return profile;
+  private async loadUsers(): Promise<UserProfile[]> {
+    const users = await this.localStorageService.getItem<UserProfile[]>(LS_USERS_KEY);
+    return users ?? [];
   }
 
   private async saveProfile(profile: UserProfileModel): Promise<void> {
-    const profileRef = doc(this.firestore, USERS_COLLECTION, profile.id);
-    await setDoc(profileRef, mapUserProfileToFirestore(profile));
-  }
-
-  private resolveProvider(firebaseUser: User): 'password' | 'demo' {
-    return firebaseUser.providerData.some(
-      (provider) => provider.providerId === 'password',
-    )
-      ? 'password'
-      : 'demo';
-  }
-
-  private buildDisplayNameFromEmail(email: string | null): string {
-    const normalizedEmail = email?.trim().toLowerCase();
-
-    if (!normalizedEmail) {
-      return 'Colecionador';
+    const users = await this.loadUsers();
+    const existing = users.findIndex((u) => u.id === profile.id);
+    if (existing >= 0) {
+      users[existing] = profile.toPlainObject();
+    } else {
+      users.push(profile.toPlainObject());
     }
-
-    return normalizedEmail.split('@')[0] || 'Colecionador';
+    await this.localStorageService.setItem(LS_USERS_KEY, users);
   }
 }
