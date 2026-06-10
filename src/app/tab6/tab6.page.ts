@@ -39,10 +39,10 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
 })
 export class Tab6Page {
   readonly popularSearchTerms = [
-    'Denário',
     'Império Romano',
-    'Escudo Português',
-    'Dracma',
+    'Grécia Antiga',
+    'Portugal',
+    'Império Bizantino',
   ];
 
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;

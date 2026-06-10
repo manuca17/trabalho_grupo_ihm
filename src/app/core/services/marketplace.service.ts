@@ -24,6 +24,13 @@ const LS_NEGOTIATIONS_KEY = 'ls_negotiations';
 
 const PLACEHOLDER_IMAGE = 'assets/icon/coin-aureus.svg';
 
+const ERA_LABELS: Record<string, string> = {
+  romano: 'Império Romano',
+  grego: 'Grécia Antiga',
+  portugues: 'Portugal',
+  bizantino: 'Império Bizantino',
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -81,19 +88,27 @@ export class MarketplaceService {
       // Cards de ofertas com coinIds personalizados (moedas adicionadas pelo utilizador)
       const standaloneOffers = offers.filter((o) => !catalogCoinIds.has(o.coinId));
       const standaloneCards = standaloneOffers.map((offer) => {
-        const photoUrl = offer.photos?.[0]?.dataUrl || PLACEHOLDER_IMAGE;
+        const obversePhoto = offer.photos?.find((p) => p.kind === 'obverse');
+        const reversePhoto = offer.photos?.find((p) => p.kind === 'reverse');
+        const edgePhoto = offer.photos?.find((p) => p.kind === 'edge');
+        const photoUrl = obversePhoto?.dataUrl || offer.photos?.[0]?.dataUrl || PLACEHOLDER_IMAGE;
+        const eraLabel = ERA_LABELS[offer.era] || offer.era || '';
         const virtualCoin: Coin = {
           id: offer.coinId,
           name: offer.title || 'Moeda personalizada',
-          emperor: offer.era || '',
-          period: offer.era || '',
+          emperor: eraLabel,
+          period: eraLabel,
           material: '',
           conservation: offer.condition || '',
           location: '',
           estimatedValue: offer.realValue || offer.askPrice || 0,
           description: offer.description || '',
           image: photoUrl,
-          images: { obverse: photoUrl, reverse: photoUrl, edge: photoUrl },
+          images: {
+            obverse: obversePhoto?.dataUrl || photoUrl,
+            reverse: reversePhoto?.dataUrl || photoUrl,
+            edge: edgePhoto?.dataUrl || photoUrl,
+          },
           tags: [],
         };
         return {
@@ -150,7 +165,12 @@ export class MarketplaceService {
 
   async getCoinById(coinId: string): Promise<Coin | undefined> {
     const catalog = await firstValueFrom(this.catalog$);
-    return catalog.find((coin) => coin.id === coinId);
+    const catalogCoin = catalog.find((coin) => coin.id === coinId);
+    if (catalogCoin) return catalogCoin;
+
+    // Procurar em moedas virtuais (adicionadas pelo utilizador)
+    const cards = await firstValueFrom(this.inventoryCards$);
+    return cards.find((item) => item.coin.id === coinId)?.coin;
   }
 
   getOfferById(offerId: string): Offer | undefined {
