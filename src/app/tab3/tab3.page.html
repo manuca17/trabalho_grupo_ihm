@@ -1,4 +1,4 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar class="app-toolbar">
     <div class="app-header-body">
       <div class="app-header-body__content">
@@ -7,18 +7,23 @@
       </div>
     </div>
   </ion-toolbar>
+  <ion-toolbar class="search-bar-toolbar">
+    <div class="search-panel-top">
+      <div class="search-input-row">
+        <div class="search-box">
+          <ion-icon name="search-outline"></ion-icon>
+          <ion-input
+            [value]="searchText"
+            (ionInput)="searchText = $event.detail.value ?? ''"
+            placeholder="Pesquisar conversas..."
+          ></ion-input>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="chat-content" scrollY="true">
-  <div class="searchbar-wrapper">
-    <ion-searchbar
-      [(ngModel)]="searchText"
-      name="search"
-      placeholder="Pesquisar conversas..."
-      showCancelButton="never"
-      class="custom-searchbar"
-    ></ion-searchbar>
-  </div>
+<ion-content class="chat-content" scrollY="true">
 
   <div class="conversations-list" *ngIf="filteredConversations.length > 0; else emptyState">
     <button

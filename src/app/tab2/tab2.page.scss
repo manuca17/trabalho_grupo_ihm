@@ -295,6 +295,25 @@
   gap: 16px;
 }
 
+.optional-section {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.optional-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #475569;
+  margin: 0 0 4px;
+
+  span {
+    font-weight: 400;
+    color: #94a3b8;
+    font-size: 0.82rem;
+  }
+}
+
 .figma-row-grid {
   display: grid;
   grid-template-columns: 1fr 1.5fr;

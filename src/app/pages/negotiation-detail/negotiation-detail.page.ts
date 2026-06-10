@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
 import { Coin, NegotiationThread } from '../../core/models/coin.model';
@@ -26,6 +26,7 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
+    private readonly router: Router,
     private readonly marketplaceService: MarketplaceService,
     private readonly authService: AuthService,
   ) {}
@@ -88,6 +89,10 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
     }
 
     await this.marketplaceService.markNegotiationAsTraded(this.thread.id);
+  }
+
+  goBack(): void {
+    void this.router.navigateByUrl('/tabs/tab3');
   }
 
   isOwnMessage(message: { userId: string }): boolean {

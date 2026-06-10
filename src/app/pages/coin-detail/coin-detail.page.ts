@@ -120,7 +120,7 @@ export class CoinDetailPage implements OnInit, OnDestroy {
   private async populateScreenState(): Promise<void> {
     if (!this.coin) return;
     this.sellerName = this.coin.sellerName ?? 'Colecionador Ancient Coins';
-    this.sellerRating = this.coin.sellerRating ?? 4.7;
+    this.sellerRating = this.coin.sellerRating ?? 0;
     this.origin = this.coin.origin ?? this.coin.emperor;
     this.diameter = this.coin.diameter ?? 'N/D';
     this.history = this.coin.history ?? this.coin.description;

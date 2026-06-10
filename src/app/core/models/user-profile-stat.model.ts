@@ -23,7 +23,7 @@ export class UserProfileStatsModel implements UserProfileStats {
       publishedOffers: 0,
       completedTrades: 0,
       favoritesCount: 0,
-      rating: 5,
+      rating: 0,
     });
   }
 

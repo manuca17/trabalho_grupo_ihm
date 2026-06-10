@@ -32,6 +32,13 @@ export class Tab2Page implements OnInit {
     realValue: [0, [Validators.required, Validators.min(0)]],
     availableFor: ['sale', [Validators.required]],
     salePrice: [0, [Validators.min(0)]],
+    weight: ['', []],
+    diameter: ['', []],
+    material: ['', []],
+    origin: ['', []],
+    history: ['', []],
+    reference: ['', []],
+    location: ['', []],
   });
 
   photos: OfferPhoto[] = [];
@@ -86,6 +93,13 @@ export class Tab2Page implements OnInit {
       realValue: 0,
       availableFor: 'sale',
       salePrice: 0,
+      weight: '',
+      diameter: '',
+      material: '',
+      origin: '',
+      history: '',
+      reference: '',
+      location: '',
     });
     this.photos = [];
   }
@@ -109,6 +123,13 @@ export class Tab2Page implements OnInit {
       realValue: offer.realValue,
       availableFor: offer.availableForTrade ? 'trade' : 'sale',
       salePrice: offer.availableForTrade ? 0 : offer.askPrice,
+      weight: offer.weight ?? '',
+      diameter: offer.diameter ?? '',
+      material: offer.material ?? '',
+      origin: offer.origin ?? '',
+      history: offer.history ?? '',
+      reference: offer.reference ?? '',
+      location: offer.location ?? '',
     });
     const priceControl = this.offerForm.controls.salePrice;
     if (!offer.availableForTrade) {
@@ -163,6 +184,13 @@ export class Tab2Page implements OnInit {
         realValue: formValue.realValue,
         availableForTrade: formValue.availableFor === 'trade',
         photos: this.photos,
+        weight: formValue.weight || undefined,
+        diameter: formValue.diameter || undefined,
+        material: formValue.material || undefined,
+        origin: formValue.origin || undefined,
+        history: formValue.history || undefined,
+        reference: formValue.reference || undefined,
+        location: formValue.location || undefined,
       };
       const wasEdit = this.mode === 'edit';
       if (wasEdit && this.editingOfferId) {

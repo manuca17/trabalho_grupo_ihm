@@ -65,7 +65,7 @@
             <h2>{{ sellerName }}</h2>
             <div class="seller-rating">
               <ion-icon name="star" class="star-gold"></ion-icon>
-              <span>{{ sellerRating }} (24 avaliações)</span>
+              <span>{{ sellerRating > 0 ? sellerRating : 'Sem avaliações' }}</span>
             </div>
           </div>
         </div>

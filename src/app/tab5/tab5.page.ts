@@ -26,8 +26,6 @@ const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
 })
 export class Tab5Page implements OnInit {
   activeTab: 'active' | 'sold' | 'traded' = 'active';
-  soldCoinsCount = 1;
-  tradedCoinsCount = 1;
   showSettings = false;
   showEditProfile = false;
   newName = '';
@@ -44,6 +42,22 @@ export class Tab5Page implements OnInit {
     );
   readonly catalog$ = this.marketplaceService.catalog$;
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
+
+  readonly soldCoins$ = combineLatest([this.currentProfile$, this.marketplaceService.offers$]).pipe(
+    map(([profile, offers]) =>
+      offers.filter((o) => o.ownerId === profile?.id && o.status === 'traded' && !o.availableForTrade)
+    ),
+  );
+
+  readonly tradedCoins$ = combineLatest([this.currentProfile$, this.marketplaceService.offers$]).pipe(
+    map(([profile, offers]) =>
+      offers.filter((o) => o.ownerId === profile?.id && o.status === 'traded' && o.availableForTrade)
+    ),
+  );
+
+  readonly publishedCount$ = combineLatest([this.currentProfile$, this.marketplaceService.offers$]).pipe(
+    map(([profile, offers]) => offers.filter((o) => o.ownerId === profile?.id).length),
+  );
   readonly featuredCoins$ = this.inventoryCards$.pipe(map((cards) => cards.slice(0, 4)));
   
   readonly summary$ = combineLatest([
@@ -220,7 +234,7 @@ export class Tab5Page implements OnInit {
   }
 
   openAddOffer(): void { void this.router.navigate(['/tabs/tab2']); }
-  openMessages(): void { void this.router.navigate(['/tabs/tab4']); }
+  openMessages(): void { void this.router.navigate(['/tabs/tab3']); }
 
   openEditProfile() {
     this.showEditProfile = true;

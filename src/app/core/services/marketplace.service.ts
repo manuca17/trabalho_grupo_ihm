@@ -96,13 +96,19 @@ export class MarketplaceService {
         const virtualCoin: Coin = {
           id: offer.coinId,
           name: offer.title || 'Moeda personalizada',
+          sellerName: offer.ownerDisplayName || '',
           emperor: eraLabel,
           period: eraLabel,
-          material: '',
+          material: offer.material || '',
           conservation: offer.condition || '',
-          location: '',
+          location: offer.location || '',
+          origin: offer.origin,
+          weight: offer.weight,
+          diameter: offer.diameter,
           estimatedValue: offer.realValue || offer.askPrice || 0,
           description: offer.description || '',
+          history: offer.history,
+          reference: offer.reference,
           image: photoUrl,
           images: {
             obverse: obversePhoto?.dataUrl || photoUrl,
@@ -211,6 +217,13 @@ export class MarketplaceService {
     realValue: number;
     availableForTrade: boolean;
     photos: OfferPhoto[];
+    weight?: string;
+    diameter?: string;
+    material?: string;
+    origin?: string;
+    history?: string;
+    reference?: string;
+    location?: string;
   }): Promise<Offer> {
     try {
       const profile = await this.resolveCurrentProfile();
@@ -233,9 +246,16 @@ export class MarketplaceService {
         condition: input.condition,
         realValue: input.realValue,
         availableForTrade: input.availableForTrade,
-        photos: input.photos, // fotos completas em memória
+        photos: input.photos,
         status: 'negotiating',
         createdAt: new Date().toISOString(),
+        weight: input.weight,
+        diameter: input.diameter,
+        material: input.material,
+        origin: input.origin,
+        history: input.history,
+        reference: input.reference,
+        location: input.location,
       });
 
       const updatedOffers = [...this.offersSubject.value, offer];
@@ -408,6 +428,13 @@ export class MarketplaceService {
       realValue: number;
       availableForTrade: boolean;
       photos: OfferPhoto[];
+      weight?: string;
+      diameter?: string;
+      material?: string;
+      origin?: string;
+      history?: string;
+      reference?: string;
+      location?: string;
     },
   ): Promise<void> {
     await this.localStorageService.setItem(`offer_photos_${offerId}`, input.photos);
@@ -425,6 +452,13 @@ export class MarketplaceService {
         realValue: input.realValue,
         availableForTrade: input.availableForTrade,
         photos: input.photos,
+        weight: input.weight,
+        diameter: input.diameter,
+        material: input.material,
+        origin: input.origin,
+        history: input.history,
+        reference: input.reference,
+        location: input.location,
       });
     });
 
@@ -537,6 +571,13 @@ export class MarketplaceService {
       })),
       status: o.status,
       createdAt: o.createdAt,
+      weight: o.weight,
+      diameter: o.diameter,
+      material: o.material,
+      origin: o.origin,
+      history: o.history,
+      reference: o.reference,
+      location: o.location,
     }));
     await this.localStorageService.setItem(LS_OFFERS_KEY, plain);
   }

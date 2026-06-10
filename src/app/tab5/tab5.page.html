@@ -117,7 +117,9 @@
         <p class="profile-bio">{{ profile.bio }}</p>
         <div class="profile-rating">
           <ion-icon name="star" class="star-icon"></ion-icon>
-          <span class="rating-text">{{ profile.stats.rating }} (24 avaliações)</span>
+          <span class="rating-text">
+            {{ profile.stats.rating > 0 ? profile.stats.rating : 'Sem avaliações' }}
+          </span>
         </div>
       </section>
 
@@ -132,15 +134,15 @@
         <div class="stat-box">
           <ion-icon name="trending-up-outline" class="stat-icon"></ion-icon>
           <div class="stat-content">
-            <p class="stat-value">{{ profile.stats.publishedOffers }}</p>
-            <span class="stat-label">Vendas</span>
+            <p class="stat-value">{{ publishedCount$ | async }}</p>
+            <span class="stat-label">Publicadas</span>
           </div>
         </div>
         <div class="stat-box">
-          <ion-icon name="star-outline" class="stat-icon"></ion-icon>
+          <ion-icon name="checkmark-done-outline" class="stat-icon"></ion-icon>
           <div class="stat-content">
-            <p class="stat-value">{{ profile.stats.rating }}</p>
-            <span class="stat-label">Avaliação</span>
+            <p class="stat-value">{{ ((soldCoins$ | async)?.length || 0) + ((tradedCoins$ | async)?.length || 0) }}</p>
+            <span class="stat-label">Concluídas</span>
           </div>
         </div>
       </section>
@@ -151,10 +153,10 @@
             Minhas Moedas ({{ (myCoins$ | async)?.length || 0 }})
           </button>
           <button class="tab-button" [class.active]="activeTab === 'sold'" (click)="setActiveTab('sold')">
-            Vendidas ({{ soldCoinsCount || 0 }})
+            Vendidas ({{ (soldCoins$ | async)?.length || 0 }})
           </button>
           <button class="tab-button" [class.active]="activeTab === 'traded'" (click)="setActiveTab('traded')">
-            Trocadas ({{ tradedCoinsCount || 0 }})
+            Trocadas ({{ (tradedCoins$ | async)?.length || 0 }})
           </button>
         </div>
 
@@ -169,7 +171,7 @@
                   <h3 class="coin-name">{{ item.coin.name }}</h3>
                   <div class="coin-details">
                     <span class="condition-tag">{{ item.coin.conservation }}</span>
-                    <span class="views-count">45 visualizações</span>
+                    <span class="views-count">0 visualizações</span>
                   </div>
                   <div class="coin-footer">
                     <span class="coin-price">{{ getPriceLabel(item) }}</span>
@@ -192,17 +194,47 @@
         </div>
 
         <div class="coins-list" *ngIf="activeTab === 'sold'">
-          <article class="empty-state">
-            <h3>Sem moedas vendidas</h3>
-            <p>Quando vender moedas, elas aparecerão aqui.</p>
-          </article>
+          <ng-container *ngIf="soldCoins$ | async as soldCoins">
+            <div *ngIf="soldCoins.length; else emptySold" class="coins-container">
+              <div class="coin-card" *ngFor="let offer of soldCoins">
+                <div class="coin-info">
+                  <h3 class="coin-name">{{ offer.title || 'Moeda' }}</h3>
+                  <div class="coin-footer">
+                    <span class="coin-price">{{ offer.askPrice | currency:'EUR':'symbol':'1.0-0':'pt-PT' }}</span>
+                    <span class="coin-status sold-status">Vendida</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #emptySold>
+              <article class="empty-state">
+                <h3>Sem moedas vendidas</h3>
+                <p>Quando vender moedas, elas aparecerão aqui.</p>
+              </article>
+            </ng-template>
+          </ng-container>
         </div>
 
         <div class="coins-list" *ngIf="activeTab === 'traded'">
-          <article class="empty-state">
-            <h3>Sem moedas trocadas</h3>
-            <p>Quando trocar moedas, elas aparecerão aqui.</p>
-          </article>
+          <ng-container *ngIf="tradedCoins$ | async as tradedCoins">
+            <div *ngIf="tradedCoins.length; else emptyTraded" class="coins-container">
+              <div class="coin-card" *ngFor="let offer of tradedCoins">
+                <div class="coin-info">
+                  <h3 class="coin-name">{{ offer.title || 'Moeda' }}</h3>
+                  <div class="coin-footer">
+                    <span class="coin-price">Troca</span>
+                    <span class="coin-status traded-status">Trocada</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #emptyTraded>
+              <article class="empty-state">
+                <h3>Sem moedas trocadas</h3>
+                <p>Quando trocar moedas, elas aparecerão aqui.</p>
+              </article>
+            </ng-template>
+          </ng-container>
         </div>
       </section>
     </ng-container>

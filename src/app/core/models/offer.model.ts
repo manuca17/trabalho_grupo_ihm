@@ -19,6 +19,13 @@ export interface Offer {
   photos: OfferPhoto[];
   status: 'draft' | 'published' | 'negotiating' | 'traded';
   createdAt: string;
+  weight?: string;
+  diameter?: string;
+  material?: string;
+  origin?: string;
+  history?: string;
+  reference?: string;
+  location?: string;
 }
 
 export class OfferModel implements Offer {
@@ -37,6 +44,13 @@ export class OfferModel implements Offer {
   photos: OfferPhotoModel[];
   status: 'draft' | 'published' | 'negotiating' | 'traded';
   createdAt: string;
+  weight?: string;
+  diameter?: string;
+  material?: string;
+  origin?: string;
+  history?: string;
+  reference?: string;
+  location?: string;
 
   constructor(data: Offer) {
     this.id = data.id;
@@ -54,6 +68,13 @@ export class OfferModel implements Offer {
     this.photos = OfferPhotoModel.fromJsonArray(data.photos);
     this.status = data.status;
     this.createdAt = data.createdAt;
+    this.weight = data.weight;
+    this.diameter = data.diameter;
+    this.material = data.material;
+    this.origin = data.origin;
+    this.history = data.history;
+    this.reference = data.reference;
+    this.location = data.location;
   }
 
   static fromJson(data: Offer): OfferModel {
@@ -81,6 +102,13 @@ export class OfferModel implements Offer {
       photos: this.photos.map((photo) => photo.toPlainObject()),
       status: this.status,
       createdAt: this.createdAt,
+      weight: this.weight,
+      diameter: this.diameter,
+      material: this.material,
+      origin: this.origin,
+      history: this.history,
+      reference: this.reference,
+      location: this.location,
     };
   }
 }

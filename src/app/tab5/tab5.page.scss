@@ -173,6 +173,8 @@
     font-size: 0.75rem;
     color: #4ade80;
     font-weight: 600;
+    &.sold-status { color: #60a5fa; }
+    &.traded-status { color: #a78bfa; }
     background: rgba(74, 222, 128, 0.1);
     padding: 4px 8px;
     border-radius: 4px;

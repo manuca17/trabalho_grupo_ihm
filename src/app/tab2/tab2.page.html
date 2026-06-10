@@ -119,6 +119,47 @@
         </div>
       </div>
 
+      <!-- Informações Adicionais (opcionais) -->
+      <div class="figma-form-group optional-section">
+        <p class="section-label optional-label">Informações Adicionais <span>(opcional)</span></p>
+
+        <div class="figma-row-grid">
+          <div class="figma-input-item">
+            <label>Peso</label>
+            <input type="text" formControlName="weight" placeholder="Ex: 7.9g" />
+          </div>
+          <div class="figma-input-item">
+            <label>Diâmetro</label>
+            <input type="text" formControlName="diameter" placeholder="Ex: 19mm" />
+          </div>
+        </div>
+
+        <div class="figma-input-item">
+          <label>Material / Metal</label>
+          <input type="text" formControlName="material" placeholder="Ex: Ouro, Prata, Bronze..." />
+        </div>
+
+        <div class="figma-input-item">
+          <label>Origem Histórica</label>
+          <input type="text" formControlName="origin" placeholder="Ex: Roma Antiga" />
+        </div>
+
+        <div class="figma-input-item">
+          <label>Localização do Vendedor</label>
+          <input type="text" formControlName="location" placeholder="Ex: Lisboa, Portugal" />
+        </div>
+
+        <div class="figma-input-item">
+          <label>História</label>
+          <textarea rows="3" formControlName="history" placeholder="Contexto histórico sobre esta moeda..."></textarea>
+        </div>
+
+        <div class="figma-input-item">
+          <label>Referência Catalográfica</label>
+          <input type="text" formControlName="reference" placeholder="Ex: RIC I 544" />
+        </div>
+      </div>
+
       <div class="submit-container">
         <button
           type="submit"

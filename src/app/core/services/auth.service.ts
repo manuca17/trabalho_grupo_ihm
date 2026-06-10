@@ -184,6 +184,15 @@ export class AuthService {
       return;
     }
 
+    // Migração: corrigir rating hardcoded antigo (default era 5, agora é 0)
+    if (profile.stats?.rating === 5 && profile.stats?.completedTrades === 0) {
+      profile.stats.rating = 0;
+      const updatedUsers = users.map((u) =>
+        u.id === profile.id ? { ...u, stats: { ...u.stats, rating: 0 } } : u,
+      );
+      await this.localStorageService.setItem(LS_USERS_KEY, updatedUsers);
+    }
+
     this.currentSessionSubject.next(new AuthSessionModel(session));
     this.currentProfileSubject.next(new UserProfileModel(profile));
     this.authenticatedSubject.next(true);
