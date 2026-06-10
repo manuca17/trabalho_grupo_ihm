@@ -301,7 +301,7 @@
             class="figma-submit-btn"
             [disabled]="offerForm.invalid || photos.length < 3"
           >
-            PUBLICAR MOEDA
+            {{ mode === 'edit' ? 'GUARDAR ALTERAÇÕES' : 'PUBLICAR MOEDA' }}
           </button>
         </div>
       </form>

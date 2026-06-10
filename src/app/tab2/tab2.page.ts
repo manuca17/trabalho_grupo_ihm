@@ -9,7 +9,7 @@ import { Coin, OfferPhoto } from '../core/models/coin.model';
 import { ContentService } from '../core/services/content.service';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
-type Tab2Mode = 'create' | 'proposal';
+type Tab2Mode = 'create' | 'proposal' | 'edit';
 type ProposalType = 'money' | 'trade' | 'both';
 
 const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
@@ -58,6 +58,7 @@ export class Tab2Page implements OnInit {
   selectedTradeCoinIds: string[] = [];
   ownedCoins: Coin[] = [];
   isProposalSubmitting = false;
+  editingOfferId: string | null = null;
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -69,9 +70,10 @@ export class Tab2Page implements OnInit {
   ) {}
 
   ionViewWillEnter(): void {
-    if (this.mode !== 'proposal') {
+    if (this.mode === 'create') {
       this.resetFormState();
     }
+    // No modo 'edit' e 'proposal' os dados já foram carregados em ngOnInit
   }
 
   async ngOnInit(): Promise<void> {
@@ -80,13 +82,20 @@ export class Tab2Page implements OnInit {
 
     this.resetFormState();
 
-    const requestedCoinId =
-      this.activatedRoute.snapshot.queryParamMap.get('coinId');
+    const offerId = this.activatedRoute.snapshot.queryParamMap.get('offerId');
+    const requestedCoinId = this.activatedRoute.snapshot.queryParamMap.get('coinId');
     this.sourceTab =
       this.activatedRoute.snapshot.queryParamMap.get('from') ?? this.sourceTab;
-    this.mode = requestedCoinId ? 'proposal' : 'create';
 
-    if (this.mode === 'proposal') {
+    if (offerId) {
+      this.mode = 'edit';
+      this.editingOfferId = offerId;
+      await this.loadOfferForEdit(offerId);
+      return;
+    }
+
+    if (requestedCoinId) {
+      this.mode = 'proposal';
       this.setupProposalMode(requestedCoinId);
       return;
     }
@@ -128,8 +137,38 @@ export class Tab2Page implements OnInit {
     if (this.mode === 'proposal') {
       return this.supportsTrade ? 'Propor Troca' : 'Fazer Oferta';
     }
-
+    if (this.mode === 'edit') {
+      return 'Editar Moeda';
+    }
     return 'Adicionar Moeda';
+  }
+
+  private async loadOfferForEdit(offerId: string): Promise<void> {
+    const offer = this.marketplaceService.getOfferById(offerId);
+    if (!offer) return;
+
+    // Carregar fotos com dataUrl do storage
+    const storedPhotos = await this.marketplaceService.getOfferPhotos(offerId);
+    this.photos = storedPhotos.length ? storedPhotos : offer.photos.filter((p) => p.dataUrl);
+
+    this.offerForm.patchValue({
+      coinId: offer.coinId,
+      title: offer.title,
+      quantity: offer.quantity,
+      era: offer.era,
+      condition: offer.condition,
+      description: offer.description,
+      realValue: offer.realValue,
+      availableFor: offer.availableForTrade ? 'trade' : 'sale',
+      salePrice: offer.availableForTrade ? 0 : offer.askPrice,
+    });
+
+    // Ativar validação de preço se necessário
+    const priceControl = this.offerForm.controls.salePrice;
+    if (!offer.availableForTrade) {
+      priceControl.setValidators([Validators.required, Validators.min(0.01)]);
+      priceControl.updateValueAndValidity();
+    }
   }
 
   get proposalPriceLabel(): string {
@@ -240,7 +279,6 @@ export class Tab2Page implements OnInit {
     return 'Boa luminosidade';
   }
 
-  // 3. Modificado para enviar os novos parâmetros para o teu serviço de Backend
   async publishOffer(): Promise<void> {
     if (
       this.offerForm.invalid ||
@@ -254,11 +292,7 @@ export class Tab2Page implements OnInit {
 
     try {
       const formValue = this.offerForm.getRawValue();
-
-      // Adaptado para enviar a estrutura que o teu marketplaceService espera,
-      // incluindo as novidades do Figma
-      await this.marketplaceService.publishOffer({
-        coinId: formValue.coinId,
+      const offerInput = {
         title: formValue.title,
         quantity: formValue.quantity,
         askPrice: formValue.availableFor === 'sale' ? formValue.salePrice : 0,
@@ -268,18 +302,32 @@ export class Tab2Page implements OnInit {
         realValue: formValue.realValue,
         availableForTrade: formValue.availableFor === 'trade',
         photos: this.photos,
-      });
+      };
 
+      if (this.mode === 'edit' && this.editingOfferId) {
+        await this.marketplaceService.updateOffer(this.editingOfferId, offerInput);
+      } else {
+        await this.marketplaceService.publishOffer({
+          coinId: formValue.coinId,
+          ...offerInput,
+        });
+      }
+
+      const wasEdit = this.mode === 'edit';
       this.resetFormState();
 
       const successToast = await this.toastController.create({
-        message: 'Moeda publicada com sucesso!',
+        message: wasEdit ? 'Moeda atualizada com sucesso!' : 'Moeda publicada com sucesso!',
         duration: 2500,
         position: 'bottom',
         color: 'success',
         icon: 'checkmark-circle-outline',
       });
       await successToast.present();
+
+      if (wasEdit) {
+        await this.router.navigate(['/tabs/tab5'], { queryParams: { nav: 'profile' } });
+      }
     } catch (err) {
       console.error('Erro ao publicar oferta:', err);
       const errorToast = await this.toastController.create({

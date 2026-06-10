@@ -360,6 +360,58 @@ export class MarketplaceService {
     await this.persistNegotiations(updatedNegotiations);
   }
 
+  async removeOffer(offerId: string): Promise<void> {
+    const updatedOffers = this.offersSubject.value.filter((o) => o.id !== offerId);
+    const updatedNegotiations = this.negotiationsSubject.value.filter(
+      (t) => t.offerId !== offerId,
+    );
+
+    this.offersSubject.next(updatedOffers);
+    this.negotiationsSubject.next(updatedNegotiations);
+
+    await Promise.all([
+      this.persistOffers(updatedOffers),
+      this.persistNegotiations(updatedNegotiations),
+      this.localStorageService.setItem(`offer_photos_${offerId}`, null),
+    ]);
+  }
+
+  async updateOffer(
+    offerId: string,
+    input: {
+      title: string;
+      quantity: number;
+      askPrice: number;
+      description: string;
+      era: string;
+      condition: string;
+      realValue: number;
+      availableForTrade: boolean;
+      photos: OfferPhoto[];
+    },
+  ): Promise<void> {
+    await this.localStorageService.setItem(`offer_photos_${offerId}`, input.photos);
+
+    const updatedOffers = this.offersSubject.value.map((o) => {
+      if (o.id !== offerId) return o;
+      return new OfferModel({
+        ...o,
+        title: input.title,
+        quantity: input.quantity,
+        askPrice: input.askPrice,
+        description: input.description,
+        era: input.era,
+        condition: input.condition,
+        realValue: input.realValue,
+        availableForTrade: input.availableForTrade,
+        photos: input.photos,
+      });
+    });
+
+    this.offersSubject.next(updatedOffers);
+    await this.persistOffers(updatedOffers);
+  }
+
   async markNegotiationAsTraded(threadId: string): Promise<void> {
     const targetThread = this.getNegotiationById(threadId);
 

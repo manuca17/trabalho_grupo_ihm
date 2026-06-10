@@ -177,14 +177,38 @@ export class Tab5Page implements OnInit {
     });
   }
 
-  editCoin(coin: Coin): void {
+  editCoin(item: { coin: Coin; lastOffer?: Offer }): void {
+    if (!item.lastOffer) return;
     void this.router.navigate(['/tabs/tab2'], {
-      queryParams: { coinId: coin.id },
+      queryParams: { offerId: item.lastOffer.id },
     });
   }
 
-  removeCoin(coin: Coin): void {
-    console.log('Remover moeda:', coin.name);
+  async removeCoin(item: { coin: Coin; lastOffer?: Offer }): Promise<void> {
+    if (!item.lastOffer) return;
+
+    const alert = await this.alertController.create({
+      header: 'Remover moeda',
+      message: `Tens a certeza que queres remover "${item.coin.name}"? Esta ação não pode ser desfeita.`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Remover',
+          role: 'destructive',
+          handler: () => {
+            void this.marketplaceService.removeOffer(item.lastOffer!.id).then(async () => {
+              const toast = await this.toastController.create({
+                message: 'Moeda removida com sucesso.',
+                duration: 2000,
+                color: 'success',
+              });
+              await toast.present();
+            });
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   openSettings(): void {
