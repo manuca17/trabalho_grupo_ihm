@@ -134,9 +134,17 @@ export class MarketplaceService {
     );
 
     this.offersSubject.next(OfferModel.fromJsonArray(offersWithPhotos));
-    this.negotiationsSubject.next(
+
+    const mergedNegotiations = this.mergeThreadsByPerson(
       NegotiationThreadModel.fromJsonArray(storedNegotiations ?? []),
     );
+    this.negotiationsSubject.next(mergedNegotiations);
+
+    // Persistir se houve fusão de chats
+    if (mergedNegotiations.length !== (storedNegotiations ?? []).length) {
+      await this.persistNegotiations(mergedNegotiations);
+    }
+
     this.isInitialized = true;
   }
 
@@ -222,32 +230,49 @@ export class MarketplaceService {
       const catalog = await firstValueFrom(this.catalog$);
       const proposerCoin =
         catalog.find((coin) => coin.id !== input.coinId) ?? catalog[0];
-      const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
-        id: `thread-${Date.now()}`,
-        offerId,
-        offerCoinId: input.coinId,
-        proposerCoinId: proposerCoin?.id ?? input.coinId,
-        proposerName: profile.displayName,
-        sellerName: 'Maria',
-        status: 'pending',
-        realValue: proposerCoin?.estimatedValue ?? input.askPrice,
-        unreadCount: 1,
-        messages: [
-          {
-            id: `msg-${Date.now()}`,
-            userId: profile.id,
-            displayName: profile.displayName,
-            body: input.availableForTrade
-              ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
-              : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
-            sentAt: new Date().toISOString(),
-          },
-        ],
-      });
-      const updatedNegotiations = [
-        ...this.negotiationsSubject.value,
-        nextNegotiation,
-      ];
+
+      const sellerName = 'Maria';
+      const newMessageBody = input.availableForTrade
+        ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
+        : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.';
+      const newMessage: NegotiationMessage = {
+        id: `msg-${Date.now()}`,
+        userId: profile.id,
+        displayName: profile.displayName,
+        body: newMessageBody,
+        sentAt: new Date().toISOString(),
+      };
+
+      const existingThread = this.negotiationsSubject.value.find(
+        (t) => t.proposerName === profile.displayName && t.sellerName === sellerName,
+      );
+
+      let updatedNegotiations: NegotiationThread[];
+
+      if (existingThread) {
+        const updatedThread: NegotiationThread = {
+          ...existingThread,
+          unreadCount: existingThread.unreadCount + 1,
+          messages: [...existingThread.messages, newMessage],
+        };
+        updatedNegotiations = this.negotiationsSubject.value.map((t) =>
+          t.id === existingThread.id ? updatedThread : t,
+        );
+      } else {
+        const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
+          id: `thread-${Date.now()}`,
+          offerId,
+          offerCoinId: input.coinId,
+          proposerCoinId: proposerCoin?.id ?? input.coinId,
+          proposerName: profile.displayName,
+          sellerName,
+          status: 'pending',
+          realValue: proposerCoin?.estimatedValue ?? input.askPrice,
+          unreadCount: 1,
+          messages: [newMessage],
+        });
+        updatedNegotiations = [...this.negotiationsSubject.value, nextNegotiation];
+      }
 
       this.offersSubject.next(updatedOffers);
       this.negotiationsSubject.next(updatedNegotiations);
@@ -298,13 +323,44 @@ export class MarketplaceService {
       .filter(Boolean)
       .join(' ');
 
+    const sellerName = 'Maria';
+
+    // Reutilizar o chat existente com a mesma pessoa, em vez de abrir um novo.
+    const existingThread = this.negotiationsSubject.value.find(
+      (t) => t.proposerName === profile.displayName && t.sellerName === sellerName,
+    );
+
+    if (existingThread) {
+      const proposalMessage: NegotiationMessage = {
+        id: `msg-${Date.now()}`,
+        userId: profile.id,
+        displayName: profile.displayName,
+        body: firstMessageBody,
+        sentAt: new Date().toISOString(),
+      };
+
+      const updatedThread: NegotiationThread = {
+        ...existingThread,
+        unreadCount: existingThread.unreadCount + 1,
+        messages: [...existingThread.messages, proposalMessage],
+      };
+
+      const updatedNegotiations = this.negotiationsSubject.value.map((t) =>
+        t.id === existingThread.id ? updatedThread : t,
+      );
+      this.negotiationsSubject.next(updatedNegotiations);
+      await this.persistNegotiations(updatedNegotiations);
+
+      return updatedThread;
+    }
+
     const thread: NegotiationThread = new NegotiationThreadModel({
       id: `thread-${Date.now()}`,
       offerId: `proposal-${Date.now()}`,
       offerCoinId: input.offerCoinId,
       proposerCoinId: primaryTradeCoin?.id ?? input.offerCoinId,
       proposerName: profile.displayName,
-      sellerName: 'Maria',
+      sellerName,
       status: 'pending',
       realValue:
         input.offerAmount ??
@@ -450,6 +506,36 @@ export class MarketplaceService {
       this.persistOffers(updatedOffers),
       this.persistNegotiations(updatedNegotiations),
     ]);
+  }
+
+  private mergeThreadsByPerson(threads: NegotiationThread[]): NegotiationThread[] {
+    const groups = new Map<string, NegotiationThread[]>();
+
+    for (const thread of threads) {
+      const key = `${thread.proposerName}|${thread.sellerName}`;
+      const group = groups.get(key) ?? [];
+      group.push(thread);
+      groups.set(key, group);
+    }
+
+    const merged: NegotiationThread[] = [];
+
+    for (const group of groups.values()) {
+      if (group.length === 1) {
+        merged.push(group[0]);
+        continue;
+      }
+
+      const base = group[0];
+      const allMessages = ([] as NegotiationMessage[])
+        .concat(...group.map((t) => t.messages))
+        .sort((a: NegotiationMessage, b: NegotiationMessage) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+      const totalUnread = group.reduce((sum, t) => sum + t.unreadCount, 0);
+
+      merged.push({ ...base, messages: allMessages, unreadCount: totalUnread });
+    }
+
+    return merged;
   }
 
   private async resolveCurrentProfile(): Promise<{ id: string; displayName: string }> {
