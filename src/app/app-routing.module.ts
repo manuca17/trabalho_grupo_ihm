@@ -41,6 +41,14 @@ const routes: Routes = [
       ),
   },
   {
+    path: 'make-offer',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./pages/make-offer/make-offer.module').then(
+        (m) => m.MakeOfferPageModule,
+      ),
+  },
+  {
     path: 'negotiation/:threadId',
     canActivate: [authGuard],
     loadChildren: () =>

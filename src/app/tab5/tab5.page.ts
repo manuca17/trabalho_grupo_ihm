@@ -177,8 +177,8 @@ export class Tab5Page implements OnInit {
   }
 
   editCoin(coin: Coin): void {
-    void this.router.navigate(['/tabs/tab2'], {
-      queryParams: { coinId: coin.id },
+    void this.router.navigate(['/coin', coin.id], {
+      queryParams: { from: 'perfil' },
     });
   }
 
