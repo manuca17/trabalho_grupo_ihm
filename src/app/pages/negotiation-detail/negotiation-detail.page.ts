@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { IonContent } from '@ionic/angular';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, combineLatest, takeUntil } from 'rxjs';
 
 import { Coin, NegotiationThread } from '../../core/models/coin.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -21,6 +21,7 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
   proposerCoin?: Coin;
   thread?: NegotiationThread;
   currentUserId = '';
+  realValueDisplay = '';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -43,11 +44,16 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
       return;
     }
 
-    this.marketplaceService
-      .getNegotiationById$(threadId)
+    combineLatest([
+      this.marketplaceService.getNegotiationById$(threadId),
+      this.marketplaceService.activeCurrency$,
+    ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe((updatedThread) => {
+      .subscribe(([updatedThread, currency]) => {
         this.thread = updatedThread;
+        if (updatedThread) {
+          this.realValueDisplay = this.marketplaceService.formatCurrency(updatedThread.realValue, currency);
+        }
         setTimeout(() => this.content?.scrollToBottom(200), 50);
       });
 
@@ -103,5 +109,15 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
 
   isSystemMessage(message: { userId: string }): boolean {
     return message.userId === 'system';
+  }
+
+  get statusLabel(): string {
+    if (!this.thread) return '';
+    const labels: Record<string, string> = { pending: 'Pendente', accepted: 'Aceite', traded: 'Trocado' };
+    return labels[this.thread.status] ?? this.thread.status;
+  }
+
+  get statusClass(): string {
+    return `status--${this.thread?.status ?? 'pending'}`;
   }
 }

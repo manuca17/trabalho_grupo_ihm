@@ -1,99 +1,107 @@
 <ion-header [translucent]="true">
-  <ion-toolbar>
+  <ion-toolbar class="app-toolbar">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/tab3"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/tab3" text=""></ion-back-button>
     </ion-buttons>
-    <ion-title>Negociação</ion-title>
+    <div class="app-header-body">
+      <div class="app-header-body__content">
+        <strong>Negociação</strong>
+        <span *ngIf="thread">{{ thread.proposerName }}</span>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="negotiation-content">
+<ion-content class="negotiation-content">
   <ng-container *ngIf="thread">
 
-    <section class="coins-overview">
-      <div class="coins-overview__coin" *ngIf="offerCoin">
-        <img [src]="offerCoin.image" [alt]="offerCoin.name" />
-        <span class="coins-overview__name">{{ offerCoin.name }}</span>
-        <small class="coins-overview__label">{{ thread.sellerName }}</small>
+    <div class="thread-overview">
+      <div class="thread-parties">
+        <div class="party-avatar">{{ thread.sellerName[0] }}</div>
+        <div class="thread-vs">
+          <ion-icon name="swap-horizontal-outline"></ion-icon>
+        </div>
+        <div class="party-avatar party-avatar--proposer">{{ thread.proposerName[0] }}</div>
       </div>
-      <div class="coins-overview__arrow">
-        <ion-icon name="swap-horizontal-outline"></ion-icon>
+      <div class="parties-names">
+        <span>{{ thread.sellerName }}</span>
+        <span>{{ thread.proposerName }}</span>
       </div>
-      <div class="coins-overview__coin" *ngIf="proposerCoin">
-        <img [src]="proposerCoin.image" [alt]="proposerCoin.name" />
-        <span class="coins-overview__name">{{ proposerCoin.name }}</span>
-        <small class="coins-overview__label">{{ thread.proposerName }}</small>
+      <div class="thread-meta">
+        <span class="thread-status-badge" [ngClass]="statusClass">{{ statusLabel }}</span>
+        <p class="thread-value" *ngIf="realValueDisplay">
+          Valor real: <strong>{{ realValueDisplay }}</strong>
+        </p>
+        <p class="thread-coins" *ngIf="offerCoin && proposerCoin">
+          <ion-icon name="repeat-outline"></ion-icon>
+          {{ proposerCoin.name }} &rarr; {{ offerCoin.name }}
+        </p>
       </div>
-    </section>
-
-    <div class="status-badge status-badge--{{ thread.status }}">
-      <ion-icon
-        [name]="thread.status === 'traded' ? 'checkmark-done-circle-outline' : thread.status === 'accepted' ? 'checkmark-circle-outline' : 'time-outline'"
-      ></ion-icon>
-      <span *ngIf="thread.status === 'pending'">Aguarda resposta</span>
-      <span *ngIf="thread.status === 'accepted'">Proposta aceite — confirme a troca</span>
-      <span *ngIf="thread.status === 'traded'">Troca concluída</span>
     </div>
 
-    <section class="message-list">
-      <article
-        class="message"
-        *ngFor="let message of thread.messages"
-        [class.message--self]="isOwnMessage(message)"
-        [class.message--system]="isSystemMessage(message)"
-      >
-        <span class="message__author" *ngIf="!isSystemMessage(message)">{{ message.displayName }}</span>
-        <p>{{ message.body }}</p>
-        <small>{{ message.sentAt | date:'HH:mm · dd/MM/yy' }}</small>
-      </article>
-    </section>
+    <div class="message-list">
+      <ng-container *ngFor="let message of thread.messages">
 
-    <ng-container *ngIf="thread.status !== 'traded'">
-      <ion-item class="composer" lines="none">
-        <ion-input
-          [(ngModel)]="draftMessage"
-          label="Responder"
-          labelPlacement="stacked"
-          placeholder="Escreve uma contra-proposta ou mensagem..."
-        ></ion-input>
-        <ion-button
-          slot="end"
-          fill="solid"
-          color="secondary"
-          (click)="sendMessage()"
-          [disabled]="!draftMessage.trim()"
+        <div *ngIf="isSystemMessage(message)" class="message-system-wrap">
+          <div class="message-system">
+            <ion-icon name="information-circle-outline"></ion-icon>
+            {{ message.body }}
+          </div>
+        </div>
+
+        <div
+          *ngIf="!isSystemMessage(message)"
+          class="message-wrap"
+          [class.message-wrap--self]="isOwnMessage(message)"
         >
-          <ion-icon slot="icon-only" name="send-outline"></ion-icon>
-        </ion-button>
-      </ion-item>
+          <article class="message-bubble" [class.message-bubble--self]="isOwnMessage(message)">
+            <span class="message-bubble__author" *ngIf="!isOwnMessage(message)">
+              {{ message.displayName }}
+            </span>
+            <p class="message-bubble__body">{{ message.body }}</p>
+            <small class="message-bubble__time">{{ message.sentAt | date:'HH:mm' }}</small>
+          </article>
+        </div>
 
-      <ion-button
-        *ngIf="thread.status === 'pending'"
-        expand="block"
-        color="warning"
-        class="action-btn"
-        (click)="acceptProposal()"
-      >
-        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-        Aceitar Proposta
-      </ion-button>
-
-      <ion-button
-        *ngIf="thread.status === 'accepted'"
-        expand="block"
-        color="success"
-        class="action-btn"
-        (click)="confirmTrade()"
-      >
-        <ion-icon slot="start" name="checkmark-done-outline"></ion-icon>
-        Confirmar Troca
-      </ion-button>
-    </ng-container>
-
-    <div class="traded-banner" *ngIf="thread.status === 'traded'">
-      <ion-icon name="checkmark-done-circle-outline"></ion-icon>
-      <span>Troca concluída com sucesso</span>
+      </ng-container>
     </div>
 
   </ng-container>
 </ion-content>
+
+<ion-footer class="negotiation-footer" *ngIf="thread">
+  <div class="composer-bar" *ngIf="thread.status !== 'traded'">
+    <input
+      class="composer-input"
+      [(ngModel)]="draftMessage"
+      placeholder="Escreve uma mensagem..."
+      (keyup.enter)="sendMessage()"
+    />
+    <button class="send-btn" (click)="sendMessage()" [disabled]="!draftMessage.trim()">
+      <ion-icon name="send-outline"></ion-icon>
+    </button>
+  </div>
+
+  <button
+    *ngIf="thread.status === 'pending'"
+    class="accept-trade-btn"
+    (click)="acceptProposal()"
+  >
+    <ion-icon name="checkmark-outline"></ion-icon>
+    Aceitar Proposta
+  </button>
+
+  <button
+    *ngIf="thread.status === 'accepted'"
+    class="accept-trade-btn accept-trade-btn--accepted"
+    (click)="confirmTrade()"
+  >
+    <ion-icon name="checkmark-done-outline"></ion-icon>
+    Confirmar Troca
+  </button>
+
+  <div *ngIf="thread.status === 'traded'" class="accept-trade-btn accept-trade-btn--done">
+    <ion-icon name="checkmark-done-outline"></ion-icon>
+    Moedas trocadas
+  </div>
+</ion-footer>

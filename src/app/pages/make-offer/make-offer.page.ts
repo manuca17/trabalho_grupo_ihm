@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastController } from '@ionic/angular';
-import { firstValueFrom } from 'rxjs';
+import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 
 import { Coin } from '../../core/models/coin.model';
 import { ContentService } from '../../core/services/content.service';
@@ -9,19 +9,13 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
 
 type ProposalType = 'money' | 'trade' | 'both';
 
-const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
-
 @Component({
   selector: 'app-make-offer',
   templateUrl: './make-offer.page.html',
   styleUrls: ['./make-offer.page.scss'],
   standalone: false,
 })
-export class MakeOfferPage implements OnInit {
+export class MakeOfferPage implements OnInit, OnDestroy {
   coins: Coin[] = [];
   selectedCoin?: Coin;
   sourceTab = 'inicio';
@@ -32,6 +26,10 @@ export class MakeOfferPage implements OnInit {
   selectedTradeCoinIds: string[] = [];
   ownedCoins: Coin[] = [];
   isProposalSubmitting = false;
+  activeCurrency: 'EUR' | 'USD' | 'JPY' | 'BRL' = 'EUR';
+  currencySymbol = '€';
+
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -45,6 +43,14 @@ export class MakeOfferPage implements OnInit {
     await this.marketplaceService.init();
     this.coins = await firstValueFrom(this.contentService.coins$);
 
+    this.marketplaceService.activeCurrency$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((c) => {
+        this.activeCurrency = c;
+        const symbols: Record<string, string> = { EUR: '€', USD: '$', JPY: '¥', BRL: 'R$' };
+        this.currencySymbol = symbols[c];
+      });
+
     const requestedCoinId = this.activatedRoute.snapshot.queryParamMap.get('coinId');
     this.sourceTab = this.activatedRoute.snapshot.queryParamMap.get('from') ?? this.sourceTab;
 
@@ -53,11 +59,14 @@ export class MakeOfferPage implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   get proposalPriceLabel(): string {
-    if (!this.selectedCoin) {
-      return '';
-    }
-    return EUR_FORMATTER.format(this.selectedCoin.estimatedValue);
+    if (!this.selectedCoin) return '';
+    return this.marketplaceService.formatCurrency(this.selectedCoin.estimatedValue, this.activeCurrency);
   }
 
   get canSubmitProposal(): boolean {
@@ -142,7 +151,7 @@ export class MakeOfferPage implements OnInit {
   }
 
   getTradeCoinValue(coin: Coin): string {
-    return EUR_FORMATTER.format(coin.estimatedValue);
+    return this.marketplaceService.formatCurrency(coin.estimatedValue, this.activeCurrency);
   }
 
   private async setupProposalMode(coinId: string): Promise<void> {
