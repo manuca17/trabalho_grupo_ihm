@@ -2,6 +2,25 @@
   --padding-bottom: 100px;
 }
 
+.app-toolbar {
+  --background: #f97316;
+  --color: white;
+  --border-width: 0 !important;
+  display: flex;
+  align-items: center;
+}
+
+
+.back-nav-btn {
+  background: transparent;
+  border: 0;
+  color: white;
+  font-size: 1.4rem;
+  padding: 0 8px 0 14px;
+  display: flex;
+  align-items: center;
+}
+
 .offer-page-header {
   padding: 24px 20px 8px;
 
@@ -24,7 +43,7 @@
   gap: 16px;
   padding: 16px 20px;
   margin: 8px 16px;
-  background: var(--ion-card-background, #fff);
+  background: var(--ion-card-background, #fff !important);
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 
@@ -52,6 +71,7 @@
       font-size: 1.1rem;
       font-weight: 600;
       margin: 0;
+      color: #000;
     }
 
     strong {
@@ -68,11 +88,14 @@
 
 .proposal-section {
   padding: 16px 20px;
+  
+  
 
   h2 {
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0 0 12px;
+    
   }
 }
 
@@ -80,6 +103,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  
 }
 
 .proposal-type-card {
@@ -89,7 +113,7 @@
   padding: 14px 16px;
   border-radius: 12px;
   border: 1.5px solid var(--ion-color-light);
-  background: var(--ion-card-background, #fff);
+  background: var(--ion-card-background, #fff !important);
   text-align: left;
   cursor: pointer;
   transition: all 0.2s;
@@ -310,12 +334,13 @@ textarea {
   padding: 14px;
   border-radius: 12px;
   border: none;
-  background: var(--ion-color-primary);
+  background: #f97316;
   color: #fff;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
 
   &:disabled {
     opacity: 0.5;
