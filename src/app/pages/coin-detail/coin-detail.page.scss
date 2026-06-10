@@ -212,6 +212,16 @@
   font-size: 0.85rem;
 }
 
+.own-coin-badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f97316;
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .spec-list {
   display: flex;
   flex-direction: column;

@@ -69,9 +69,10 @@
             </div>
           </div>
         </div>
-        <button type="button" class="contact-button" (click)="contactSeller()">
+        <button *ngIf="!isOwnCoin" type="button" class="contact-button" (click)="contactSeller()">
           Contactar
         </button>
+        <span *ngIf="isOwnCoin" class="own-coin-badge">A tua moeda</span>
       </article>
 
       <article class="surface-card specs-card">
@@ -141,7 +142,7 @@
   </ng-container>
 </ion-content>
 
-<ion-footer *ngIf="coin as currentCoin" class="detail-footer">
+<ion-footer *ngIf="coin && !isOwnCoin" class="detail-footer">
   <div class="footer-actions">
     <button type="button" class="primary-action" [class.primary-action--trade]="isTrade" (click)="navigateToOffer()">
       {{ isTrade ? 'PROPOR TROCA' : 'FAZER OFERTA' }}

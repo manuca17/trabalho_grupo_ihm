@@ -2,6 +2,9 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { Coin } from '../../core/models/coin.model';
+import { NegotiationThread } from '../../core/models/negotiation-thread.model';
+import { Offer } from '../../core/models/offer.model';
+import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 
 @Component({
@@ -25,12 +28,16 @@ export class CoinDetailPage implements OnInit, OnDestroy {
   history = '';
   reference = '';
   galleryImages: Array<{ src: string; label: string }> = [];
-  
+  isOwnCoin = false;
+  linkedOffer?: Offer;
+  linkedThread?: NegotiationThread;
+
   private marketplaceSubscription?: Subscription;
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
     private readonly router: Router,
+    private readonly authService: AuthService,
     private readonly marketplaceService: MarketplaceService,
   ) {}
 
@@ -40,9 +47,25 @@ export class CoinDetailPage implements OnInit, OnDestroy {
     this.sourceTab = this.activatedRoute.snapshot.queryParamMap.get('from') ?? 'inicio';
 
     if (coinId) {
+      await this.authService.ensureInitialized();
       this.coin = await this.marketplaceService.getCoinById(coinId);
       await this.populateScreenState();
-      
+
+      // Carregar oferta e thread ligados
+      const cards = await firstValueFrom(this.marketplaceService.inventoryCards$);
+      const linkedCard = cards.find((item) => item.coin.id === coinId);
+      this.linkedOffer = linkedCard?.lastOffer;
+
+      // Verificar se é moeda própria
+      const currentProfile = this.authService.currentProfileSnapshot;
+      this.isOwnCoin = !!this.linkedOffer && this.linkedOffer.ownerId === currentProfile?.id;
+
+      // Encontrar thread de negociação existente
+      if (this.linkedOffer) {
+        const threads = await firstValueFrom(this.marketplaceService.negotiations$);
+        this.linkedThread = threads.find((t) => t.offerId === this.linkedOffer!.id);
+      }
+
       this.marketplaceSubscription = this.marketplaceService.inventoryCards$.subscribe((cards) => {
         const foundCard = cards.find((item) => item.coin.id === coinId);
         if (foundCard) {
@@ -71,8 +94,21 @@ export class CoinDetailPage implements OnInit, OnDestroy {
     }
   }
 
-  contactSeller(): void {
-    void this.router.navigate(['/tabs/tab4']);
+  async contactSeller(): Promise<void> {
+    let thread = this.linkedThread;
+    if (!thread && this.coin) {
+      thread = await this.marketplaceService.startContactThread(
+        this.coin.id,
+        this.coin.name,
+        this.sellerName,
+      );
+      this.linkedThread = thread;
+    }
+    if (thread) {
+      void this.router.navigate(['/negotiation', thread.id]);
+    } else {
+      void this.router.navigate(['/tabs/tab3']);
+    }
   }
 
   navigateToOffer(): void {

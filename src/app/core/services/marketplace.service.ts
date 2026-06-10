@@ -472,6 +472,39 @@ export class MarketplaceService {
     ]);
   }
 
+  async startContactThread(coinId: string, coinName: string, sellerName: string): Promise<NegotiationThread> {
+    // Reutilizar thread existente para esta moeda
+    const existing = this.negotiationsSubject.value.find((t) => t.offerCoinId === coinId);
+    if (existing) return existing;
+
+    const profile = await this.resolveCurrentProfile();
+    const thread = new NegotiationThreadModel({
+      id: `thread-${Date.now()}`,
+      offerId: `catalog-${coinId}`,
+      offerCoinId: coinId,
+      proposerCoinId: coinId,
+      proposerName: profile.displayName,
+      sellerName: sellerName || 'Vendedor',
+      status: 'pending',
+      realValue: 0,
+      unreadCount: 0,
+      messages: [
+        {
+          id: `msg-${Date.now()}`,
+          userId: profile.id,
+          displayName: profile.displayName,
+          body: `Olá! Tenho interesse na moeda "${coinName}". Podemos conversar?`,
+          sentAt: new Date().toISOString(),
+        },
+      ],
+    });
+
+    const updated = [...this.negotiationsSubject.value, thread];
+    this.negotiationsSubject.next(updated);
+    await this.persistNegotiations(updated);
+    return thread;
+  }
+
   private async resolveCurrentProfile(): Promise<{ id: string; displayName: string }> {
     await this.authService.ensureInitialized();
     const profile = this.authService.currentProfileSnapshot;
