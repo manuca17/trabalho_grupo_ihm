@@ -179,17 +179,14 @@ export class Tab5Page implements OnInit {
 
   editCoin(item: { coin: Coin; lastOffer?: Offer }): void {
     if (!item.lastOffer) return;
-    void this.router.navigate(['/tabs/tab2'], {
-      queryParams: { offerId: item.lastOffer.id },
-    });
+    void this.router.navigate(['/tabs/tab2'], { queryParams: { offerId: item.lastOffer.id } });
   }
 
   async removeCoin(item: { coin: Coin; lastOffer?: Offer }): Promise<void> {
     if (!item.lastOffer) return;
-
     const alert = await this.alertController.create({
       header: 'Remover moeda',
-      message: `Tens a certeza que queres remover "${item.coin.name}"? Esta ação não pode ser desfeita.`,
+      message: `Tens a certeza que queres remover "${item.coin.name}"?`,
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {

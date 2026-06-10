@@ -1,22 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Camera, CameraResultType } from '@capacitor/camera';
 import { ToastController } from '@ionic/angular';
-import { firstValueFrom } from 'rxjs';
 
-import { Coin, OfferPhoto } from '../core/models/coin.model';
-import { ContentService } from '../core/services/content.service';
+import { OfferPhoto } from '../core/models/coin.model';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
-type Tab2Mode = 'create' | 'proposal' | 'edit';
-type ProposalType = 'money' | 'trade' | 'both';
-
-const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
+type Tab2Mode = 'create' | 'edit';
 
 @Component({
   selector: 'app-tab2',
@@ -31,33 +22,21 @@ export class Tab2Page implements OnInit {
     { kind: 'edge', label: 'Bordo' },
   ];
 
-  // 1. Atualizado com os novos campos vindos do Figma (mantendo a segurança do nonNullable)
   readonly offerForm = this.formBuilder.nonNullable.group({
     coinId: ['', [Validators.required]],
     title: ['', []],
     quantity: [1, [Validators.required, Validators.min(1)]],
-    era: ['', [Validators.required]], // Novo do Figma
-    condition: ['', [Validators.required]], // Novo do Figma
+    era: ['', [Validators.required]],
+    condition: ['', [Validators.required]],
     description: ['', [Validators.required, Validators.minLength(10)]],
-    realValue: [0, [Validators.required, Validators.min(0)]], // Novo do Figma
-    availableFor: ['sale', [Validators.required]], // Novo do Figma ('sale' ou 'trade')
-    salePrice: [0, [Validators.min(0)]], // Substitui o askPrice antigo para ser condicional
+    realValue: [0, [Validators.required, Validators.min(0)]],
+    availableFor: ['sale', [Validators.required]],
+    salePrice: [0, [Validators.min(0)]],
   });
 
-  coins: Coin[] = [];
-  selectedCoin?: Coin;
   photos: OfferPhoto[] = [];
   isSubmitting = false;
-  submitted = false; // Controla o ecrã de sucesso temporário se quiseres usar
   mode: Tab2Mode = 'create';
-  sourceTab = 'inicio';
-  supportsTrade = false;
-  offerType: ProposalType = 'money';
-  offerAmount = '';
-  message = '';
-  selectedTradeCoinIds: string[] = [];
-  ownedCoins: Coin[] = [];
-  isProposalSubmitting = false;
   editingOfferId: string | null = null;
 
   constructor(
@@ -65,7 +44,6 @@ export class Tab2Page implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly router: Router,
     private readonly toastController: ToastController,
-    private readonly contentService: ContentService,
     private readonly marketplaceService: MarketplaceService,
   ) {}
 
@@ -73,20 +51,13 @@ export class Tab2Page implements OnInit {
     if (this.mode === 'create') {
       this.resetFormState();
     }
-    // No modo 'edit' e 'proposal' os dados já foram carregados em ngOnInit
   }
 
   async ngOnInit(): Promise<void> {
     await this.marketplaceService.init();
-    this.coins = await firstValueFrom(this.contentService.coins$);
-
     this.resetFormState();
 
     const offerId = this.activatedRoute.snapshot.queryParamMap.get('offerId');
-    const requestedCoinId = this.activatedRoute.snapshot.queryParamMap.get('coinId');
-    this.sourceTab =
-      this.activatedRoute.snapshot.queryParamMap.get('from') ?? this.sourceTab;
-
     if (offerId) {
       this.mode = 'edit';
       this.editingOfferId = offerId;
@@ -94,13 +65,6 @@ export class Tab2Page implements OnInit {
       return;
     }
 
-    if (requestedCoinId) {
-      this.mode = 'proposal';
-      this.setupProposalMode(requestedCoinId);
-      return;
-    }
-
-    // Lógica para ligar/desligar a obrigatoriedade do preço dependendo da seleção
     this.offerForm.controls.availableFor.valueChanges.subscribe((value) => {
       const priceControl = this.offerForm.controls.salePrice;
       if (value === 'sale') {
@@ -113,10 +77,9 @@ export class Tab2Page implements OnInit {
     });
   }
 
-  /**
-   * Resets form fields and photos to initial state.
-   */
   private resetFormState(): void {
+    this.mode = 'create';
+    this.editingOfferId = null;
     this.offerForm.reset({
       coinId: `custom-coin-${Date.now()}`,
       title: '',
@@ -129,28 +92,17 @@ export class Tab2Page implements OnInit {
       salePrice: 0,
     });
     this.photos = [];
-    this.selectedCoin = undefined;
-    this.submitted = false;
   }
 
   get pageTitle(): string {
-    if (this.mode === 'proposal') {
-      return this.supportsTrade ? 'Propor Troca' : 'Fazer Oferta';
-    }
-    if (this.mode === 'edit') {
-      return 'Editar Moeda';
-    }
-    return 'Adicionar Moeda';
+    return this.mode === 'edit' ? 'Editar Moeda' : 'Adicionar Moeda';
   }
 
   private async loadOfferForEdit(offerId: string): Promise<void> {
     const offer = this.marketplaceService.getOfferById(offerId);
     if (!offer) return;
-
-    // Carregar fotos com dataUrl do storage
     const storedPhotos = await this.marketplaceService.getOfferPhotos(offerId);
     this.photos = storedPhotos.length ? storedPhotos : offer.photos.filter((p) => p.dataUrl);
-
     this.offerForm.patchValue({
       coinId: offer.coinId,
       title: offer.title,
@@ -162,8 +114,6 @@ export class Tab2Page implements OnInit {
       availableFor: offer.availableForTrade ? 'trade' : 'sale',
       salePrice: offer.availableForTrade ? 0 : offer.askPrice,
     });
-
-    // Ativar validação de preço se necessário
     const priceControl = this.offerForm.controls.salePrice;
     if (!offer.availableForTrade) {
       priceControl.setValidators([Validators.required, Validators.min(0.01)]);
@@ -171,96 +121,20 @@ export class Tab2Page implements OnInit {
     }
   }
 
-  get proposalPriceLabel(): string {
-    if (!this.selectedCoin) {
-      return '';
-    }
-
-    return EUR_FORMATTER.format(this.selectedCoin.estimatedValue);
-  }
-
-  get canSubmitProposal(): boolean {
-    if (this.offerType === 'money') {
-      return this.hasOfferAmount;
-    }
-
-    if (this.offerType === 'trade') {
-      return this.selectedTradeCoinIds.length > 0;
-    }
-
-    return this.hasOfferAmount || this.selectedTradeCoinIds.length > 0;
-  }
-
-  get hasOfferAmount(): boolean {
-    return Number(this.offerAmount) > 0;
-  }
-
-  get selectedTradeCoins(): Coin[] {
-    return this.ownedCoins.filter((coin) =>
-      this.selectedTradeCoinIds.includes(coin.id),
-    );
-  }
-
-  onCoinChange(coinId: string): void {
-    this.selectedCoin = this.coins.find((coin) => coin.id === coinId);
-  }
-
-  goBackFromProposal(): void {
-    if (!this.selectedCoin) {
-      void this.router.navigate(['/tabs/tab5']);
-      return;
-    }
-
-    void this.router.navigate(['/coin', this.selectedCoin.id], {
-      queryParams: {
-        from: this.sourceTab,
-      },
-    });
-  }
-
-  setOfferType(type: ProposalType): void {
-    this.offerType = type;
-  }
-
-  toggleTradeCoinSelection(coinId: string): void {
-    this.selectedTradeCoinIds = this.selectedTradeCoinIds.includes(coinId)
-      ? this.selectedTradeCoinIds.filter((id) => id !== coinId)
-      : [...this.selectedTradeCoinIds, coinId];
-  }
-
-  async capturePhoto(step: {
-    kind: OfferPhoto['kind'];
-    label: string;
-  }): Promise<void> {
-    const photo = await Camera.getPhoto({
-      quality: 80,
-      allowEditing: true,
-      resultType: CameraResultType.DataUrl,
-    });
-
-    if (!photo.dataUrl) {
-      return;
-    }
-
+  async capturePhoto(step: { kind: OfferPhoto['kind']; label: string }): Promise<void> {
+    const photo = await Camera.getPhoto({ quality: 80, allowEditing: true, resultType: CameraResultType.DataUrl });
+    if (!photo.dataUrl) return;
     const brightness = await this.calculateBrightness(photo.dataUrl);
-    const nextPhoto: OfferPhoto = {
-      kind: step.kind,
-      label: step.label,
-      dataUrl: photo.dataUrl,
-      brightness,
-    };
-
+    const nextPhoto: OfferPhoto = { kind: step.kind, label: step.label, dataUrl: photo.dataUrl, brightness };
     this.photos = [
       ...this.photos.filter((item) => item.kind !== step.kind),
       nextPhoto,
-    ].sort(
-      (left, right) =>
-        this.photoSteps.findIndex((stepItem) => stepItem.kind === left.kind) -
-        this.photoSteps.findIndex((stepItem) => stepItem.kind === right.kind),
+    ].sort((left, right) =>
+      this.photoSteps.findIndex((s) => s.kind === left.kind) -
+      this.photoSteps.findIndex((s) => s.kind === right.kind),
     );
   }
 
-  // 2. Nova Função: Permite ao utilizador remover a foto clicando no "X" (visto no Figma)
   removePhoto(kind: OfferPhoto['kind']): void {
     this.photos = this.photos.filter((photo) => photo.kind !== kind);
   }
@@ -270,26 +144,17 @@ export class Tab2Page implements OnInit {
   }
 
   getBrightnessTone(brightness: number): string {
-    if (brightness < 35) {
-      return 'Pouca luz detetada';
-    }
-    if (brightness < 65) {
-      return 'Luminosidade aceitável';
-    }
+    if (brightness < 35) return 'Pouca luz detetada';
+    if (brightness < 65) return 'Luminosidade aceitável';
     return 'Boa luminosidade';
   }
 
-  async publishOffer(): Promise<void> {
-    if (
-      this.offerForm.invalid ||
-      this.photos.length !== this.photoSteps.length
-    ) {
+  async handleSubmit(): Promise<void> {
+    if (this.offerForm.invalid || this.photos.length !== this.photoSteps.length) {
       this.offerForm.markAllAsTouched();
       return;
     }
-
     this.isSubmitting = true;
-
     try {
       const formValue = this.offerForm.getRawValue();
       const offerInput = {
@@ -303,103 +168,37 @@ export class Tab2Page implements OnInit {
         availableForTrade: formValue.availableFor === 'trade',
         photos: this.photos,
       };
-
-      if (this.mode === 'edit' && this.editingOfferId) {
+      const wasEdit = this.mode === 'edit';
+      if (wasEdit && this.editingOfferId) {
         await this.marketplaceService.updateOffer(this.editingOfferId, offerInput);
       } else {
-        await this.marketplaceService.publishOffer({
-          coinId: formValue.coinId,
-          ...offerInput,
-        });
+        await this.marketplaceService.publishOffer({ coinId: formValue.coinId, ...offerInput });
       }
-
-      const wasEdit = this.mode === 'edit';
       this.resetFormState();
-
-      const successToast = await this.toastController.create({
+      const toast = await this.toastController.create({
         message: wasEdit ? 'Moeda atualizada com sucesso!' : 'Moeda publicada com sucesso!',
         duration: 2500,
         position: 'bottom',
         color: 'success',
         icon: 'checkmark-circle-outline',
       });
-      await successToast.present();
-
+      await toast.present();
       if (wasEdit) {
         await this.router.navigate(['/tabs/tab5'], { queryParams: { nav: 'profile' } });
       }
     } catch (err) {
-      console.error('Erro ao publicar oferta:', err);
-      const errorToast = await this.toastController.create({
-        message: 'Erro ao publicar a oferta. Tenta novamente.',
+      console.error('Erro ao submeter oferta:', err);
+      const toast = await this.toastController.create({
+        message: 'Erro ao guardar a moeda. Tenta novamente.',
         duration: 3000,
         position: 'bottom',
         color: 'danger',
         icon: 'alert-circle-outline',
       });
-      await errorToast.present();
+      await toast.present();
     } finally {
       this.isSubmitting = false;
     }
-  }
-
-  handleSubmit(): void {
-    if (this.mode === 'proposal') {
-      void this.submitProposal();
-      return;
-    }
-
-    void this.publishOffer();
-  }
-
-  async submitProposal(): Promise<void> {
-    if (!this.selectedCoin || !this.canSubmitProposal) {
-      return;
-    }
-
-    this.isProposalSubmitting = true;
-
-    try {
-      const thread = await this.marketplaceService.createProposal({
-        offerCoinId: this.selectedCoin.id,
-        proposedCoinIds:
-          this.offerType === 'money' ? [] : this.selectedTradeCoinIds,
-        offerAmount:
-          this.offerType === 'trade' ? undefined : Number(this.offerAmount),
-        message: this.message.trim(),
-      });
-
-      await this.router.navigate(['/negotiation', thread.id], {
-        queryParams: {
-          from: this.sourceTab,
-        },
-      });
-    } finally {
-      this.isProposalSubmitting = false;
-    }
-  }
-
-  getTradeCoinValue(coin: Coin): string {
-    return EUR_FORMATTER.format(coin.estimatedValue);
-  }
-
-  private async setupProposalMode(coinId: string | null): Promise<void> {
-    if (!coinId) {
-      this.mode = 'create';
-      return;
-    }
-
-    this.onCoinChange(coinId);
-    this.ownedCoins = this.coins
-      .filter((coin) => coin.id !== coinId)
-      .slice(0, 3);
-
-    const inventoryCards = await firstValueFrom(
-      this.marketplaceService.inventoryCards$,
-    );
-    const currentCard = inventoryCards.find((item) => item.coin.id === coinId);
-    this.supportsTrade = !!currentCard?.lastOffer?.availableForTrade;
-    this.offerType = this.supportsTrade ? 'trade' : 'money';
   }
 
   private calculateBrightness(dataUrl: string): Promise<number> {
@@ -408,27 +207,12 @@ export class Tab2Page implements OnInit {
       image.onload = () => {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-
-        if (!context) {
-          resolve(50);
-          return;
-        }
-
-        canvas.width = 40;
-        canvas.height = 40;
+        if (!context) { resolve(50); return; }
+        canvas.width = 40; canvas.height = 40;
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        const { data } = context.getImageData(
-          0,
-          0,
-          canvas.width,
-          canvas.height,
-        );
+        const { data } = context.getImageData(0, 0, canvas.width, canvas.height);
         let total = 0;
-
-        for (let index = 0; index < data.length; index += 4) {
-          total += (data[index] + data[index + 1] + data[index + 2]) / 3;
-        }
-
+        for (let i = 0; i < data.length; i += 4) total += (data[i] + data[i + 1] + data[i + 2]) / 3;
         resolve(Math.round(total / (data.length / 4) / 2.55));
       };
       image.src = dataUrl;

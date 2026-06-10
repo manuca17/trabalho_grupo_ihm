@@ -77,7 +77,7 @@ export class CoinDetailPage implements OnInit, OnDestroy {
 
   navigateToOffer(): void {
     if (this.coin) {
-      void this.router.navigate(['/tabs/tab2'], { queryParams: { coinId: this.coin.id, from: this.sourceTab } });
+      void this.router.navigate(['/make-offer'], { queryParams: { coinId: this.coin.id, from: this.sourceTab } });
     }
   }
 

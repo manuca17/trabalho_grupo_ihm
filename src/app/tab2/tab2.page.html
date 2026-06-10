@@ -1,15 +1,5 @@
 <ion-header [translucent]="true">
-  <!-- CABEÇALHO UNIFICADO: Agora com o mesmo estilo das restantes páginas (Print 1) -->
   <ion-toolbar class="search-toolbar">
-    <ion-buttons slot="start" *ngIf="mode === 'proposal'">
-      <button
-        type="button"
-        class="header-back-button"
-        (click)="goBackFromProposal()"
-      >
-        <ion-icon name="arrow-back-outline"></ion-icon>
-      </button>
-    </ion-buttons>
     <div class="search-header">
       <div class="search-header__content">
         <strong>AncientCoins</strong>
@@ -19,312 +9,125 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content
-  [fullscreen]="true"
-  [class.add-coin-content]="mode === 'create'"
-  [class.make-offer-content]="mode === 'proposal'"
->
-  <!-- CÓDIGO MISTURADO PRESERVADO: Ecrã de Proposta ao Vendedor intocado -->
-  <ng-container *ngIf="mode === 'proposal'; else createOfferView">
-    <ng-container *ngIf="selectedCoin as currentCoin">
-      <section class="offer-page-header">
-        <h1>{{ supportsTrade ? 'Propor Troca' : 'Fazer Oferta' }}</h1>
-        <p>Envie a sua proposta ao vendedor desta moeda.</p>
-      </section>
+<ion-content [fullscreen]="true" class="add-coin-content">
+  <div class="form-container">
+    <section class="page-intro">
+      <h1>{{ pageTitle }}</h1>
+      <p>Preencha os detalhes e tire fotografias da sua moeda.</p>
+    </section>
 
-      <section class="selected-coin-card">
-        <div class="selected-coin-card__media">
-          <img [src]="currentCoin.image" [alt]="currentCoin.name" />
-        </div>
-        <div class="selected-coin-card__copy">
-          <h2>{{ currentCoin.name }}</h2>
-          <strong>{{ proposalPriceLabel }}</strong>
-          <span>{{ currentCoin.conservation }}</span>
-        </div>
-      </section>
+    <form [formGroup]="offerForm" class="offer-form" (ngSubmit)="handleSubmit()">
+      
+      <!-- Bloco de Fotos -->
+      <section class="photos-section">
+        <label class="section-label">Fotografias da Moeda</label>
 
-      <section class="proposal-section" *ngIf="supportsTrade">
-        <h2>Tipo de Proposta</h2>
-
-        <div class="proposal-type-list">
+        <div class="capture-grid">
           <button
             type="button"
-            class="proposal-type-card"
-            [class.proposal-type-card--active]="offerType === 'money'"
-            (click)="setOfferType('money')"
+            class="capture-card"
+            *ngFor="let step of photoSteps; let i = index"
+            (click)="capturePhoto(step)"
           >
-            <strong>Oferta Monetária</strong>
-            <span>Propor um valor em dinheiro</span>
-          </button>
+            <ng-container *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder">
+              <div class="photo-wrapper">
+                <img [src]="captured.dataUrl" [alt]="captured.label" />
+                <button
+                  type="button"
+                  class="remove-btn"
+                  (click)="removePhoto(step.kind); $event.stopPropagation()"
+                >
+                  <ion-icon name="close-circle"></ion-icon>
+                </button>
+              </div>
+              <strong>{{ captured.label }}</strong>
+            </ng-container>
 
-          <button
-            type="button"
-            class="proposal-type-card"
-            [class.proposal-type-card--active]="offerType === 'trade'"
-            (click)="setOfferType('trade')"
-          >
-            <strong>Troca Direta</strong>
-            <span>Trocar por moedas da sua coleção</span>
-          </button>
-
-          <button
-            type="button"
-            class="proposal-type-card"
-            [class.proposal-type-card--active]="offerType === 'both'"
-            (click)="setOfferType('both')"
-          >
-            <strong>Combinado</strong>
-            <span>Dinheiro e moedas em troca</span>
+            <ng-template #capturePlaceholder>
+              <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
+              <strong>{{ step.label }}</strong>
+              <span>Toca para abrir a câmara</span>
+            </ng-template>
           </button>
         </div>
+        <p class="hint-text">Recomendamos 3 fotos: anverso, reverso e bordo da moeda</p>
       </section>
 
-      <section
-        class="proposal-section"
-        *ngIf="offerType === 'money' || offerType === 'both'"
-      >
-        <label class="field-label" for="offer-amount">Valor da Oferta</label>
-        <div class="currency-field">
-          <span>EUR</span>
-          <input
-            id="offer-amount"
-            type="number"
-            min="0"
-            step="1"
-            [(ngModel)]="offerAmount"
-            placeholder="0"
-          />
-        </div>
-        <p class="hint-text">Preço pedido: {{ proposalPriceLabel }}</p>
-      </section>
-
-      <section
-        class="proposal-section"
-        *ngIf="offerType === 'trade' || offerType === 'both'"
-      >
-        <div class="section-heading section-heading--stacked">
-          <h2>Moedas para Troca</h2>
-          <p>Selecione moedas da sua coleção para incluir na proposta.</p>
+      <!-- Elementos de Detalhes -->
+      <div class="figma-form-group">
+        <div class="figma-input-item">
+          <label>Título / Descrição Breve</label>
+          <input type="text" formControlName="title" placeholder="Ex: Denário Romano - Augusto" />
         </div>
 
-        <div class="trade-coin-list">
-          <button
-            type="button"
-            class="trade-coin-card"
-            *ngFor="let coin of ownedCoins"
-            [class.trade-coin-card--selected]="selectedTradeCoinIds.includes(coin.id)"
-            (click)="toggleTradeCoinSelection(coin.id)"
-          >
-            <div class="trade-coin-card__media">
-              <img [src]="coin.image" [alt]="coin.name" />
-            </div>
-            <div class="trade-coin-card__copy">
-              <strong>{{ coin.name }}</strong>
-              <span>Condição: {{ coin.conservation }}</span>
-              <em>{{ getTradeCoinValue(coin) }}</em>
-            </div>
-            <div
-              class="trade-coin-card__check"
-              *ngIf="selectedTradeCoinIds.includes(coin.id)"
-            >
-              <ion-icon name="checkmark-outline"></ion-icon>
-            </div>
-          </button>
-        </div>
-
-        <p class="warning-text" *ngIf="selectedTradeCoinIds.length === 0">
-          Selecione pelo menos uma moeda para troca.
-        </p>
-      </section>
-
-      <section class="proposal-section">
-        <label class="field-label" for="proposal-message">Mensagem ao Vendedor</label>
-        <textarea
-          id="proposal-message"
-          [(ngModel)]="message"
-          maxlength="500"
-          rows="5"
-          placeholder="Escreva uma mensagem opcional..."
-        ></textarea>
-        <p class="hint-text">Preço pedido: {{ proposalPriceLabel }}</p>
-      </section>
-
-      <section class="proposal-summary">
-        <h2>Resumo da Oferta</h2>
-
-        <div
-          class="summary-row"
-          *ngIf="(offerType === 'money' || offerType === 'both') && hasOfferAmount"
-        >
-          <span>Valor oferecido</span>
-          <strong>{{ 'EUR ' + offerAmount }}</strong>
-        </div>
-
-        <div
-          class="summary-row"
-          *ngIf="(offerType === 'trade' || offerType === 'both') && selectedTradeCoinIds.length > 0"
-        >
-          <span>Moedas em troca</span>
-          <strong>{{ selectedTradeCoinIds.length }}</strong>
-        </div>
-
-        <div class="summary-row" *ngIf="message.trim()">
-          <span>Mensagem personalizada</span>
-          <strong>Sim</strong>
-        </div>
-      </section>
-    </ng-container>
-  </ng-container>
-
-  <!-- FORMULÁRIO DE CRIAÇÃO ATUALIZADO COM O DESIGN INTEGRADO -->
-  <ng-template #createOfferView>
-    <div *ngIf="submitted" class="success-screen">
-      <div class="success-icon-container">
-        <ion-icon name="checkmark-circle" color="success"></ion-icon>
-      </div>
-      <h3>Moeda Adicionada!</h3>
-      <p>A sua moeda foi publicada com sucesso e já está disponível para outros colecionadores.</p>
-    </div>
-
-    <div *ngIf="!submitted" class="form-container">
-      <section class="page-intro">
-        <h1>Adicionar Nova Moeda</h1>
-        <p>Preencha os detalhes e tire fotografias da sua moeda.</p>
-      </section>
-
-      <form [formGroup]="offerForm" class="offer-form" (ngSubmit)="handleSubmit()">
-        
-        <!-- Bloco de Fotos Corrigido e Alinhado com a Estética Geral -->
-        <section class="photos-section">
-          <label class="section-label">Fotografias da Moeda</label>
-
-          <div class="capture-grid">
-            <button
-              type="button"
-              class="capture-card"
-              *ngFor="let step of photoSteps; let i = index"
-              (click)="capturePhoto(step)"
-            >
-              <ng-container *ngIf="getPhotoForStep(step.kind) as captured; else capturePlaceholder">
-                <div class="photo-wrapper">
-                  <img [src]="captured.dataUrl" [alt]="captured.label" />
-                  <button
-                    type="button"
-                    class="remove-btn"
-                    (click)="removePhoto(step.kind); $event.stopPropagation()"
-                  >
-                    <ion-icon name="close-circle"></ion-icon>
-                  </button>
-                </div>
-                <strong>{{ captured.label }}</strong>
-              </ng-container>
-
-              <ng-template #capturePlaceholder>
-                <ion-icon name="camera-outline" class="camera-icon"></ion-icon>
-                <strong>{{ step.label }}</strong>
-                <span>Toca para abrir a câmara</span>
-              </ng-template>
-            </button>
-          </div>
-          <p class="hint-text">Recomendamos 3 fotos: anverso, reverso e bordo da moeda</p>
-        </section>
-
-        <!-- Elementos de Detalhes Estilizados -->
-        <div class="figma-form-group">
+        <div class="figma-row-grid">
           <div class="figma-input-item">
-            <label>Título / Descrição Breve</label>
-            <input type="text" formControlName="title" placeholder="Ex: Denário Romano - Augusto" />
-          </div>
-
-          <div class="figma-row-grid">
-            <div class="figma-input-item">
-              <label>Quantidade</label>
-              <input type="number" min="1" formControlName="quantity" />
-            </div>
-
-            <div class="figma-input-item">
-              <label>Era Histórica</label>
-              <select formControlName="era">
-                <option value="" disabled selected>Selecionar</option>
-                <option value="romano">Império Romano</option>
-                <option value="grego">Grécia Antiga</option>
-                <option value="portugues">Portugal</option>
-                <option value="bizantino">Império Bizantino</option>
-              </select>
-            </div>
+            <label>Quantidade</label>
+            <input type="number" min="1" formControlName="quantity" />
           </div>
 
           <div class="figma-input-item">
-            <label>Estado de Conservação</label>
-            <select formControlName="condition">
+            <label>Era Histórica</label>
+            <select formControlName="era">
               <option value="" disabled selected>Selecionar</option>
-              <option value="bc">BC (Bem Conservada)</option>
-              <option value="mbc">MBC (Muito Bem Conservada)</option>
-              <option value="bela">Bela</option>
-              <option value="soberba">Soberba</option>
+              <option value="romano">Império Romano</option>
+              <option value="grego">Grécia Antiga</option>
+              <option value="portugues">Portugal</option>
+              <option value="bizantino">Império Bizantino</option>
             </select>
           </div>
+        </div>
 
-          <div class="figma-input-item">
-            <label>Descrição Detalhada</label>
-            <textarea rows="4" formControlName="description" placeholder="Detalhes sobre origem, características, história..."></textarea>
-          </div>
+        <div class="figma-input-item">
+          <label>Estado de Conservação</label>
+          <select formControlName="condition">
+            <option value="" disabled selected>Selecionar</option>
+            <option value="bc">BC (Bem Conservada)</option>
+            <option value="mbc">MBC (Muito Bem Conservada)</option>
+            <option value="bela">Bela</option>
+            <option value="soberba">Soberba</option>
+          </select>
+        </div>
 
-          <div class="figma-input-item">
-            <label>Valor Real Estimado (€)</label>
-            <input type="number" step="0.01" formControlName="realValue" placeholder="0" />
-          </div>
+        <div class="figma-input-item">
+          <label>Descrição Detalhada</label>
+          <textarea rows="4" formControlName="description" placeholder="Detalhes sobre origem, características, história..."></textarea>
+        </div>
 
-          <div class="availability-section">
-            <label class="availability-label">Disponível para</label>
-            <div class="segment-container">
-              <ion-segment formControlName="availableFor">
-                <ion-segment-button value="sale">
-                  <ion-label>VENDA</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="trade">
-                  <ion-label>TROCA</ion-label>
-                </ion-segment-button>
-              </ion-segment>
-            </div>
-          </div>
+        <div class="figma-input-item">
+          <label>Valor Real Estimado (€)</label>
+          <input type="number" step="0.01" formControlName="realValue" placeholder="0" />
+        </div>
 
-          <div class="figma-input-item" *ngIf="offerForm.get('availableFor')?.value === 'sale'">
-            <label>Preço de Venda (€)</label>
-            <input type="number" step="0.01" formControlName="salePrice" placeholder="0" />
+        <div class="availability-section">
+          <label class="availability-label">Disponível para</label>
+          <div class="segment-container">
+            <ion-segment formControlName="availableFor">
+              <ion-segment-button value="sale">
+                <ion-label>VENDA</ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="trade">
+                <ion-label>TROCA</ion-label>
+              </ion-segment-button>
+            </ion-segment>
           </div>
         </div>
 
-        <div class="submit-container">
-          <button
-            type="submit"
-            class="figma-submit-btn"
-            [disabled]="offerForm.invalid || photos.length < 3"
-          >
-            {{ mode === 'edit' ? 'GUARDAR ALTERAÇÕES' : 'PUBLICAR MOEDA' }}
-          </button>
+        <div class="figma-input-item" *ngIf="offerForm.get('availableFor')?.value === 'sale'">
+          <label>Preço de Venda (€)</label>
+          <input type="number" step="0.01" formControlName="salePrice" placeholder="0" />
         </div>
-      </form>
-    </div>
-  </ng-template>
-</ion-content>
+      </div>
 
-<ion-footer *ngIf="mode === 'proposal'" class="proposal-footer">
-  <div class="proposal-footer__actions">
-    <button
-      type="button"
-      class="proposal-submit"
-      [disabled]="!canSubmitProposal || isProposalSubmitting"
-      (click)="handleSubmit()"
-    >
-      Enviar Proposta
-    </button>
-    <button
-      type="button"
-      class="proposal-cancel"
-      (click)="goBackFromProposal()"
-    >
-      Cancelar
-    </button>
+      <div class="submit-container">
+        <button
+          type="submit"
+          class="figma-submit-btn"
+          [disabled]="offerForm.invalid || photos.length < 3"
+        >
+          {{ mode === 'edit' ? 'GUARDAR ALTERAÇÕES' : 'PUBLICAR MOEDA' }}
+        </button>
+      </div>
+    </form>
   </div>
-</ion-footer>
+</ion-content>
