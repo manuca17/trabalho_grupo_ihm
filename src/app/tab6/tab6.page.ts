@@ -39,6 +39,26 @@ export class Tab6Page {
     'Dracma',
   ];
 
+  readonly eraOptions = [
+    { label: 'Todas as eras', value: '' },
+    { label: 'Grécia Antiga', value: 'Grécia' },
+    { label: 'Roma Antiga', value: 'Roma' },
+    { label: 'Portugal Medieval', value: 'Portugal' },
+  ];
+
+  readonly conditionOptions = [
+    { label: 'Todos os estados', value: '' },
+    { label: 'Excelente', value: 'excelente' },
+    { label: 'Muito Bom', value: 'muito bom' },
+    { label: 'Bom', value: 'bom' },
+  ];
+
+  readonly availableForOptions = [
+    { label: 'Tudo', value: '' },
+    { label: 'Venda', value: 'sale' },
+    { label: 'Troca', value: 'trade' },
+  ];
+
   readonly inventoryCards$ = this.marketplaceService.inventoryCards$;
 
   private readonly searchQuerySubject = new BehaviorSubject('');
@@ -72,12 +92,12 @@ export class Tab6Page {
 
   searchQuery = '';
   showFilters = false;
-  filters: SearchFilters = {
-    era: '',
-    condition: '',
-    priceRange: '',
-    availableFor: '',
-  };
+  filters: SearchFilters = { era: '', condition: '', priceRange: '', availableFor: '' };
+
+  // Pending state bound to the dropdowns — only pushed on "Aplicar Filtros"
+  pendingEra = '';
+  pendingCondition = '';
+  pendingAvailableFor = '';
 
   constructor(
     private readonly router: Router,
@@ -98,14 +118,27 @@ export class Tab6Page {
     this.updateSearchQuery(term);
   }
 
-  setFilter(field: keyof SearchFilters, value: string): void {
-    this.filters = { ...this.filters, [field]: value };
+  applyFilters(): void {
+    this.filters = {
+      ...this.filters,
+      era: this.pendingEra,
+      condition: this.pendingCondition,
+      availableFor: this.pendingAvailableFor,
+    };
     this.filtersSubject.next(this.filters);
+    this.showFilters = false;
   }
 
   clearFilters(): void {
+    this.pendingEra = '';
+    this.pendingCondition = '';
+    this.pendingAvailableFor = '';
     this.filters = { era: '', condition: '', priceRange: '', availableFor: '' };
     this.filtersSubject.next(this.filters);
+  }
+
+  get hasActiveFilters(): boolean {
+    return !!(this.filters.era || this.filters.condition || this.filters.availableFor);
   }
 
   openCoinById(coinId: string): void {
@@ -131,7 +164,10 @@ export class Tab6Page {
       .toLowerCase();
 
     const matchesQuery = !normalizedQuery || searchableText.includes(normalizedQuery);
-    const matchesEra = !filters.era || item.coin.period.toLowerCase().includes(filters.era.toLowerCase());
+
+    const searchableEra = [item.coin.period, item.coin.name, ...(item.coin.tags ?? [])].join(' ').toLowerCase();
+    const matchesEra = !filters.era || searchableEra.includes(filters.era.toLowerCase());
+
     const matchesCondition = !filters.condition || item.coin.conservation.toLowerCase() === filters.condition;
     const matchesAvailability =
       !filters.availableFor ||
