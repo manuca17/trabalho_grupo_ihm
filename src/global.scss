@@ -355,3 +355,22 @@ ion-button {
   min-height: 52px;
   font-weight: 700;
 }
+
+.light-alert-theme {
+  --ion-background-color: #ffffff;
+  --ion-text-color: #1a1a2e;
+  .alert-wrapper {
+    background: #ffffff !important;
+    color: #1a1a2e !important;
+  }
+  .alert-head, .alert-message, .alert-title, .alert-sub-title {
+    color: #1a1a2e !important;
+  }
+  .alert-button {
+    color: #f97316 !important;
+    font-weight: 700 !important;
+  }
+  .alert-button.alert-button-role-destructive {
+    color: #d4183d !important;
+  }
+}

@@ -48,22 +48,18 @@ export class Tab2Page implements OnInit {
   ) {}
 
   ionViewWillEnter(): void {
-    if (this.mode === 'create') {
+    const offerId = this.activatedRoute.snapshot.queryParamMap.get('offerId');
+    if (offerId) {
+      this.mode = 'edit';
+      this.editingOfferId = offerId;
+      void this.loadOfferForEdit(offerId);
+    } else {
       this.resetFormState();
     }
   }
 
   async ngOnInit(): Promise<void> {
     await this.marketplaceService.init();
-    this.resetFormState();
-
-    const offerId = this.activatedRoute.snapshot.queryParamMap.get('offerId');
-    if (offerId) {
-      this.mode = 'edit';
-      this.editingOfferId = offerId;
-      await this.loadOfferForEdit(offerId);
-      return;
-    }
 
     this.offerForm.controls.availableFor.valueChanges.subscribe((value) => {
       const priceControl = this.offerForm.controls.salePrice;

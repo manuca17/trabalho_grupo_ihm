@@ -187,6 +187,7 @@ export class Tab5Page implements OnInit {
     const alert = await this.alertController.create({
       header: 'Remover moeda',
       message: `Tens a certeza que queres remover "${item.coin.name}"?`,
+      cssClass: 'light-alert-theme',
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
