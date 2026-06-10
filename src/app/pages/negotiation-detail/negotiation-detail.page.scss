@@ -6,21 +6,112 @@
   --padding-bottom: 30px;
 }
 
+// ── Coins overview ──────────────────────────────────────────────────────────
+
+.coins-overview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 0 12px;
+}
+
+.coins-overview__coin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+
+  img {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    box-shadow: var(--app-shadow-sm);
+  }
+}
+
+.coins-overview__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-text);
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coins-overview__label {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #888);
+  text-align: center;
+}
+
+.coins-overview__arrow {
+  font-size: 1.6rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+// ── Status badge ─────────────────────────────────────────────────────────────
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+
+  ion-icon {
+    font-size: 1rem;
+  }
+
+  &--pending {
+    background: rgba(234, 179, 8, 0.12);
+    color: #b45309;
+  }
+
+  &--accepted {
+    background: rgba(59, 130, 246, 0.12);
+    color: #1d4ed8;
+  }
+
+  &--traded {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+  }
+}
+
+// ── Message list ──────────────────────────────────────────────────────────────
+
 .message-list {
   display: grid;
   gap: 12px;
-  margin: 18px 0;
+  margin: 0 0 18px;
 }
 
 .message {
-  padding: 14px 16px;
+  padding: 12px 16px;
   border-radius: 22px 22px 22px 8px;
   background: var(--color-card);
   border: 1px solid var(--color-border);
   box-shadow: var(--app-shadow-sm);
+  max-width: 80%;
 
   p {
-    margin: 8px 0;
+    margin: 6px 0;
+  }
+
+  small {
+    font-size: 0.7rem;
+    color: var(--color-text-muted, #888);
   }
 }
 
@@ -30,15 +121,59 @@
   border-radius: 22px 22px 8px 22px;
 }
 
+.message--system {
+  justify-self: center;
+  max-width: 90%;
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  text-align: center;
+
+  p {
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #888);
+    font-style: italic;
+  }
+}
+
 .message__author {
   font-weight: 700;
+  font-size: 0.78rem;
   color: var(--color-primary);
 }
 
+// ── Composer ──────────────────────────────────────────────────────────────────
+
 .composer {
-  margin-bottom: 18px;
+  margin-bottom: 12px;
   --background: var(--color-card);
   --border-radius: 20px;
   border: 1px solid var(--color-border);
   box-shadow: var(--app-shadow-sm);
+}
+
+// ── Action buttons ────────────────────────────────────────────────────────────
+
+.action-btn {
+  margin-top: 8px;
+}
+
+// ── Traded banner ─────────────────────────────────────────────────────────────
+
+.traded-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 12px;
+
+  ion-icon {
+    font-size: 1.4rem;
+  }
 }

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 
 import { Coin } from '../../core/models/coin.model';
@@ -35,6 +36,7 @@ export class MakeOfferPage implements OnInit {
   constructor(
     private readonly activatedRoute: ActivatedRoute,
     private readonly router: Router,
+    private readonly toastCtrl: ToastController,
     private readonly contentService: ContentService,
     private readonly marketplaceService: MarketplaceService,
   ) {}
@@ -115,9 +117,25 @@ export class MakeOfferPage implements OnInit {
         message: this.message.trim(),
       });
 
-      await this.router.navigate(['/negotiation', thread.id], {
-        queryParams: { from: this.sourceTab },
+      const toast = await this.toastCtrl.create({
+        message: 'Proposta enviada com sucesso!',
+        duration: 2000,
+        color: 'success',
+        position: 'top',
       });
+      void toast.present();
+
+      await this.router.navigate(['/negotiation', thread.id], {
+        replaceUrl: true,
+      });
+    } catch {
+      const toast = await this.toastCtrl.create({
+        message: 'Não foi possível enviar a proposta. Tenta novamente.',
+        duration: 3000,
+        color: 'danger',
+        position: 'top',
+      });
+      await toast.present();
     } finally {
       this.isProposalSubmitting = false;
     }
@@ -135,9 +153,7 @@ export class MakeOfferPage implements OnInit {
       return;
     }
 
-    this.ownedCoins = this.coins
-      .filter((coin) => coin.id !== coinId)
-      .slice(0, 3);
+    this.ownedCoins = this.coins.filter((coin) => coin.id !== coinId);
 
     const inventoryCards = await firstValueFrom(
       this.marketplaceService.inventoryCards$,

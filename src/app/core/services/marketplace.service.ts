@@ -227,16 +227,18 @@ export class MarketplaceService {
         offerId,
         offerCoinId: input.coinId,
         proposerCoinId: proposerCoin?.id ?? input.coinId,
-        proposerName: profile.displayName,
-        sellerName: 'Maria',
+        proposerName: 'Comprador',
+        proposerId: 'unknown-proposer',
+        sellerName: profile.displayName,
+        sellerId: profile.id,
         status: 'pending',
         realValue: proposerCoin?.estimatedValue ?? input.askPrice,
         unreadCount: 1,
         messages: [
           {
             id: `msg-${Date.now()}`,
-            userId: profile.id,
-            displayName: profile.displayName,
+            userId: 'unknown-proposer',
+            displayName: 'Comprador',
             body: input.availableForTrade
               ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
               : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
@@ -298,18 +300,21 @@ export class MarketplaceService {
       .filter(Boolean)
       .join(' ');
 
+    const offerCoin = catalog.find((coin) => coin.id === input.offerCoinId);
     const thread: NegotiationThread = new NegotiationThreadModel({
       id: `thread-${Date.now()}`,
       offerId: `proposal-${Date.now()}`,
       offerCoinId: input.offerCoinId,
       proposerCoinId: primaryTradeCoin?.id ?? input.offerCoinId,
       proposerName: profile.displayName,
-      sellerName: 'Maria',
+      proposerId: profile.id,
+      sellerName: offerCoin?.sellerName ?? 'Vendedor',
+      sellerId: `seller-${input.offerCoinId}`,
       status: 'pending',
       realValue:
         input.offerAmount ??
         primaryTradeCoin?.estimatedValue ??
-        catalog.find((coin) => coin.id === input.offerCoinId)?.estimatedValue ??
+        offerCoin?.estimatedValue ??
         0,
       unreadCount: 1,
       messages: [
@@ -410,6 +415,37 @@ export class MarketplaceService {
 
     this.offersSubject.next(updatedOffers);
     await this.persistOffers(updatedOffers);
+  }
+
+  async acceptProposal(threadId: string): Promise<void> {
+    const targetThread = this.getNegotiationById(threadId);
+
+    if (!targetThread || targetThread.status !== 'pending') {
+      return;
+    }
+
+    const updatedNegotiations: NegotiationThread[] =
+      this.negotiationsSubject.value.map((thread) =>
+        thread.id === threadId
+          ? {
+              ...thread,
+              status: 'accepted' as const,
+              messages: [
+                ...thread.messages,
+                {
+                  id: `msg-${Date.now()}`,
+                  userId: 'system',
+                  displayName: 'Sistema',
+                  body: `${targetThread.sellerName} aceitou a proposta. Confirme a troca para concluir.`,
+                  sentAt: new Date().toISOString(),
+                },
+              ],
+            }
+          : thread,
+      );
+
+    this.negotiationsSubject.next(updatedNegotiations);
+    await this.persistNegotiations(updatedNegotiations);
   }
 
   async markNegotiationAsTraded(threadId: string): Promise<void> {

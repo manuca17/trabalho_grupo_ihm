@@ -1,14 +1,12 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { IonContent } from '@ionic/angular';
 import { Subject, takeUntil } from 'rxjs';
 
 import { Coin, NegotiationThread } from '../../core/models/coin.model';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 
-/**
- * Hosts the real-time chat that simulates the trade negotiation flow.
- */
 @Component({
   selector: 'app-negotiation-detail',
   templateUrl: './negotiation-detail.page.html',
@@ -16,6 +14,8 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
   standalone: false,
 })
 export class NegotiationDetailPage implements OnInit, OnDestroy {
+  @ViewChild(IonContent) content!: IonContent;
+
   draftMessage = '';
   offerCoin?: Coin;
   proposerCoin?: Coin;
@@ -43,15 +43,14 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
       return;
     }
 
-    // Subscribe to real-time updates for this negotiation thread
     this.marketplaceService
       .getNegotiationById$(threadId)
       .pipe(takeUntil(this.destroy$))
       .subscribe((updatedThread) => {
         this.thread = updatedThread;
+        setTimeout(() => this.content?.scrollToBottom(200), 50);
       });
 
-    // Load coin details
     const snapshotThread = this.marketplaceService.getNegotiationById(threadId);
     if (snapshotThread) {
       const [offerCoin, proposerCoin] = await Promise.all([
@@ -82,7 +81,15 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
     this.draftMessage = '';
   }
 
-  async acceptTrade(): Promise<void> {
+  async acceptProposal(): Promise<void> {
+    if (!this.thread) {
+      return;
+    }
+
+    await this.marketplaceService.acceptProposal(this.thread.id);
+  }
+
+  async confirmTrade(): Promise<void> {
     if (!this.thread) {
       return;
     }
@@ -92,5 +99,9 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
 
   isOwnMessage(message: { userId: string }): boolean {
     return message.userId === this.currentUserId;
+  }
+
+  isSystemMessage(message: { userId: string }): boolean {
+    return message.userId === 'system';
   }
 }
