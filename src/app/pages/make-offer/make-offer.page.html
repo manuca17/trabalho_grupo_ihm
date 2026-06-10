@@ -73,7 +73,7 @@
     >
       <label class="field-label" for="offer-amount">Valor da Oferta</label>
       <div class="currency-field">
-        <span>EUR</span>
+        <span>{{ currencySymbol }}</span>
         <input
           id="offer-amount"
           type="number"
@@ -146,7 +146,7 @@
         *ngIf="(offerType === 'money' || offerType === 'both') && hasOfferAmount"
       >
         <span>Valor oferecido</span>
-        <strong>{{ 'EUR ' + offerAmount }}</strong>
+        <strong>{{ currencySymbol + ' ' + offerAmount }}</strong>
       </div>
 
       <div

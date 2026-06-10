@@ -297,21 +297,36 @@
 }
 
 .photo-upload-container {
-  display: flex;
-  gap: 8px;
   width: 100%;
-  input { flex: 1; }
+
+  .photo-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .photo-preview-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f97316;
+    flex-shrink: 0;
+  }
+
   .form-camera-btn {
-    width: 48px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 16px;
     height: 46px;
     background: #f1f5f9;
     border: 1px solid #cbd5e1;
     border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     cursor: pointer;
-    ion-icon { font-size: 1.3rem; color: #475569; }
+    font-size: 0.875rem;
+    color: #475569;
+    ion-icon { font-size: 1.3rem; }
   }
 }
 

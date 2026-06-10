@@ -5,7 +5,7 @@ import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
 import { Coin, Offer } from '../core/models/coin.model';
 import { MarketplaceService } from '../core/services/marketplace.service';
 
-type InventoryCard = { coin: Coin; lastOffer?: Offer };
+type InventoryCard = { coin: Coin; lastOffer?: Offer; customDisplayPrice?: string };
 
 type SearchResult = {
   id: string;
@@ -24,12 +24,6 @@ type SearchFilters = {
   priceRange: string;
   availableFor: string;
 };
-
-const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
 
 @Component({
   selector: 'app-tab6',
@@ -158,8 +152,7 @@ export class Tab6Page {
   }
 
   private getPriceLabel(item: InventoryCard): string {
-    if (item.lastOffer?.availableForTrade) return 'Troca';
-    return EUR_FORMATTER.format(item.lastOffer?.askPrice ?? item.coin.estimatedValue);
+    return item.customDisplayPrice ?? (item.lastOffer?.availableForTrade ? 'Troca' : '');
   }
 
   private isTrade(item: InventoryCard): boolean {
