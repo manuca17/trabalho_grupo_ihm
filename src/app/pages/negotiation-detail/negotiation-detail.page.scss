@@ -1,44 +1,289 @@
 .negotiation-content {
-  --background: var(--color-background);
-  --padding-start: 18px;
-  --padding-end: 18px;
-  --padding-top: 18px;
-  --padding-bottom: 30px;
+  --background: #fbf8f3;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-bottom: 16px;
 }
 
-.message-list {
-  display: grid;
+/* ── TOOLBAR ── */
+.app-toolbar {
+  --background: #f97316;
+  --color: white;
+  --border-width: 0 !important;
+  padding: 0;
+  min-height: auto;
+}
+
+.app-header-body {
+  width: 100%;
+  padding: 16px 16px 10px 16px;
+}
+
+.app-header-body__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  strong { font-size: 1.1rem; font-weight: 800; color: white; letter-spacing: -0.01em; }
+  span { font-size: 0.8rem; color: rgba(255, 255, 255, 0.85); }
+}
+
+/* ── OVERVIEW CARD ── */
+.thread-overview {
+  background: white;
+  border-radius: 20px;
+  padding: 20px 16px;
+  margin: 16px 0;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
-  margin: 18px 0;
 }
 
-.message {
-  padding: 14px 16px;
-  border-radius: 22px 22px 22px 8px;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--app-shadow-sm);
+.thread-parties {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
-  p {
-    margin: 8px 0;
+.party-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #fb923c);
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(249, 115, 22, 0.35);
+
+  &--proposer {
+    background: linear-gradient(135deg, #64748b, #94a3b8);
+    box-shadow: 0 2px 6px rgba(100, 116, 139, 0.3);
   }
 }
 
-.message--self {
-  justify-self: end;
-  background: var(--color-accent);
-  border-radius: 22px 22px 8px 22px;
+.thread-vs {
+  color: #cbd5e1;
+  font-size: 1.5rem;
+  display: flex;
 }
 
-.message__author {
+.parties-names {
+  display: flex;
+  gap: 32px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  width: 100%;
+  justify-content: space-around;
+  margin-top: -6px;
+}
+
+.thread-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  width: 100%;
+  padding-top: 4px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.thread-status-badge {
+  display: inline-block;
+  padding: 4px 16px;
+  border-radius: 20px;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--color-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &.status--pending  { background: #fef3c7; color: #d97706; }
+  &.status--accepted { background: #dbeafe; color: #2563eb; }
+  &.status--traded   { background: #dcfce7; color: #16a34a; }
 }
 
-.composer {
-  margin-bottom: 18px;
-  --background: var(--color-card);
-  --border-radius: 20px;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--app-shadow-sm);
+.thread-value {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #64748b;
+  strong { color: #0f172a; font-weight: 700; }
+}
+
+.thread-coins {
+  margin: 0;
+  font-size: 0.83rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  ion-icon { font-size: 0.95rem; color: #f97316; }
+}
+
+/* ── MESSAGES ── */
+.message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.message-wrap {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 4px;
+
+  &--self { justify-content: flex-end; }
+}
+
+.message-bubble {
+  max-width: 78%;
+  padding: 10px 14px;
+  border-radius: 18px 18px 18px 4px;
+  background: white;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  &--self {
+    background: #f97316;
+    border-color: #f97316;
+    border-radius: 18px 18px 4px 18px;
+
+    .message-bubble__body { color: white; }
+    .message-bubble__time { color: rgba(255, 255, 255, 0.65); }
+  }
+
+  &__author {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #f97316;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  &__body {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #1e293b;
+    line-height: 1.45;
+  }
+
+  &__time {
+    display: block;
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-top: 5px;
+    text-align: right;
+  }
+}
+
+.message-system-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 6px 16px;
+}
+
+.message-system {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.75rem;
+  padding: 5px 14px;
+  border-radius: 12px;
+  max-width: 90%;
+  text-align: center;
+  line-height: 1.4;
+
+  ion-icon { font-size: 0.9rem; flex-shrink: 0; color: #94a3b8; }
+}
+
+/* ── FOOTER ── */
+.negotiation-footer {
+  background: white;
+  border-top: 1px solid #f0f0f0;
+  padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.composer-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.composer-input {
+  flex: 1;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 22px;
+  padding: 11px 16px;
+  font-size: 0.9rem;
+  color: #0f172a;
+  outline: none;
+  font-family: inherit;
+
+  &::placeholder { color: #94a3b8; }
+  &:focus { border-color: #f97316; background: white; }
+}
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f97316 !important;
+  color: white !important;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+  transition: opacity 0.15s;
+
+  &:disabled { background: #cbd5e1 !important; box-shadow: none; cursor: not-allowed; }
+}
+
+.accept-trade-btn {
+  width: 100%;
+  min-height: 46px;
+  background: #f97316 !important;
+  color: white !important;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+
+  &--done {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  &:disabled { opacity: 0.8; }
+
+  ion-icon { font-size: 1.15rem; }
 }
