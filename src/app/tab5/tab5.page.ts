@@ -77,6 +77,7 @@ export class Tab5Page implements OnInit {
           return { coin: catalogCoin, lastOffer: offer };
         }
         // Create a virtual coin from the offer metadata
+        const photoUrl = offer.photos?.[0]?.dataUrl || 'assets/icon/coin-aureus.svg';
         const virtualCoin: Coin = {
           id: offer.coinId,
           name: offer.title || 'Moeda personalizada',
@@ -92,7 +93,7 @@ export class Tab5Page implements OnInit {
           description: offer.description || '',
           history: '',
           reference: '',
-          image: '',
+          image: photoUrl,
           tags: [],
         };
         return { coin: virtualCoin, lastOffer: offer };

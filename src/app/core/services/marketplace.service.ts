@@ -22,6 +22,8 @@ import { LocalStorageService } from './local-storage.service';
 const LS_OFFERS_KEY = 'ls_offers';
 const LS_NEGOTIATIONS_KEY = 'ls_negotiations';
 
+const PLACEHOLDER_IMAGE = 'assets/icon/coin-aureus.svg';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -44,54 +46,65 @@ export class MarketplaceService {
   readonly inventoryCards$: Observable<
     Array<{ coin: Coin; lastOffer?: Offer; customDisplayPrice?: string }>
   > = combineLatest([this.catalog$, this.offers$, this.activeUnit$, this.activeCurrency$]).pipe(
-    map(([coins, offers, unit, currency]) =>
-      coins.map((coin) => {
-        const mappedCoin = { ...coin };
+    map(([coins, offers, unit, currency]) => {
+      const formatPrice = (price: number, isTradeOption: boolean): string => {
+        if (isTradeOption) return 'Troca';
+        const adjusted = currency === 'USD' ? price * 1.08 : price;
+        return currency === 'USD'
+          ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(adjusted)
+          : new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(adjusted);
+      };
 
-        if (unit === 'oz' && mappedCoin.weight) {
-          const numericWeight = parseFloat(mappedCoin.weight);
-          if (!isNaN(numericWeight)) {
-            mappedCoin.weight = `${(numericWeight * 0.035274).toFixed(2)} oz`;
-          }
-        } else if (unit === 'g' && mappedCoin.weight) {
-          const numericWeight = parseFloat(mappedCoin.weight);
-          if (!isNaN(numericWeight)) {
-            mappedCoin.weight = `${numericWeight.toFixed(1)}g`;
-          }
-        }
+      const applyWeightUnit = (coin: Coin): Coin => {
+        if (!coin.weight) return coin;
+        const numericWeight = parseFloat(coin.weight);
+        if (isNaN(numericWeight)) return coin;
+        const weight = unit === 'oz'
+          ? `${(numericWeight * 0.035274).toFixed(2)} oz`
+          : `${numericWeight.toFixed(1)}g`;
+        return { ...coin, weight };
+      };
 
-        const lastOffer = [...offers]
-          .reverse()
-          .find((offer) => offer.coinId === coin.id);
-
-        let rawPrice = lastOffer?.askPrice ?? coin.estimatedValue;
-        let isTradeOption = !!lastOffer?.availableForTrade;
-        let formattedPriceLabel = 'Troca';
-
-        if (!isTradeOption) {
-          if (currency === 'USD') {
-            rawPrice = rawPrice * 1.08;
-            formattedPriceLabel = new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              maximumFractionDigits: 0,
-            }).format(rawPrice);
-          } else {
-            formattedPriceLabel = new Intl.NumberFormat('pt-PT', {
-              style: 'currency',
-              currency: 'EUR',
-              maximumFractionDigits: 0,
-            }).format(rawPrice);
-          }
-        }
-
+      // Cards das moedas do catálogo com as suas ofertas
+      const catalogCoinIds = new Set(coins.map((c) => c.id));
+      const catalogCards = coins.map((coin) => {
+        const mappedCoin = applyWeightUnit(coin);
+        const lastOffer = [...offers].reverse().find((o) => o.coinId === coin.id);
+        const rawPrice = lastOffer?.askPrice ?? coin.estimatedValue;
         return {
           coin: mappedCoin,
           lastOffer,
-          customDisplayPrice: formattedPriceLabel,
+          customDisplayPrice: formatPrice(rawPrice, !!lastOffer?.availableForTrade),
         };
-      }),
-    ),
+      });
+
+      // Cards de ofertas com coinIds personalizados (moedas adicionadas pelo utilizador)
+      const standaloneOffers = offers.filter((o) => !catalogCoinIds.has(o.coinId));
+      const standaloneCards = standaloneOffers.map((offer) => {
+        const photoUrl = offer.photos?.[0]?.dataUrl || PLACEHOLDER_IMAGE;
+        const virtualCoin: Coin = {
+          id: offer.coinId,
+          name: offer.title || 'Moeda personalizada',
+          emperor: offer.era || '',
+          period: offer.era || '',
+          material: '',
+          conservation: offer.condition || '',
+          location: '',
+          estimatedValue: offer.realValue || offer.askPrice || 0,
+          description: offer.description || '',
+          image: photoUrl,
+          images: { obverse: photoUrl, reverse: photoUrl, edge: photoUrl },
+          tags: [],
+        };
+        return {
+          coin: virtualCoin,
+          lastOffer: offer,
+          customDisplayPrice: formatPrice(offer.askPrice, offer.availableForTrade),
+        };
+      });
+
+      return [...catalogCards, ...standaloneCards];
+    }),
   );
 
   constructor(
@@ -110,7 +123,17 @@ export class MarketplaceService {
       this.localStorageService.getItem<NegotiationThread[]>(LS_NEGOTIATIONS_KEY),
     ]);
 
-    this.offersSubject.next(OfferModel.fromJsonArray(storedOffers ?? []));
+    // Reintegrar as fotos nas ofertas carregadas do storage
+    const offersWithPhotos = await Promise.all(
+      (storedOffers ?? []).map(async (offer) => {
+        const photos = await this.localStorageService.getItem<OfferPhoto[]>(
+          `offer_photos_${offer.id}`,
+        );
+        return { ...offer, photos: photos ?? offer.photos ?? [] };
+      }),
+    );
+
+    this.offersSubject.next(OfferModel.fromJsonArray(offersWithPhotos));
     this.negotiationsSubject.next(
       NegotiationThreadModel.fromJsonArray(storedNegotiations ?? []),
     );
@@ -173,18 +196,10 @@ export class MarketplaceService {
       const profile = await this.resolveCurrentProfile();
       const offerId = `offer-${Date.now()}`;
 
-      await this.localStorageService.setItem(
-        `offer_photos_${offerId}`,
-        input.photos,
-      );
+      // Guardar fotos completas no storage
+      await this.localStorageService.setItem(`offer_photos_${offerId}`, input.photos);
 
-      const safePhotos: OfferPhoto[] = input.photos.map((p) => ({
-        kind: p.kind,
-        label: p.label,
-        dataUrl: '',
-        brightness: p.brightness,
-      }));
-
+      // Manter as fotos completas em memória para exibição imediata
       const offer: Offer = new OfferModel({
         id: offerId,
         coinId: input.coinId,
@@ -198,7 +213,7 @@ export class MarketplaceService {
         condition: input.condition,
         realValue: input.realValue,
         availableForTrade: input.availableForTrade,
-        photos: safePhotos,
+        photos: input.photos, // fotos completas em memória
         status: 'negotiating',
         createdAt: new Date().toISOString(),
       });
@@ -394,6 +409,7 @@ export class MarketplaceService {
     };
   }
 
+  // Persiste as ofertas sem as dataUrls (as fotos ficam no storage separado)
   private async persistOffers(offers: Offer[]): Promise<void> {
     const plain = offers.map((o) => ({
       id: o.id,
