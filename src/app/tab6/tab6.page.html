@@ -21,7 +21,12 @@
           ></ion-input>
         </div>
 
-        <button type="button" class="filter-toggle-button" (click)="toggleFilters()">
+        <button
+          type="button"
+          class="filter-toggle-button"
+          [class.filter-toggle-button--active]="showFilters || hasActiveFilters"
+          (click)="toggleFilters()"
+        >
           <ion-icon name="options-outline"></ion-icon>
         </button>
 
@@ -30,20 +35,49 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="search-content">
+<ion-content class="search-content">
 
-  <div class="search-extended-area">
-    <div class="filters-expanded-panel" *ngIf="showFilters">
-      <p class="filter-group-title">Filtros Avançados</p>
-      <div class="filter-options-grid">
-        <button type="button" [class.active]="filters.priceRange === 'under200'" (click)="setFilter('priceRange', 'under200')">&lt; 200€</button>
-        <button type="button" [class.active]="filters.priceRange === '200-500'" (click)="setFilter('priceRange', '200-500')">200€ - 500€</button>
-        <button type="button" [class.active]="filters.priceRange === 'above500'" (click)="setFilter('priceRange', 'above500')">&gt; 500€</button>
+  <!-- Painel de filtros: só aparece quando aberto, separado das pesquisas populares -->
+  <div class="filters-panel" *ngIf="showFilters">
+    <div class="filter-field">
+      <label class="filter-field__label">Era Histórica</label>
+      <div class="filter-select-wrap">
+        <select class="filter-select" [(ngModel)]="pendingEra">
+          <option *ngFor="let opt of eraOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+        <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
       </div>
-      <button type="button" class="clear-filters-btn" (click)="clearFilters()">Limpar Filtros</button>
     </div>
 
-    <p class="popular-label">PESQUISAS POPULARES:</p>
+    <div class="filter-field">
+      <label class="filter-field__label">Estado de Conservação</label>
+      <div class="filter-select-wrap">
+        <select class="filter-select" [(ngModel)]="pendingCondition">
+          <option *ngFor="let opt of conditionOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+        <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
+      </div>
+    </div>
+
+    <div class="filter-field">
+      <label class="filter-field__label">Disponível para</label>
+      <div class="filter-select-wrap">
+        <select class="filter-select" [(ngModel)]="pendingAvailableFor">
+          <option *ngFor="let opt of availableForOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+        <ion-icon name="chevron-down-outline" class="select-arrow"></ion-icon>
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button type="button" class="filter-btn-clear" (click)="clearFilters()">Limpar</button>
+      <button type="button" class="filter-btn-apply" (click)="applyFilters()">Aplicar Filtros</button>
+    </div>
+  </div>
+
+  <!-- Pesquisas populares: sempre visíveis, fora do painel de filtros -->
+  <div class="search-extended-area">
+    <p class="popular-label">Pesquisas populares:</p>
     <div class="popular-buttons">
       <button
         *ngFor="let term of popularSearchTerms"
@@ -56,16 +90,12 @@
     </div>
   </div>
 
-  <div class="search-divider"></div>
-
   <section class="search-page">
-    <ng-container *ngIf="!searchQuery; else searchResultsArea">
+    <ng-container *ngIf="!searchQuery && !hasActiveFilters; else searchResultsArea">
       <section class="empty-area">
-        <div class="empty-illustration">
-          <ion-icon name="search-outline"></ion-icon>
-        </div>
-        <h3>PROCURA ALGO ESPECÍFICO?</h3>
-        <p>Use a barra de pesquisa para encontrar moedas por era histórica, tipo ou descrição.</p>
+        <div class="empty-illustration">🔍</div>
+        <h3>Procura algo específico?</h3>
+        <p>Use a barra de pesquisa para encontrar moedas por era histórica, tipo ou descrição</p>
       </section>
     </ng-container>
 
@@ -102,9 +132,7 @@
 
     <ng-template #noResults>
       <section class="empty-area empty-area--no-results">
-        <div class="empty-illustration">
-          <ion-icon name="sad-outline"></ion-icon>
-        </div>
+        <div class="empty-illustration">😔</div>
         <h3>Sem resultados</h3>
         <p>Tente outro termo ou ajuste os filtros para encontrar uma moeda.</p>
       </section>
