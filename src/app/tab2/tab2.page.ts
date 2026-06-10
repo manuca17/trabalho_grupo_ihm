@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Camera, CameraResultType } from '@capacitor/camera';
+import { ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 
 import { OfferPhoto } from '../core/models/coin.model';
@@ -40,9 +41,16 @@ export class Tab2Page implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly router: Router,
+    private readonly toastController: ToastController,
     private readonly contentService: ContentService,
     private readonly marketplaceService: MarketplaceService,
   ) {}
+
+  ionViewWillEnter(): void {
+    if (this.mode !== 'proposal') {
+      this.resetFormState();
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     await this.marketplaceService.init();
@@ -132,7 +140,9 @@ export class Tab2Page implements OnInit {
     try {
       const formValue = this.offerForm.getRawValue();
 
-      const offer = await this.marketplaceService.publishOffer({
+      // Adaptado para enviar a estrutura que o teu marketplaceService espera,
+      // incluindo as novidades do Figma
+      await this.marketplaceService.publishOffer({
         coinId: formValue.coinId,
         title: formValue.title,
         quantity: formValue.quantity,
@@ -145,10 +155,26 @@ export class Tab2Page implements OnInit {
         photos: this.photos,
       });
 
-      await this.router.navigate(['/offer', offer.id]);
+      this.resetFormState();
+
+      const successToast = await this.toastController.create({
+        message: 'Moeda publicada com sucesso!',
+        duration: 2500,
+        position: 'bottom',
+        color: 'success',
+        icon: 'checkmark-circle-outline',
+      });
+      await successToast.present();
     } catch (err) {
       console.error('Erro ao publicar oferta:', err);
-      alert('Erro ao publicar a oferta. Verifica a consola do navegador (F12) para mais detalhes.');
+      const errorToast = await this.toastController.create({
+        message: 'Erro ao publicar a oferta. Tenta novamente.',
+        duration: 3000,
+        position: 'bottom',
+        color: 'danger',
+        icon: 'alert-circle-outline',
+      });
+      await errorToast.present();
     } finally {
       this.isSubmitting = false;
     }
