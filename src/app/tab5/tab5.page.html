@@ -29,12 +29,16 @@
         </div>
 
         <div class="figma-input-item">
-          <label>Fotografia de Perfil (URL da Imagem)</label>
+          <label>Fotografia de Perfil</label>
           <div class="photo-upload-container">
-            <input type="text" [(ngModel)]="newPhotoUrl" placeholder="Cole o link da imagem aqui..." />
-            <button type="button" class="form-camera-btn">
-              <ion-icon name="camera-outline"></ion-icon>
-            </button>
+            <input #photoFileInput type="file" accept="image/*" style="display:none" (change)="onPhotoFileChange($event)" />
+            <div class="photo-preview-row">
+              <img *ngIf="newPhotoUrl" [src]="newPhotoUrl" class="photo-preview-thumb" alt="Pré-visualização" />
+              <button type="button" class="form-camera-btn" (click)="photoFileInput.click()">
+                <ion-icon name="camera-outline"></ion-icon>
+                <span>{{ newPhotoUrl ? 'Alterar imagem' : 'Escolher imagem' }}</span>
+              </button>
+            </div>
           </div>
         </div>
 

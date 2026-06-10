@@ -20,8 +20,7 @@
         </ion-card-header>
         <ion-card-content>
           <p>
-            Valor real indicado pelo interessado: {{ thread.realValue |
-            currency:'EUR' }}
+            Valor real indicado pelo interessado: {{ realValueDisplay }}
           </p>
           <p *ngIf="offerCoin && proposerCoin">
             Proposta: {{ proposerCoin.name }} em troca de {{ offerCoin.name }}.

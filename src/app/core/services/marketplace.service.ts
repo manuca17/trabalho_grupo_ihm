@@ -32,7 +32,7 @@ export class MarketplaceService {
   private readonly negotiationsSubject = new BehaviorSubject<NegotiationThread[]>([]);
 
   private readonly activeUnitSubject = new BehaviorSubject<'g' | 'oz'>('g');
-  private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD'>('EUR');
+  private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD' | 'JPY' | 'BRL'>('EUR');
 
   private isInitialized = false;
 
@@ -49,10 +49,7 @@ export class MarketplaceService {
     map(([coins, offers, unit, currency]) => {
       const formatPrice = (price: number, isTradeOption: boolean): string => {
         if (isTradeOption) return 'Troca';
-        const adjusted = currency === 'USD' ? price * 1.08 : price;
-        return currency === 'USD'
-          ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(adjusted)
-          : new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(adjusted);
+        return this.formatCurrency(price, currency);
       };
 
       const applyWeightUnit = (coin: Coin): Coin => {
@@ -152,8 +149,18 @@ export class MarketplaceService {
     this.activeUnitSubject.next(unit);
   }
 
-  updateActiveCurrency(currency: 'EUR' | 'USD'): void {
+  updateActiveCurrency(currency: 'EUR' | 'USD' | 'JPY' | 'BRL'): void {
     this.activeCurrencySubject.next(currency);
+  }
+
+  formatCurrency(value: number, currency: 'EUR' | 'USD' | 'JPY' | 'BRL'): string {
+    const rates: Record<string, number> = { EUR: 1, USD: 1.08, JPY: 160, BRL: 5.5 };
+    const locales: Record<string, string> = { EUR: 'pt-PT', USD: 'en-US', JPY: 'ja-JP', BRL: 'pt-BR' };
+    return new Intl.NumberFormat(locales[currency], {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(value * rates[currency]);
   }
 
   async getCoinById(coinId: string): Promise<Coin | undefined> {
@@ -302,11 +309,7 @@ export class MarketplaceService {
       offeredCoins[0] ?? catalog.find((coin) => coin.id !== input.offerCoinId);
     const proposalSummary = [
       input.offerAmount
-        ? `Proponho ${new Intl.NumberFormat('pt-PT', {
-            style: 'currency',
-            currency: 'EUR',
-            maximumFractionDigits: 0,
-          }).format(input.offerAmount)}`
+        ? `Proponho ${this.formatCurrency(input.offerAmount, this.activeCurrencySubject.value)}`
         : '',
       offeredCoins.length
         ? `para troca por ${offeredCoins.map((coin) => coin.name).join(', ')}`

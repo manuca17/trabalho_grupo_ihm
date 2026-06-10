@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, combineLatest, map } from 'rxjs';
+import { Observable, Subject, combineLatest, map, takeUntil } from 'rxjs';
 import { AlertController, ToastController } from '@ionic/angular';
 
 import { UserProfile } from '../core/models/auth.model';
@@ -12,19 +12,13 @@ import { MarketplaceService } from '../core/services/marketplace.service';
 
 type InventoryCard = { coin: Coin; lastOffer?: Offer };
 
-const EUR_FORMATTER = new Intl.NumberFormat('pt-PT', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-});
-
 @Component({
   selector: 'app-tab5',
   templateUrl: './tab5.page.html',
   styleUrls: ['./tab5.page.scss'],
   standalone: false,
 })
-export class Tab5Page implements OnInit {
+export class Tab5Page implements OnInit, OnDestroy {
   activeTab: 'active' | 'sold' | 'traded' = 'active';
   soldCoinsCount = 1;
   tradedCoinsCount = 1;
@@ -35,6 +29,9 @@ export class Tab5Page implements OnInit {
   currentUnit = 'Gramas (g)';
   currentCurrency = 'Euro (€)';
   notificationsEnabled = true;
+  activeCurrency: 'EUR' | 'USD' | 'JPY' | 'BRL' = 'EUR';
+
+  private readonly destroy$ = new Subject<void>();
 
   readonly currentProfile$: Observable<UserProfile | null> =
     this.authService.currentProfile$;
@@ -165,6 +162,15 @@ export class Tab5Page implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.authService.ensureInitialized();
     await this.marketplaceService.init();
+
+    this.marketplaceService.activeCurrency$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((c) => (this.activeCurrency = c));
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   setActiveTab(tab: 'active' | 'sold' | 'traded'): void {
@@ -284,25 +290,34 @@ export class Tab5Page implements OnInit {
   }
 
   async triggerChangeCurrency() {
+    const options: Array<{ label: string; code: 'EUR' | 'USD' | 'JPY' | 'BRL' }> = [
+      { label: 'Euro (€)', code: 'EUR' },
+      { label: 'Dólar ($)', code: 'USD' },
+      { label: 'Iene (¥)', code: 'JPY' },
+      { label: 'Real (R$)', code: 'BRL' },
+    ];
     const alert = await this.alertController.create({
       header: 'Moeda Comercial',
       cssClass: 'orange-alert-theme',
-      inputs: [
-        { type: 'radio', label: 'Euro (€)', value: 'Euro (€)', checked: this.currentCurrency === 'Euro (€)' },
-        { type: 'radio', label: 'Dólar ($)', value: 'Dólar ($)', checked: this.currentCurrency === 'Dólar ($)' }
-      ],
+      inputs: options.map((opt) => ({
+        type: 'radio' as const,
+        label: opt.label,
+        value: opt.code,
+        checked: this.activeCurrency === opt.code,
+      })),
       buttons: [
         { text: 'Cancelar', role: 'cancel' },
         {
           text: 'Confirmar',
-          handler: (data) => {
-            if (data) {
-              this.currentCurrency = data;
-              this.marketplaceService.updateActiveCurrency(data === 'Euro (€)' ? 'EUR' : 'USD');
+          handler: (code: 'EUR' | 'USD' | 'JPY' | 'BRL') => {
+            if (code) {
+              const selected = options.find((o) => o.code === code);
+              this.currentCurrency = selected?.label ?? code;
+              this.marketplaceService.updateActiveCurrency(code);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
@@ -318,14 +333,20 @@ export class Tab5Page implements OnInit {
   }
 
   getPriceLabel(item: { coin: Coin; lastOffer?: Offer }): string {
-    if (item.lastOffer?.availableForTrade) {
-      return 'Troca';
-    }
-    return new Intl.NumberFormat('pt-PT', {
-      style: 'currency',
-      currency: 'EUR',
-      maximumFractionDigits: 0,
-    }).format(item.lastOffer?.askPrice ?? item.coin.estimatedValue);
+    if (item.lastOffer?.availableForTrade) return 'Troca';
+    return this.marketplaceService.formatCurrency(
+      item.lastOffer?.askPrice ?? item.coin.estimatedValue,
+      this.activeCurrency,
+    );
+  }
+
+  onPhotoFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { this.newPhotoUrl = reader.result as string; };
+    reader.readAsDataURL(file);
   }
 
   async logout(): Promise<void> {

@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 
 import { Coin } from '../../core/models/coin.model';
 import { Offer } from '../../core/models/offer.model';
@@ -15,10 +16,14 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
   styleUrls: ['./offer-detail.page.scss'],
   standalone: false,
 })
-export class OfferDetailPage implements OnInit {
+export class OfferDetailPage implements OnInit, OnDestroy {
   coin?: Coin;
   offer?: Offer;
   offerPhotos: OfferPhoto[] = [];
+  displayPrice = '';
+
+  private activeCurrency: 'EUR' | 'USD' | 'JPY' | 'BRL' = 'EUR';
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly activatedRoute: ActivatedRoute,
@@ -29,19 +34,32 @@ export class OfferDetailPage implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.marketplaceService.init();
 
-    const offerId = this.activatedRoute.snapshot.paramMap.get('offerId');
+    this.marketplaceService.activeCurrency$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((c) => {
+        this.activeCurrency = c;
+        this.updateDisplayPrice();
+      });
 
-    if (!offerId) {
-      return;
-    }
+    const offerId = this.activatedRoute.snapshot.paramMap.get('offerId');
+    if (!offerId) return;
 
     this.offer = this.marketplaceService.getOfferById(offerId);
-
     if (this.offer) {
       this.coin = await this.marketplaceService.getCoinById(this.offer.coinId);
-      // Load photos from local storage
       this.offerPhotos = await this.marketplaceService.getOfferPhotos(offerId);
+      this.updateDisplayPrice();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private updateDisplayPrice(): void {
+    if (!this.offer) return;
+    this.displayPrice = this.marketplaceService.formatCurrency(this.offer.askPrice, this.activeCurrency);
   }
 
   navigateToProfile(): void {
