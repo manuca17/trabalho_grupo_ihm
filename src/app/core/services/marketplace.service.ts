@@ -39,7 +39,7 @@ export class MarketplaceService {
   private readonly negotiationsSubject = new BehaviorSubject<NegotiationThread[]>([]);
 
   private readonly activeUnitSubject = new BehaviorSubject<'g' | 'oz'>('g');
-  private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD'>('EUR');
+  private readonly activeCurrencySubject = new BehaviorSubject<'EUR' | 'USD' | 'JPY' | 'BRL'>('EUR');
 
   private isInitialized = false;
 
@@ -56,10 +56,7 @@ export class MarketplaceService {
     map(([coins, offers, unit, currency]) => {
       const formatPrice = (price: number, isTradeOption: boolean): string => {
         if (isTradeOption) return 'Troca';
-        const adjusted = currency === 'USD' ? price * 1.08 : price;
-        return currency === 'USD'
-          ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(adjusted)
-          : new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(adjusted);
+        return this.formatCurrency(price, currency);
       };
 
       const applyWeightUnit = (coin: Coin): Coin => {
@@ -155,9 +152,17 @@ export class MarketplaceService {
     );
 
     this.offersSubject.next(OfferModel.fromJsonArray(offersWithPhotos));
-    this.negotiationsSubject.next(
+
+    const mergedNegotiations = this.mergeThreadsByPerson(
       NegotiationThreadModel.fromJsonArray(storedNegotiations ?? []),
     );
+    this.negotiationsSubject.next(mergedNegotiations);
+
+    // Persistir se houve fusão de chats
+    if (mergedNegotiations.length !== (storedNegotiations ?? []).length) {
+      await this.persistNegotiations(mergedNegotiations);
+    }
+
     this.isInitialized = true;
   }
 
@@ -165,8 +170,18 @@ export class MarketplaceService {
     this.activeUnitSubject.next(unit);
   }
 
-  updateActiveCurrency(currency: 'EUR' | 'USD'): void {
+  updateActiveCurrency(currency: 'EUR' | 'USD' | 'JPY' | 'BRL'): void {
     this.activeCurrencySubject.next(currency);
+  }
+
+  formatCurrency(value: number, currency: 'EUR' | 'USD' | 'JPY' | 'BRL'): string {
+    const rates: Record<string, number> = { EUR: 1, USD: 1.08, JPY: 160, BRL: 5.5 };
+    const locales: Record<string, string> = { EUR: 'pt-PT', USD: 'en-US', JPY: 'ja-JP', BRL: 'pt-BR' };
+    return new Intl.NumberFormat(locales[currency], {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(value * rates[currency]);
   }
 
   async getCoinById(coinId: string): Promise<Coin | undefined> {
@@ -262,32 +277,49 @@ export class MarketplaceService {
       const catalog = await firstValueFrom(this.catalog$);
       const proposerCoin =
         catalog.find((coin) => coin.id !== input.coinId) ?? catalog[0];
-      const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
-        id: `thread-${Date.now()}`,
-        offerId,
-        offerCoinId: input.coinId,
-        proposerCoinId: proposerCoin?.id ?? input.coinId,
-        proposerName: profile.displayName,
-        sellerName: 'Maria',
-        status: 'pending',
-        realValue: proposerCoin?.estimatedValue ?? input.askPrice,
-        unreadCount: 1,
-        messages: [
-          {
-            id: `msg-${Date.now()}`,
-            userId: profile.id,
-            displayName: profile.displayName,
-            body: input.availableForTrade
-              ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
-              : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
-            sentAt: new Date().toISOString(),
-          },
-        ],
-      });
-      const updatedNegotiations = [
-        ...this.negotiationsSubject.value,
-        nextNegotiation,
-      ];
+
+      const sellerName = 'Maria';
+      const newMessageBody = input.availableForTrade
+        ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
+        : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.';
+      const newMessage: NegotiationMessage = {
+        id: `msg-${Date.now()}`,
+        userId: profile.id,
+        displayName: profile.displayName,
+        body: newMessageBody,
+        sentAt: new Date().toISOString(),
+      };
+
+      const existingThread = this.negotiationsSubject.value.find(
+        (t) => t.proposerName === profile.displayName && t.sellerName === sellerName,
+      );
+
+      let updatedNegotiations: NegotiationThread[];
+
+      if (existingThread) {
+        const updatedThread: NegotiationThread = {
+          ...existingThread,
+          unreadCount: existingThread.unreadCount + 1,
+          messages: [...existingThread.messages, newMessage],
+        };
+        updatedNegotiations = this.negotiationsSubject.value.map((t) =>
+          t.id === existingThread.id ? updatedThread : t,
+        );
+      } else {
+        const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
+          id: `thread-${Date.now()}`,
+          offerId,
+          offerCoinId: input.coinId,
+          proposerCoinId: proposerCoin?.id ?? input.coinId,
+          proposerName: profile.displayName,
+          sellerName,
+          status: 'pending',
+          realValue: proposerCoin?.estimatedValue ?? input.askPrice,
+          unreadCount: 1,
+          messages: [newMessage],
+        });
+        updatedNegotiations = [...this.negotiationsSubject.value, nextNegotiation];
+      }
 
       this.offersSubject.next(updatedOffers);
       this.negotiationsSubject.next(updatedNegotiations);
@@ -317,11 +349,7 @@ export class MarketplaceService {
       offeredCoins[0] ?? catalog.find((coin) => coin.id !== input.offerCoinId);
     const proposalSummary = [
       input.offerAmount
-        ? `Proponho ${new Intl.NumberFormat('pt-PT', {
-            style: 'currency',
-            currency: 'EUR',
-            maximumFractionDigits: 0,
-          }).format(input.offerAmount)}`
+        ? `Proponho ${this.formatCurrency(input.offerAmount, this.activeCurrencySubject.value)}`
         : '',
       offeredCoins.length
         ? `para troca por ${offeredCoins.map((coin) => coin.name).join(', ')}`
@@ -338,13 +366,44 @@ export class MarketplaceService {
       .filter(Boolean)
       .join(' ');
 
+    const sellerName = 'Maria';
+
+    // Reutilizar o chat existente com a mesma pessoa, em vez de abrir um novo.
+    const existingThread = this.negotiationsSubject.value.find(
+      (t) => t.proposerName === profile.displayName && t.sellerName === sellerName,
+    );
+
+    if (existingThread) {
+      const proposalMessage: NegotiationMessage = {
+        id: `msg-${Date.now()}`,
+        userId: profile.id,
+        displayName: profile.displayName,
+        body: firstMessageBody,
+        sentAt: new Date().toISOString(),
+      };
+
+      const updatedThread: NegotiationThread = {
+        ...existingThread,
+        unreadCount: existingThread.unreadCount + 1,
+        messages: [...existingThread.messages, proposalMessage],
+      };
+
+      const updatedNegotiations = this.negotiationsSubject.value.map((t) =>
+        t.id === existingThread.id ? updatedThread : t,
+      );
+      this.negotiationsSubject.next(updatedNegotiations);
+      await this.persistNegotiations(updatedNegotiations);
+
+      return updatedThread;
+    }
+
     const thread: NegotiationThread = new NegotiationThreadModel({
       id: `thread-${Date.now()}`,
       offerId: `proposal-${Date.now()}`,
       offerCoinId: input.offerCoinId,
       proposerCoinId: primaryTradeCoin?.id ?? input.offerCoinId,
       proposerName: profile.displayName,
-      sellerName: 'Maria',
+      sellerName,
       status: 'pending',
       realValue:
         input.offerAmount ??
@@ -507,7 +566,6 @@ export class MarketplaceService {
   }
 
   async startContactThread(coinId: string, coinName: string, sellerName: string): Promise<NegotiationThread> {
-    // Reutilizar thread existente para esta moeda
     const existing = this.negotiationsSubject.value.find((t) => t.offerCoinId === coinId);
     if (existing) return existing;
 
@@ -537,6 +595,36 @@ export class MarketplaceService {
     this.negotiationsSubject.next(updated);
     await this.persistNegotiations(updated);
     return thread;
+  }
+
+  private mergeThreadsByPerson(threads: NegotiationThread[]): NegotiationThread[] {
+    const groups = new Map<string, NegotiationThread[]>();
+
+    for (const thread of threads) {
+      const key = `${thread.proposerName}|${thread.sellerName}`;
+      const group = groups.get(key) ?? [];
+      group.push(thread);
+      groups.set(key, group);
+    }
+
+    const merged: NegotiationThread[] = [];
+
+    for (const group of groups.values()) {
+      if (group.length === 1) {
+        merged.push(group[0]);
+        continue;
+      }
+
+      const base = group[0];
+      const allMessages = ([] as NegotiationMessage[])
+        .concat(...group.map((t) => t.messages))
+        .sort((a: NegotiationMessage, b: NegotiationMessage) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+      const totalUnread = group.reduce((sum, t) => sum + t.unreadCount, 0);
+
+      merged.push({ ...base, messages: allMessages, unreadCount: totalUnread });
+    }
+
+    return merged;
   }
 
   private async resolveCurrentProfile(): Promise<{ id: string; displayName: string }> {

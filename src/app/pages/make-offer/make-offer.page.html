@@ -8,7 +8,6 @@
     <div class="app-header-body">
       <div class="app-header-body__content">
         <strong>AncientCoins</strong>
-        <span>Colecionadores de Moedas</span>
       </div>
     </div>
   </ion-toolbar>
@@ -74,7 +73,7 @@
     >
       <label class="field-label" for="offer-amount">Valor da Oferta</label>
       <div class="currency-field">
-        <span>EUR</span>
+        <span>{{ currencySymbol }}</span>
         <input
           id="offer-amount"
           type="number"
@@ -84,7 +83,6 @@
           placeholder="0"
         />
       </div>
-      <p class="hint-text">Preço pedido: {{ proposalPriceLabel }}</p>
     </section>
 
     <section
@@ -127,7 +125,9 @@
     </section>
 
     <section class="proposal-section">
-      <label class="field-label" for="proposal-message">Mensagem ao Vendedor</label>
+      <label class="field-label" for="proposal-message"
+        >Mensagem ao Vendedor</label
+      >
       <textarea
         id="proposal-message"
         [(ngModel)]="message"
@@ -146,7 +146,7 @@
         *ngIf="(offerType === 'money' || offerType === 'both') && hasOfferAmount"
       >
         <span>Valor oferecido</span>
-        <strong>{{ 'EUR ' + offerAmount }}</strong>
+        <strong>{{ currencySymbol + ' ' + offerAmount }}</strong>
       </div>
 
       <div
@@ -175,6 +175,7 @@
     >
       Enviar Proposta
     </button>
+
     <button
       type="button"
       class="proposal-cancel"

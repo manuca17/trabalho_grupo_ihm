@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, combineLatest, takeUntil } from 'rxjs';
 
 import { Coin, NegotiationThread } from '../../core/models/coin.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -21,6 +21,7 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
   proposerCoin?: Coin;
   thread?: NegotiationThread;
   currentUserId = '';
+  realValueDisplay = '';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -44,12 +45,17 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
       return;
     }
 
-    // Subscribe to real-time updates for this negotiation thread
-    this.marketplaceService
-      .getNegotiationById$(threadId)
+    // Subscribe to real-time updates for this negotiation thread, combined with active currency
+    combineLatest([
+      this.marketplaceService.getNegotiationById$(threadId),
+      this.marketplaceService.activeCurrency$,
+    ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe((updatedThread) => {
+      .subscribe(([updatedThread, currency]) => {
         this.thread = updatedThread;
+        if (updatedThread) {
+          this.realValueDisplay = this.marketplaceService.formatCurrency(updatedThread.realValue, currency);
+        }
       });
 
     // Load coin details
@@ -97,5 +103,19 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
 
   isOwnMessage(message: { userId: string }): boolean {
     return message.userId === this.currentUserId;
+  }
+
+  isSystemMessage(message: { userId: string }): boolean {
+    return message.userId === 'system';
+  }
+
+  get statusLabel(): string {
+    if (!this.thread) return '';
+    const labels: Record<string, string> = { pending: 'Pendente', accepted: 'Aceite', traded: 'Trocado' };
+    return labels[this.thread.status] ?? this.thread.status;
+  }
+
+  get statusClass(): string {
+    return `status--${this.thread?.status ?? 'pending'}`;
   }
 }
