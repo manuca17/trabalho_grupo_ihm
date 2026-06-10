@@ -6,9 +6,6 @@ import { Coin, NegotiationThread } from '../../core/models/coin.model';
 import { AuthService } from '../../core/services/auth.service';
 import { MarketplaceService } from '../../core/services/marketplace.service';
 
-/**
- * Hosts the real-time chat that simulates the trade negotiation flow.
- */
 @Component({
   selector: 'app-negotiation-detail',
   templateUrl: './negotiation-detail.page.html',
@@ -16,6 +13,8 @@ import { MarketplaceService } from '../../core/services/marketplace.service';
   standalone: false,
 })
 export class NegotiationDetailPage implements OnInit, OnDestroy {
+  @ViewChild(IonContent) content!: IonContent;
+
   draftMessage = '';
   offerCoin?: Coin;
   proposerCoin?: Coin;
@@ -45,7 +44,6 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
       return;
     }
 
-    // Subscribe to real-time updates for this negotiation thread, combined with active currency
     combineLatest([
       this.marketplaceService.getNegotiationById$(threadId),
       this.marketplaceService.activeCurrency$,
@@ -56,9 +54,9 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
         if (updatedThread) {
           this.realValueDisplay = this.marketplaceService.formatCurrency(updatedThread.realValue, currency);
         }
+        setTimeout(() => this.content?.scrollToBottom(200), 50);
       });
 
-    // Load coin details
     const snapshotThread = this.marketplaceService.getNegotiationById(threadId);
     if (snapshotThread) {
       const [offerCoin, proposerCoin] = await Promise.all([
@@ -89,7 +87,15 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
     this.draftMessage = '';
   }
 
-  async acceptTrade(): Promise<void> {
+  async acceptProposal(): Promise<void> {
+    if (!this.thread) {
+      return;
+    }
+
+    await this.marketplaceService.acceptProposal(this.thread.id);
+  }
+
+  async confirmTrade(): Promise<void> {
     if (!this.thread) {
       return;
     }

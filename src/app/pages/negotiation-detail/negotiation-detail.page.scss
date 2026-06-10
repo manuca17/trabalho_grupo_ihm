@@ -244,8 +244,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #f97316 !important;
-  color: white !important;
+  background: #f97316;
+  color: white;
   border: none;
   cursor: pointer;
   display: flex;
@@ -256,14 +256,14 @@
   box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
   transition: opacity 0.15s;
 
-  &:disabled { background: #cbd5e1 !important; box-shadow: none; cursor: not-allowed; }
+  &:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
 }
 
 .accept-trade-btn {
   width: 100%;
   min-height: 46px;
-  background: #f97316 !important;
-  color: white !important;
+  background: #f97316;
+  color: white;
   border: none;
   border-radius: 12px;
   font-size: 0.88rem;
@@ -275,12 +275,18 @@
   gap: 7px;
   letter-spacing: 0.03em;
   box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+  transition: opacity 0.15s;
+
+  &--accepted {
+    background: #16a34a;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.35);
+  }
 
   &--done {
-    background: #f1f5f9 !important;
-    color: #64748b !important;
+    background: #f1f5f9;
+    color: #64748b;
     box-shadow: none;
-    cursor: not-allowed;
+    cursor: default;
   }
 
   &:disabled { opacity: 0.8; }

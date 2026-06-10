@@ -77,7 +77,7 @@
 </ion-content>
 
 <ion-footer class="negotiation-footer" *ngIf="thread">
-  <div class="composer-bar">
+  <div class="composer-bar" *ngIf="thread.status !== 'traded'">
     <input
       class="composer-input"
       [(ngModel)]="draftMessage"
@@ -88,13 +88,27 @@
       <ion-icon name="send-outline"></ion-icon>
     </button>
   </div>
+
   <button
+    *ngIf="thread.status === 'pending'"
     class="accept-trade-btn"
-    (click)="acceptTrade()"
-    [disabled]="thread.status === 'traded'"
-    [class.accept-trade-btn--done]="thread.status === 'traded'"
+    (click)="acceptProposal()"
+  >
+    <ion-icon name="checkmark-outline"></ion-icon>
+    Aceitar Proposta
+  </button>
+
+  <button
+    *ngIf="thread.status === 'accepted'"
+    class="accept-trade-btn accept-trade-btn--accepted"
+    (click)="confirmTrade()"
   >
     <ion-icon name="checkmark-done-outline"></ion-icon>
-    {{ thread.status === 'traded' ? 'Moedas trocadas' : 'Marcar moedas como trocadas' }}
+    Confirmar Troca
   </button>
+
+  <div *ngIf="thread.status === 'traded'" class="accept-trade-btn accept-trade-btn--done">
+    <ion-icon name="checkmark-done-outline"></ion-icon>
+    Moedas trocadas
+  </div>
 </ion-footer>

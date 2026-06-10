@@ -12,7 +12,9 @@ export interface NegotiationThread {
   offerCoinId: string;
   proposerCoinId: string;
   proposerName: string;
+  proposerId: string;
   sellerName: string;
+  sellerId: string;
   status: 'pending' | 'accepted' | 'traded';
   realValue: number;
   unreadCount: number;
@@ -25,7 +27,9 @@ export class NegotiationThreadModel implements NegotiationThread {
   offerCoinId: string;
   proposerCoinId: string;
   proposerName: string;
+  proposerId: string;
   sellerName: string;
+  sellerId: string;
   status: 'pending' | 'accepted' | 'traded';
   realValue: number;
   unreadCount: number;
@@ -37,7 +41,9 @@ export class NegotiationThreadModel implements NegotiationThread {
     this.offerCoinId = data.offerCoinId;
     this.proposerCoinId = data.proposerCoinId;
     this.proposerName = data.proposerName;
+    this.proposerId = data.proposerId ?? '';
     this.sellerName = data.sellerName;
+    this.sellerId = data.sellerId ?? '';
     this.status = data.status;
     this.realValue = data.realValue;
     this.unreadCount = data.unreadCount;
@@ -61,7 +67,9 @@ export class NegotiationThreadModel implements NegotiationThread {
       offerCoinId: this.offerCoinId,
       proposerCoinId: this.proposerCoinId,
       proposerName: this.proposerName,
+      proposerId: this.proposerId,
       sellerName: this.sellerName,
+      sellerId: this.sellerId,
       status: this.status,
       realValue: this.realValue,
       unreadCount: this.unreadCount,

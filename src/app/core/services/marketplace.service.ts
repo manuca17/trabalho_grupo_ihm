@@ -69,7 +69,6 @@ export class MarketplaceService {
         return { ...coin, weight };
       };
 
-      // Cards das moedas do catálogo com as suas ofertas
       const catalogCoinIds = new Set(coins.map((c) => c.id));
       const catalogCards = coins.map((coin) => {
         const mappedCoin = applyWeightUnit(coin);
@@ -82,7 +81,6 @@ export class MarketplaceService {
         };
       });
 
-      // Cards de ofertas com coinIds personalizados (moedas adicionadas pelo utilizador)
       const standaloneOffers = offers.filter((o) => !catalogCoinIds.has(o.coinId));
       const standaloneCards = standaloneOffers.map((offer) => {
         const obversePhoto = offer.photos?.find((p) => p.kind === 'obverse');
@@ -141,7 +139,6 @@ export class MarketplaceService {
       this.localStorageService.getItem<NegotiationThread[]>(LS_NEGOTIATIONS_KEY),
     ]);
 
-    // Reintegrar as fotos nas ofertas carregadas do storage
     const offersWithPhotos = await Promise.all(
       (storedOffers ?? []).map(async (offer) => {
         const photos = await this.localStorageService.getItem<OfferPhoto[]>(
@@ -158,7 +155,6 @@ export class MarketplaceService {
     );
     this.negotiationsSubject.next(mergedNegotiations);
 
-    // Persistir se houve fusão de chats
     if (mergedNegotiations.length !== (storedNegotiations ?? []).length) {
       await this.persistNegotiations(mergedNegotiations);
     }
@@ -244,10 +240,8 @@ export class MarketplaceService {
       const profile = await this.resolveCurrentProfile();
       const offerId = `offer-${Date.now()}`;
 
-      // Guardar fotos completas no storage
       await this.localStorageService.setItem(`offer_photos_${offerId}`, input.photos);
 
-      // Manter as fotos completas em memória para exibição imediata
       const offer: Offer = new OfferModel({
         id: offerId,
         coinId: input.coinId,
@@ -278,48 +272,34 @@ export class MarketplaceService {
       const proposerCoin =
         catalog.find((coin) => coin.id !== input.coinId) ?? catalog[0];
 
-      const sellerName = 'Maria';
-      const newMessageBody = input.availableForTrade
-        ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
-        : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.';
-      const newMessage: NegotiationMessage = {
-        id: `msg-${Date.now()}`,
-        userId: profile.id,
-        displayName: profile.displayName,
-        body: newMessageBody,
-        sentAt: new Date().toISOString(),
-      };
-
-      const existingThread = this.negotiationsSubject.value.find(
-        (t) => t.proposerName === profile.displayName && t.sellerName === sellerName,
-      );
-
-      let updatedNegotiations: NegotiationThread[];
-
-      if (existingThread) {
-        const updatedThread: NegotiationThread = {
-          ...existingThread,
-          unreadCount: existingThread.unreadCount + 1,
-          messages: [...existingThread.messages, newMessage],
-        };
-        updatedNegotiations = this.negotiationsSubject.value.map((t) =>
-          t.id === existingThread.id ? updatedThread : t,
-        );
-      } else {
-        const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
-          id: `thread-${Date.now()}`,
-          offerId,
-          offerCoinId: input.coinId,
-          proposerCoinId: proposerCoin?.id ?? input.coinId,
-          proposerName: profile.displayName,
-          sellerName,
-          status: 'pending',
-          realValue: proposerCoin?.estimatedValue ?? input.askPrice,
-          unreadCount: 1,
-          messages: [newMessage],
-        });
-        updatedNegotiations = [...this.negotiationsSubject.value, nextNegotiation];
-      }
+      const nextNegotiation: NegotiationThread = new NegotiationThreadModel({
+        id: `thread-${Date.now()}`,
+        offerId,
+        offerCoinId: input.coinId,
+        proposerCoinId: proposerCoin?.id ?? input.coinId,
+        proposerName: 'Comprador',
+        proposerId: 'unknown-proposer',
+        sellerName: profile.displayName,
+        sellerId: profile.id,
+        status: 'pending',
+        realValue: proposerCoin?.estimatedValue ?? input.askPrice,
+        unreadCount: 1,
+        messages: [
+          {
+            id: `msg-${Date.now()}`,
+            userId: 'unknown-proposer',
+            displayName: 'Comprador',
+            body: input.availableForTrade
+              ? `Tenho interesse nesta oferta. Posso propor ${proposerCoin?.name ?? 'uma moeda do meu inventário'} para troca.`
+              : 'Tenho interesse na compra imediata e gostava de validar o estado da moeda.',
+            sentAt: new Date().toISOString(),
+          },
+        ],
+      });
+      const updatedNegotiations = [
+        ...this.negotiationsSubject.value,
+        nextNegotiation,
+      ];
 
       this.offersSubject.next(updatedOffers);
       this.negotiationsSubject.next(updatedNegotiations);
@@ -366,11 +346,13 @@ export class MarketplaceService {
       .filter(Boolean)
       .join(' ');
 
-    const sellerName = 'Maria';
+    const offerCoin = catalog.find((coin) => coin.id === input.offerCoinId);
+    const sellerName = offerCoin?.sellerName ?? 'Vendedor';
+    const sellerId = `seller-${input.offerCoinId}`;
 
-    // Reutilizar o chat existente com a mesma pessoa, em vez de abrir um novo.
+    // Reutilizar o chat existente com o mesmo vendedor, em vez de abrir um novo.
     const existingThread = this.negotiationsSubject.value.find(
-      (t) => t.proposerName === profile.displayName && t.sellerName === sellerName,
+      (t) => t.proposerId === profile.id && t.sellerId === sellerId,
     );
 
     if (existingThread) {
@@ -403,12 +385,14 @@ export class MarketplaceService {
       offerCoinId: input.offerCoinId,
       proposerCoinId: primaryTradeCoin?.id ?? input.offerCoinId,
       proposerName: profile.displayName,
+      proposerId: profile.id,
       sellerName,
+      sellerId,
       status: 'pending',
       realValue:
         input.offerAmount ??
         primaryTradeCoin?.estimatedValue ??
-        catalog.find((coin) => coin.id === input.offerCoinId)?.estimatedValue ??
+        offerCoin?.estimatedValue ??
         0,
       unreadCount: 1,
       messages: [
@@ -525,6 +509,37 @@ export class MarketplaceService {
     await this.persistOffers(updatedOffers);
   }
 
+  async acceptProposal(threadId: string): Promise<void> {
+    const targetThread = this.getNegotiationById(threadId);
+
+    if (!targetThread || targetThread.status !== 'pending') {
+      return;
+    }
+
+    const updatedNegotiations: NegotiationThread[] =
+      this.negotiationsSubject.value.map((thread) =>
+        thread.id === threadId
+          ? {
+              ...thread,
+              status: 'accepted' as const,
+              messages: [
+                ...thread.messages,
+                {
+                  id: `msg-${Date.now()}`,
+                  userId: 'system',
+                  displayName: 'Sistema',
+                  body: `${targetThread.sellerName} aceitou a proposta. Confirme a troca para concluir.`,
+                  sentAt: new Date().toISOString(),
+                },
+              ],
+            }
+          : thread,
+      );
+
+    this.negotiationsSubject.next(updatedNegotiations);
+    await this.persistNegotiations(updatedNegotiations);
+  }
+
   async markNegotiationAsTraded(threadId: string): Promise<void> {
     const targetThread = this.getNegotiationById(threadId);
 
@@ -618,7 +633,7 @@ export class MarketplaceService {
       const base = group[0];
       const allMessages = ([] as NegotiationMessage[])
         .concat(...group.map((t) => t.messages))
-        .sort((a: NegotiationMessage, b: NegotiationMessage) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
+        .sort((a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime());
       const totalUnread = group.reduce((sum, t) => sum + t.unreadCount, 0);
 
       merged.push({ ...base, messages: allMessages, unreadCount: totalUnread });
@@ -636,7 +651,6 @@ export class MarketplaceService {
     };
   }
 
-  // Persiste as ofertas sem as dataUrls (as fotos ficam no storage separado)
   private async persistOffers(offers: Offer[]): Promise<void> {
     const plain = offers.map((o) => ({
       id: o.id,
