@@ -99,4 +99,18 @@ export class NegotiationDetailPage implements OnInit, OnDestroy {
   isOwnMessage(message: { userId: string }): boolean {
     return message.userId === this.currentUserId;
   }
+
+  isSystemMessage(message: { userId: string }): boolean {
+    return message.userId === 'system';
+  }
+
+  get statusLabel(): string {
+    if (!this.thread) return '';
+    const labels: Record<string, string> = { pending: 'Pendente', accepted: 'Aceite', traded: 'Trocado' };
+    return labels[this.thread.status] ?? this.thread.status;
+  }
+
+  get statusClass(): string {
+    return `status--${this.thread?.status ?? 'pending'}`;
+  }
 }
